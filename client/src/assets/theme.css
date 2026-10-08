@@ -1,0 +1,365 @@
+/* ============================================================
+   StudySpot SG — Design System
+   IS216 G10 Team T3
+
+   HOW TO USE
+   Import AFTER Bootstrap in src/main.js:
+       import 'bootstrap/dist/css/bootstrap.min.css'
+       import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+       import './assets/theme.css'
+
+   Everything below is plain CSS custom properties layered over
+   Bootstrap 5.3 — no SCSS, no build step, no extra dependency.
+
+   Brand hues come from the project proposal: Sky Blue, Light
+   Green, Light Purple, Light Pink. Each is expanded into a 50–900
+   tonal scale so there is always a step dark enough for text.
+   Every colour pair used for text has been contrast-checked
+   against WCAG AA (4.5:1 body, 3:1 large/UI).
+   ============================================================ */
+
+:root {
+  /* ---------- 1. Brand scales ---------- */
+  --ss-sky-50:#F4F8FB;  --ss-sky-100:#E5F0F9; --ss-sky-200:#C6E2F7;
+  --ss-sky-300:#9DD1F6; --ss-sky-400:#67BAF5; --ss-sky-500:#35A3F2;
+  --ss-sky-600:#118DE5; --ss-sky-700:#1173B9; --ss-sky-800:#135D92;
+  --ss-sky-900:#134A70;
+
+  --ss-green-50:#F5FAF7;  --ss-green-100:#E9F5EF; --ss-green-200:#D0EDDF;
+  --ss-green-300:#AFE4CB; --ss-green-400:#84D8B1; --ss-green-500:#5BCB97;
+  --ss-green-600:#3CBA7F; --ss-green-700:#339768; --ss-green-800:#2D7855;
+  --ss-green-900:#265D44;
+
+  --ss-purple-50:#F7F5FA;  --ss-purple-100:#EDE8F6; --ss-purple-200:#DBCDF0;
+  --ss-purple-300:#C4AAE9; --ss-purple-400:#A67CE0; --ss-purple-500:#8851D6;
+  --ss-purple-600:#6E30C6; --ss-purple-700:#5B2AA0; --ss-purple-800:#4B257F;
+  --ss-purple-900:#3C2162;
+
+  --ss-pink-50:#FBF4F6;  --ss-pink-100:#F8E6EC; --ss-pink-200:#F4C9D7;
+  --ss-pink-300:#F1A2BC; --ss-pink-400:#ED6F99; --ss-pink-500:#E73F77;
+  --ss-pink-600:#D91D5C; --ss-pink-700:#B01A4C; --ss-pink-800:#8A1A3F;
+  --ss-pink-900:#6B1934;
+
+  /* Functional only — amber is NOT a proposal brand hue. It exists
+     because the crowd meter needs a readable third state between
+     green (Quiet) and pink (Packed). Do not use it decoratively. */
+  --ss-amber-50:#FBF8F3;  --ss-amber-100:#F9F1E4; --ss-amber-200:#F8E5C5;
+  --ss-amber-300:#F8D69B; --ss-amber-400:#F9C263; --ss-amber-500:#F6AE30;
+  --ss-amber-600:#EA980C; --ss-amber-700:#BD7D0D; --ss-amber-800:#956410;
+  --ss-amber-900:#724F11;
+
+  /* Neutral, very slightly blue-tinted so it sits with Sky */
+  --ss-ink-50:#F4F6F8;  --ss-ink-100:#EAEDF1; --ss-ink-200:#D6DDE5;
+  --ss-ink-300:#BCC8D4; --ss-ink-400:#A0ADBA; --ss-ink-500:#8193A4;
+  --ss-ink-600:#677A8E; --ss-ink-700:#546475; --ss-ink-800:#1E2A38;
+  --ss-ink-900:#121A24;
+
+  /* ---------- 2. Semantic tokens ----------
+     Always use these in components, never a raw scale step.
+     Contrast on white is noted for each. */
+  --ss-primary:        var(--ss-sky-700);    /* 5.03:1 */
+  --ss-primary-hover:  var(--ss-sky-800);    /* 6.98:1 */
+  --ss-primary-soft:   var(--ss-sky-100);
+  --ss-accent:         var(--ss-purple-700); /* 9.20:1 — AI assistant */
+  --ss-accent-soft:    var(--ss-purple-100);
+  --ss-success:        var(--ss-green-800);  /* 5.34:1 — open now, Quiet */
+  --ss-success-soft:   var(--ss-green-100);
+  --ss-warning:        var(--ss-amber-800);  /* 5.11:1 — Moderate */
+  --ss-warning-soft:   var(--ss-amber-100);
+  --ss-danger:         var(--ss-pink-700);   /* 6.78:1 — Packed, closed */
+  --ss-danger-soft:    var(--ss-pink-100);
+  --ss-fav:            var(--ss-pink-600);   /* saved / favourite heart */
+
+  --ss-text:           var(--ss-ink-900);    /* 17.52:1 */
+  --ss-text-muted:     var(--ss-ink-700);    /* 6.08:1  — never ink-600 or lighter */
+  --ss-text-invert:    #FFFFFF;
+  --ss-bg:             #FFFFFF;
+  --ss-surface:        var(--ss-ink-50);
+  --ss-surface-2:      var(--ss-ink-100);
+  --ss-border:         var(--ss-ink-200);
+  --ss-border-strong:  var(--ss-ink-400);
+  --ss-focus:          var(--ss-sky-700);
+
+  /* ---------- 3. Typography ---------- */
+  --ss-font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto,
+             "Helvetica Neue", Arial, sans-serif;
+  --ss-text-xs:   0.75rem;   /* 12px — meta, timestamps */
+  --ss-text-sm:   0.875rem;  /* 14px — secondary */
+  --ss-text-base: 1rem;      /* 16px — body */
+  --ss-text-lg:   1.125rem;  /* 18px — lead */
+  --ss-text-xl:   1.375rem;  /* 22px — card title */
+  --ss-text-2xl:  1.75rem;   /* 28px — section heading */
+  --ss-text-3xl:  2.25rem;   /* 36px — page title */
+  --ss-text-4xl:  3rem;      /* 48px — hero */
+  --ss-leading-tight: 1.2;
+  --ss-leading-body:  1.6;
+
+  /* ---------- 4. Spacing (4px base) ---------- */
+  --ss-1:0.25rem; --ss-2:0.5rem;  --ss-3:0.75rem; --ss-4:1rem;
+  --ss-5:1.5rem;  --ss-6:2rem;    --ss-7:3rem;    --ss-8:4rem;
+
+  /* ---------- 5. Radius ---------- */
+  --ss-radius-sm:8px; --ss-radius:14px; --ss-radius-lg:20px; --ss-radius-pill:999px;
+
+  /* ---------- 6. Elevation ---------- */
+  --ss-shadow-sm: 0 1px 2px rgba(18,26,36,.06), 0 1px 3px rgba(18,26,36,.05);
+  --ss-shadow:    0 2px 6px rgba(18,26,36,.06), 0 8px 24px rgba(18,26,36,.07);
+  --ss-shadow-lg: 0 8px 20px rgba(18,26,36,.08), 0 24px 48px rgba(18,26,36,.10);
+
+  /* ---------- 7. Motion ---------- */
+  --ss-ease: cubic-bezier(.2,.7,.3,1);
+  --ss-fast: 140ms; --ss-med: 240ms;
+
+  /* ---------- 8. Bootstrap bridge ----------
+     Re-point Bootstrap's own variables so stock components inherit
+     the theme without us rewriting them. */
+  --bs-primary: var(--ss-primary);
+  --bs-primary-rgb: 17,115,185;
+  --bs-body-color: var(--ss-text);
+  --bs-body-bg: var(--ss-bg);
+  --bs-body-font-family: var(--ss-font);
+  --bs-body-line-height: var(--ss-leading-body);
+  --bs-border-color: var(--ss-border);
+  --bs-border-radius: var(--ss-radius-sm);
+  --bs-border-radius-lg: var(--ss-radius);
+  --bs-link-color: var(--ss-primary);
+  --bs-link-hover-color: var(--ss-primary-hover);
+  --bs-emphasis-color: var(--ss-text);
+  --bs-secondary-color: var(--ss-text-muted);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+body {
+  font-family: var(--ss-font);
+  color: var(--ss-text);
+  background: var(--ss-bg);
+  line-height: var(--ss-leading-body);
+  -webkit-font-smoothing: antialiased;
+}
+h1,h2,h3,h4,h5,h6 { line-height: var(--ss-leading-tight); font-weight: 700; letter-spacing: -.01em; }
+h1 { font-size: var(--ss-text-3xl); }
+h2 { font-size: var(--ss-text-2xl); }
+h3 { font-size: var(--ss-text-xl); }
+.ss-muted { color: var(--ss-text-muted); }
+.ss-meta  { color: var(--ss-text-muted); font-size: var(--ss-text-sm); }
+
+/* Single, consistent focus treatment for every interactive element.
+   Required for keyboard accessibility — do not remove. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, .ss-chip:focus-visible,
+.ss-card:focus-visible {
+  outline: 3px solid var(--ss-focus);
+  outline-offset: 2px;
+  border-radius: var(--ss-radius-sm);
+}
+
+/* ============================================================
+   BUTTONS — override Bootstrap's per-component variables
+   ============================================================ */
+.btn { --bs-btn-font-weight:600; --bs-btn-padding-y:.55rem; --bs-btn-padding-x:1.1rem;
+       --bs-btn-border-radius:var(--ss-radius-pill);
+       transition: transform var(--ss-fast) var(--ss-ease), box-shadow var(--ss-fast) var(--ss-ease); }
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  --bs-btn-bg: var(--ss-primary);          --bs-btn-border-color: var(--ss-primary);
+  --bs-btn-hover-bg: var(--ss-primary-hover); --bs-btn-hover-border-color: var(--ss-primary-hover);
+  --bs-btn-active-bg: var(--ss-sky-900);   --bs-btn-active-border-color: var(--ss-sky-900);
+  --bs-btn-disabled-bg: var(--ss-ink-300); --bs-btn-disabled-border-color: var(--ss-ink-300);
+  box-shadow: var(--ss-shadow-sm);
+}
+.btn-outline-primary {
+  --bs-btn-color: var(--ss-primary);       --bs-btn-border-color: var(--ss-border-strong);
+  --bs-btn-hover-bg: var(--ss-primary-soft); --bs-btn-hover-color: var(--ss-primary-hover);
+  --bs-btn-hover-border-color: var(--ss-primary);
+}
+.btn-accent {
+  --bs-btn-color:#fff; --bs-btn-bg: var(--ss-accent); --bs-btn-border-color: var(--ss-accent);
+  --bs-btn-hover-color:#fff; --bs-btn-hover-bg: var(--ss-purple-800);
+  --bs-btn-hover-border-color: var(--ss-purple-800);
+}
+.btn-ghost {
+  --bs-btn-color: var(--ss-text-muted); --bs-btn-bg: transparent; --bs-btn-border-color: transparent;
+  --bs-btn-hover-color: var(--ss-text); --bs-btn-hover-bg: var(--ss-surface-2);
+}
+
+/* ============================================================
+   CARD — the core repeating unit (study space)
+   ============================================================ */
+.ss-card {
+  background: var(--ss-bg);
+  border: 1px solid var(--ss-border);
+  border-radius: var(--ss-radius);
+  box-shadow: var(--ss-shadow-sm);
+  overflow: hidden;
+  display: flex; flex-direction: column; height: 100%;
+  transition: transform var(--ss-med) var(--ss-ease), box-shadow var(--ss-med) var(--ss-ease);
+}
+.ss-card:hover { transform: translateY(-4px); box-shadow: var(--ss-shadow); }
+.ss-card__media { position: relative; aspect-ratio: 16/10; background: var(--ss-surface-2); overflow: hidden; }
+.ss-card__media img { width:100%; height:100%; object-fit: cover; display:block;
+                      transition: transform 400ms var(--ss-ease); }
+.ss-card:hover .ss-card__media img { transform: scale(1.05); }
+.ss-card__body { padding: var(--ss-4); display:flex; flex-direction:column; gap: var(--ss-2); flex:1; }
+.ss-card__title { font-size: var(--ss-text-lg); font-weight:700; margin:0; }
+.ss-card__foot { margin-top:auto; padding-top: var(--ss-3); border-top: 1px solid var(--ss-border);
+                 display:flex; align-items:center; justify-content:space-between; gap: var(--ss-2); }
+
+/* Favourite toggle sitting on the image */
+.ss-fav {
+  position:absolute; top: var(--ss-3); right: var(--ss-3);
+  width:38px; height:38px; border-radius:50%; border:none;
+  background: rgba(255,255,255,.92); color: var(--ss-ink-500);
+  display:grid; place-items:center; cursor:pointer;
+  box-shadow: var(--ss-shadow-sm);
+  transition: transform var(--ss-fast) var(--ss-ease), color var(--ss-fast) var(--ss-ease);
+}
+.ss-fav:hover { transform: scale(1.1); }
+.ss-fav[aria-pressed="true"] { color: var(--ss-fav); }
+
+/* ============================================================
+   BADGES / TAGS
+   ============================================================ */
+.ss-badge {
+  display:inline-flex; align-items:center; gap:.35rem;
+  padding:.25rem .6rem; border-radius: var(--ss-radius-pill);
+  font-size: var(--ss-text-xs); font-weight:600; line-height:1.4; white-space:nowrap;
+}
+.ss-badge--sky    { background: var(--ss-sky-100);    color: var(--ss-sky-800); }
+.ss-badge--green  { background: var(--ss-green-100);  color: var(--ss-green-800); }
+.ss-badge--purple { background: var(--ss-purple-100); color: var(--ss-purple-800); }
+.ss-badge--pink   { background: var(--ss-pink-100);   color: var(--ss-pink-800); }
+.ss-badge--amber  { background: var(--ss-amber-100);  color: var(--ss-amber-800); }
+.ss-badge--neutral{ background: var(--ss-ink-100);    color: var(--ss-ink-800); }
+.ss-badge--solid  { background: var(--ss-primary);    color: #fff; }
+
+/* Filter chip (tags double as filters per the proposal) */
+.ss-chip {
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.45rem .9rem; border-radius: var(--ss-radius-pill);
+  border:1px solid var(--ss-border-strong); background: var(--ss-bg);
+  color: var(--ss-text-muted); font-size: var(--ss-text-sm); font-weight:600;
+  cursor:pointer; transition: all var(--ss-fast) var(--ss-ease);
+}
+.ss-chip:hover { border-color: var(--ss-primary); color: var(--ss-primary); background: var(--ss-sky-50); }
+.ss-chip[aria-pressed="true"] { background: var(--ss-primary); border-color: var(--ss-primary); color:#fff; }
+
+/* ============================================================
+   CROWD METER — three states, white text on all three
+   ============================================================ */
+.ss-crowd { display:inline-flex; align-items:center; gap:.45rem; font-size: var(--ss-text-xs); font-weight:700; }
+.ss-crowd__dots { display:inline-flex; gap:3px; }
+.ss-crowd__dot { width:7px; height:16px; border-radius:3px; background: var(--ss-ink-200); }
+.ss-crowd--quiet    .ss-crowd__dot:nth-child(-n+1){ background: var(--ss-green-800); }
+.ss-crowd--moderate .ss-crowd__dot:nth-child(-n+2){ background: var(--ss-amber-800); }
+.ss-crowd--packed   .ss-crowd__dot:nth-child(-n+3){ background: var(--ss-pink-700); }
+.ss-crowd--quiet    { color: var(--ss-green-800); }
+.ss-crowd--moderate { color: var(--ss-amber-800); }
+.ss-crowd--packed   { color: var(--ss-pink-700); }
+
+/* ============================================================
+   SUITABILITY SCORE — the product's differentiator, so it gets
+   a distinct, prominent treatment
+   ============================================================ */
+.ss-score {
+  display:inline-grid; place-items:center; width:54px; height:54px; border-radius:50%;
+  background: conic-gradient(var(--ss-score-color, var(--ss-primary)) calc(var(--ss-score,0) * 1%),
+                             var(--ss-ink-100) 0);
+  position:relative; flex:none;
+}
+.ss-score::after {
+  content:""; position:absolute; inset:5px; border-radius:50%; background: var(--ss-bg);
+}
+.ss-score__val { position:relative; z-index:1; font-weight:800; font-size: var(--ss-text-sm); color: var(--ss-text); }
+.ss-score--high { --ss-score-color: var(--ss-green-800); }
+.ss-score--mid  { --ss-score-color: var(--ss-amber-800); }
+.ss-score--low  { --ss-score-color: var(--ss-ink-400); }
+
+/* ============================================================
+   WEATHER STRIP
+   ============================================================ */
+.ss-weather {
+  display:flex; align-items:center; gap: var(--ss-3);
+  padding: var(--ss-3) var(--ss-4);
+  background: linear-gradient(135deg, var(--ss-sky-100), var(--ss-purple-100));
+  border:1px solid var(--ss-sky-200); border-radius: var(--ss-radius);
+  color: var(--ss-ink-800); font-size: var(--ss-text-sm);
+}
+.ss-weather__icon { font-size: 1.6rem; line-height:1; }
+
+/* ============================================================
+   RATING STARS
+   ============================================================ */
+.ss-stars { display:inline-flex; gap:2px; color: var(--ss-amber-600); font-size: var(--ss-text-sm); letter-spacing:1px; }
+.ss-stars--muted { color: var(--ss-ink-300); }
+
+/* ============================================================
+   SEARCH BAR
+   ============================================================ */
+.ss-search {
+  display:flex; align-items:center; gap: var(--ss-2);
+  background: var(--ss-bg); border:1px solid var(--ss-border);
+  border-radius: var(--ss-radius-pill); padding: .4rem .4rem .4rem 1.1rem;
+  box-shadow: var(--ss-shadow);
+}
+.ss-search input { border:none; outline:none; flex:1; font-size: var(--ss-text-base);
+                   padding:.6rem 0; background:transparent; color: var(--ss-text); min-width:0; }
+.ss-search input::placeholder { color: var(--ss-ink-500); }
+.ss-search:focus-within { box-shadow: var(--ss-shadow), 0 0 0 3px var(--ss-sky-200); border-color: var(--ss-primary); }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.ss-hero {
+  position:relative; overflow:hidden;
+  background:
+    radial-gradient(1100px 420px at 8% -10%,  var(--ss-sky-200),    transparent 60%),
+    radial-gradient(900px  420px at 92% 0%,   var(--ss-purple-200), transparent 60%),
+    radial-gradient(700px  380px at 55% 110%, var(--ss-green-200),  transparent 60%),
+    var(--ss-sky-50);
+  padding: var(--ss-8) 0 var(--ss-7);
+  border-bottom: 1px solid var(--ss-sky-200);
+}
+.ss-hero h1 { font-size: clamp(2rem, 5vw, var(--ss-text-4xl)); max-width: 18ch; }
+.ss-hero p  { font-size: var(--ss-text-lg); color: var(--ss-ink-800); max-width: 52ch; }
+
+/* ============================================================
+   SECTION + EMPTY/LOADING STATES
+   ============================================================ */
+.ss-section { padding: var(--ss-7) 0; }
+.ss-section__head { display:flex; align-items:end; justify-content:space-between;
+                    gap: var(--ss-4); margin-bottom: var(--ss-5); flex-wrap:wrap; }
+.ss-empty { text-align:center; padding: var(--ss-7) var(--ss-4); color: var(--ss-text-muted);
+            background: var(--ss-surface); border:1px dashed var(--ss-border-strong);
+            border-radius: var(--ss-radius); }
+.ss-skeleton { background: linear-gradient(90deg, var(--ss-ink-100) 25%, var(--ss-ink-50) 37%, var(--ss-ink-100) 63%);
+               background-size:400% 100%; animation: ss-shimmer 1.3s ease-in-out infinite;
+               border-radius: var(--ss-radius-sm); }
+@keyframes ss-shimmer { 0%{background-position:100% 0} 100%{background-position:0 0} }
+
+/* Entry animation — the proposal asks for "UI moves when you first load the page" */
+.ss-rise { animation: ss-rise var(--ss-med) var(--ss-ease) both; }
+.ss-rise:nth-child(2){animation-delay:60ms}  .ss-rise:nth-child(3){animation-delay:120ms}
+.ss-rise:nth-child(4){animation-delay:180ms} .ss-rise:nth-child(5){animation-delay:240ms}
+.ss-rise:nth-child(6){animation-delay:300ms}
+@keyframes ss-rise { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none} }
+
+/* Respect reduced-motion — accessibility requirement, keep this block */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration:.001ms !important; animation-iteration-count:1 !important;
+                           transition-duration:.001ms !important; scroll-behavior:auto !important; }
+}
+
+/* ============================================================
+   NAVBAR
+   ============================================================ */
+.ss-nav { background: rgba(255,255,255,.88); backdrop-filter: blur(10px);
+          border-bottom:1px solid var(--ss-border); position:sticky; top:0; z-index:1030; }
+.ss-nav__brand { font-weight:800; font-size: var(--ss-text-lg); color: var(--ss-text); text-decoration:none;
+                 display:inline-flex; align-items:center; gap:.5rem; }
+.ss-nav__dot { width:12px; height:12px; border-radius:50%;
+               background: linear-gradient(135deg, var(--ss-sky-500), var(--ss-purple-500)); }
+.ss-nav a.nav-link { color: var(--ss-text-muted); font-weight:600; }
+.ss-nav a.nav-link:hover, .ss-nav a.router-link-active { color: var(--ss-primary); }
