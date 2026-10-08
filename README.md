@@ -148,10 +148,10 @@ cd ../server && npm install
 
 ### 3. Environment variables
 
-Create `server/.env`:
+Create `server/config.env` (the course convention — loaded with `dotenv.config({ path: './config.env' })`):
 
 ```
-PORT=3000
+PORT=8000
 MONGODB_URI=<your MongoDB connection string>
 GOOGLE_PLACES_API_KEY=<key>
 LLM_API_KEY=<Claude or OpenAI key>
@@ -161,10 +161,10 @@ LLM_PROVIDER=<claude|openai>
 Create `client/.env`:
 
 ```
-VITE_API_BASE_URL=http://localhost:3000
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
-> `.env` files are git-ignored and must **never** be committed. Keys are shared within the team privately.
+> `config.env` is git-ignored and must **never** be committed. The repo is public at submission, so a committed password is a public password. Copy `server/config.env.example` and fill it in. Keys are shared within the team privately.
 > Open-Meteo requires no API key.
 
 ---
@@ -176,7 +176,7 @@ Two terminals:
 ```bash
 # Terminal 1 — API
 cd server
-npm run dev          # http://localhost:3000
+npm run dev          # http://localhost:8000
 
 # Terminal 2 — client
 cd client
