@@ -1,5 +1,6 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { Carousel } from 'bootstrap'
 import { useRoute, RouterLink } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
@@ -13,6 +14,7 @@ import ReviewForm from '../components/ReviewForm.vue'
 import ReviewList from '../components/ReviewList.vue'
 
 const route = useRoute()
+const carouselRef = ref(null)
 const place = ref(null)
 const reviews = ref([])
 const summary = ref({ rating: 0, reviewCount: 0, crowdLevel: null })
@@ -68,12 +70,22 @@ onMounted(async () => {
   } catch (e) {
     notFound.value = true
   } finally { loading.value = false }
+  await nextTick()
+
+  if (carouselRef.value && place.value?.photos?.length > 1) {
+    const carousel = new Carousel(carouselRef.value, {
+      interval: 4000,
+      pause: false,
+      wrap: true
+    })
+    carousel.cycle()
+  }
 })
 </script>
 
 <template>
   <main class="container ss-section">
-    <div v-if="loading" class="ss-card" style="height:320px" />
+    <div v-if="loading" class="ss-card" style="height:320px"></div>
 
     <div v-else-if="notFound" class="ss-empty">
       <p class="mb-3">We couldn't find that study space.</p>
@@ -84,9 +96,40 @@ onMounted(async () => {
       <RouterLink to="/places" class="ss-meta text-decoration-none d-inline-block mb-3">← All spots</RouterLink>
 
       <!-- Photo carousel placeholder: Places API photos slot in here -->
-      <div class="ss-card mb-4">
-        <div class="ss-card__media" :style="{ background: art, aspectRatio: '21/8' }"></div>
+      <div v-if="place.photos?.length" id="placeCarousel" ref="carouselRef"
+        class="carousel slide ss-card mb-4 overflow-hidden">
+
+      <div v-if="place.photos.length > 1" class="carousel-indicators">
+        <button v-for="(photo, index) in place.photos" :key="'indicator-' + index"
+                type="button" data-bs-target="#placeCarousel" :data-bs-slide-to="index"
+                :class="{ active: index === 0 }" :aria-current="index === 0 ? 'true' : undefined"
+                :aria-label="'Slide ' + (index + 1)"></button>
       </div>
+
+      <div class="carousel-inner">
+        <div v-for="(photo, index) in place.photos" :key="photo"
+            class="carousel-item" :class="{ active: index === 0 }">
+          <img :src="photo" :alt="`${place.name} photo ${index + 1}`"
+              class="d-block w-100 place-carousel-image">
+        </div>
+      </div>
+
+      <button v-if="place.photos.length > 1" class="carousel-control-prev" type="button"
+              data-bs-target="#placeCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+      </button>
+
+      <button v-if="place.photos.length > 1" class="carousel-control-next" type="button"
+              data-bs-target="#placeCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+      </button>
+    </div>
+
+    <div v-else class="ss-card mb-4">
+      <div class="ss-card__media" :style="{ background: art, aspectRatio: '21/8' }"></div>
+    </div>
 
       <div class="row g-4">
         <div class="col-12 col-lg-7">

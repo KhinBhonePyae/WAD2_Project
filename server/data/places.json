@@ -11,6 +11,11 @@
     "facilities": ["wifi", "sockets", "toilets", "water", "quiet"],
     "tags": ["Individual study", "Quiet"],
     "photo": "lib1",
+    "photos": [
+      "/images/lks1.jpg",
+      "/images/lks2.jpg",
+      "/images/lks3.jpg"
+    ],
     "rating": 4.4,
     "reviewCount": 36,
     "description": "SMU's main library. Silent floors on levels 4 and 5, group pods on level 2, and plenty of power at every desk."
@@ -27,6 +32,11 @@
     "facilities": ["wifi", "fnb", "toilets"],
     "tags": ["Group study", "Outdoor"],
     "photo": "cafe1",
+    "photos": [
+      "/images/bettr1.jpg",
+      "/images/bettr2.jpg",
+      "/images/bettr3.jpg"
+    ],
     "rating": 4.1,
     "reviewCount": 12,
     "description": "Airy roastery with a sheltered courtyard. Good for pair work; gets loud over lunch."
@@ -43,6 +53,11 @@
     "facilities": ["wifi", "sockets", "toilets", "water", "quiet"],
     "tags": ["Individual study", "Quiet"],
     "photo": "lib2",
+    "photos": [
+      "/images/national1.jpg",
+      "/images/national2.jpg",
+      "/images/national3.jpg"
+    ],
     "rating": 4.6,
     "reviewCount": 58,
     "description": "Large reading floor with river views. Sockets along the window seats fill up by 11am."
@@ -59,6 +74,11 @@
     "facilities": ["wifi", "fnb", "toilets", "sockets"],
     "tags": ["Group study", "Outdoor"],
     "photo": "terrace1",
+    "photos": [
+      "/images/funan1.jpg",
+      "/images/funan2.jpg",
+      "/images/funan3.jpg"
+    ],
     "rating": 3.9,
     "reviewCount": 21,
     "description": "Open-air terrace above the atrium. Covered seating at the north end if it rains."
@@ -75,6 +95,11 @@
     "facilities": ["wifi", "sockets", "water", "toilets"],
     "tags": ["Group study"],
     "photo": "pod1",
+    "photos": [
+      "/images/connexion1.jpg",
+      "/images/connexion2.jpg",
+      "/images/connexion3.jpg"
+    ],
     "rating": 4.2,
     "reviewCount": 29,
     "description": "Bookable glass pods for 4-6. Needs a student login to reserve."
@@ -91,6 +116,11 @@
     "facilities": ["wifi", "fnb", "sockets"],
     "tags": ["Individual study"],
     "photo": "cafe2",
+    "photos": [
+      "/images/kopi1.jpg",
+      "/images/kopi2.jpg",
+      "/images/kopi3.jpg"
+    ],
     "rating": 4.0,
     "reviewCount": 17,
     "description": "Small corner kopitiam-style cafe. Two sockets only, so arrive early."
