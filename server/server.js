@@ -17,13 +17,14 @@ dotenv.config({ path: './config.env' });
 
 const placesRoutes = require('./routes/places-routes');
 const reviewsRoutes = require('./routes/reviews-routes');
-const usersRoutes = require('./routes/users-routes');
+const searchRoutes = require('./routes/search-routes'); // search bar
 
 const server = express();
 
 server.use(express.urlencoded({ extended: true }));
 server.use(cors());               // dev only: allows the Vite client on :5173
 server.use(express.json());
+server.use('/search', searchRoutes) // search bar
 
 server.get('/health', (req, res) => {
   res.json({ ok: true, mode: global.MOCK_MODE ? 'mock' : 'mongodb' });
