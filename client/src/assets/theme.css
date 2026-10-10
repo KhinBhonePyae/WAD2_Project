@@ -209,7 +209,7 @@ select:focus-visible, textarea:focus-visible, .ss-chip:focus-visible,
 
 /* Favourite toggle sitting on the image */
 .ss-fav {
-  position:absolute; top: var(--ss-3); right: var(--ss-3);
+  position:absolute; z-index:2; top: var(--ss-3); right: var(--ss-3);
   width:38px; height:38px; border-radius:50%; border:none;
   background: rgba(255,255,255,.92); color: var(--ss-ink-500);
   display:grid; place-items:center; cursor:pointer;

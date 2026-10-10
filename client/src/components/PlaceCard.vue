@@ -22,7 +22,7 @@ const facilityLabels = { wifi: 'Wi-Fi', sockets: 'Sockets', fnb: 'F&B', water: '
 </script>
 
 <template>
-  <article class="ss-card" data-test="place-card">
+  <article class="ss-card position-relative" data-test="place-card">
     <div class="ss-card__media" :style="!place.photos?.length ? { background: art } : {}">
       <img v-if="place.photos?.length" :src="place.photos[0]" :alt="place.name"
           class="w-100 h-100" style="object-fit: cover;">
@@ -36,7 +36,7 @@ const facilityLabels = { wifi: 'Wi-Fi', sockets: 'Sockets', fnb: 'F&B', water: '
     <div class="ss-card__body">
       <div class="d-flex justify-content-between align-items-start gap-2">
         <h3 class="ss-card__title">
-          <RouterLink :to="'/places/' + place.id" class="text-decoration-none"
+          <RouterLink :to="'/places/' + place.id" class="text-decoration-none stretched-link"
                       style="color:inherit" data-test="place-link">{{ place.name }}</RouterLink>
         </h3>
         <SuitabilityScore :score="score" />

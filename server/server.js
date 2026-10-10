@@ -15,8 +15,16 @@ const cors = require('cors');
 
 dotenv.config({ path: './config.env' });
 
+// DEMO ONLY: lets sign-up work on a fresh clone with no config.env.
+// Set a real JWT_SECRET in config.env before deploying.
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'studyspot-dev-secret';
+  console.warn('JWT_SECRET not set in config.env - using an insecure dev default.');
+}
+
 const placesRoutes = require('./routes/places-routes');
 const reviewsRoutes = require('./routes/reviews-routes');
+const usersRoutes = require('./routes/users-routes');
 const searchRoutes = require('./routes/search-routes'); // search bar
 
 const server = express();
@@ -48,7 +56,8 @@ async function connectDB() {
     return;
   }
   try {
-    await mongoose.connect(process.env.DB);
+    // Give up after 5s (default is 30s) so a blocked Atlas IP falls back to mock mode quickly.
+    await mongoose.connect(process.env.DB, { serverSelectionTimeoutMS: 5000 });
     global.MOCK_MODE = false;
     console.log('MongoDB connected successfully');
   } catch (error) {
