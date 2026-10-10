@@ -1,5 +1,29 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { ref, onMounted, onUnmounted } from 'vue'
+import { RouterLink, RouterView, useRouter } from 'vue-router'
+
+const router = useRouter()
+const user = ref(JSON.parse(localStorage.getItem('user')))
+
+function logout() {
+  localStorage.removeItem('user')
+  localStorage.removeItem('token')
+  user.value = null
+  router.push('/')
+}
+
+function updateUser() {
+  user.value = JSON.parse(localStorage.getItem('user'))
+}
+
+onMounted(() => {
+  window.addEventListener('user-login', updateUser)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('user-login', updateUser)
+})
+
 </script>
 
 <template>
@@ -11,7 +35,17 @@ import { RouterLink, RouterView } from 'vue-router'
       <div class="d-flex align-items-center gap-1 gap-sm-3">
         <RouterLink to="/places" class="nav-link px-2" data-test="nav-browse">Browse</RouterLink>
         <RouterLink to="/profile" class="nav-link px-2 d-none d-sm-inline">Saved</RouterLink>
-        <RouterLink to="/login" class="btn btn-outline-primary btn-sm">Log in</RouterLink>
+        
+        <template v-if="!user">
+          <RouterLink to="/signup" class="nav-link px-2">Sign up</RouterLink>
+          <RouterLink to="/login" class="btn btn-outline-primary btn-sm">Log in</RouterLink>
+        </template>
+
+        <template v-else>
+          <RouterLink to="/profile" class="nav-link px-2">{{ user.name }}</RouterLink>
+          <button class="btn btn-outline-primary btn-sm" @click="logout">Log out</button>
+        </template>
+
       </div>
     </div>
   </nav>

@@ -23,7 +23,9 @@ const facilityLabels = { wifi: 'Wi-Fi', sockets: 'Sockets', fnb: 'F&B', water: '
 
 <template>
   <article class="ss-card" data-test="place-card">
-    <div class="ss-card__media" :style="{ background: art }">
+    <div class="ss-card__media" :style="!place.photos?.length ? { background: art } : {}">
+      <img v-if="place.photos?.length" :src="place.photos[0]" :alt="place.name"
+          class="w-100 h-100" style="object-fit: cover;">
       <button class="ss-fav" type="button" :aria-pressed="saved"
               :aria-label="saved ? 'Remove from saved' : 'Save this place'"
               data-test="fav" @click="$emit('toggle-save', place.id)">

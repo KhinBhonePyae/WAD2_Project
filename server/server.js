@@ -32,6 +32,7 @@ server.get('/health', (req, res) => {
 
 server.use('/places', placesRoutes);
 server.use('/reviews', reviewsRoutes);
+server.use('/users', usersRoutes); 
 
 // 404 + error handler (borrowed from the better-engineered wk5 blog example)
 server.use((req, res) => res.status(404).json({ error: 'Not found' }));

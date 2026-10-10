@@ -16,6 +16,7 @@ const placeSchema = new mongoose.Schema({
   facilities:  { type: [String], default: [] },
   tags:        { type: [String], default: [] },
   photo:       { type: String, default: '' },
+  photos:      { type: [String], default: [] },
   rating:      { type: Number, default: 0 },
   reviewCount: { type: Number, default: 0 },
   description: { type: String, default: '' },
@@ -34,6 +35,53 @@ exports.retrieveAll = async () => {
 exports.findByID = async (id) => {
   if (global.MOCK_MODE) return seed.find(p => p.id === Number(id)) || null;
   return Place.findOne({ id: Number(id) });
+};
+
+exports.createPlace = async (data) => {
+  if (global.MOCK_MODE) {
+    const nextId = seed.length ? Math.max(...seed.map(p => p.id)) + 1 : 1;
+    const newPlace = {
+      address: '', area: '', indoor: true, openNow: true, hours: '',
+      facilities: [], tags: [], photo: '', photos: [],
+      rating: 0, reviewCount: 0, description: '',
+      ...data,
+      id: nextId
+    };
+
+    seed.push(newPlace);
+    return newPlace;
+  }
+
+  const lastPlace = await Place.findOne().sort({ id: -1 });
+  const nextId = lastPlace ? lastPlace.id + 1 : 1;
+  return Place.create({ ...data, id: nextId });
+};
+
+exports.updatePlace = async (id, data) => {
+  if (global.MOCK_MODE) {
+    const index = seed.findIndex(p => p.id === Number(id));
+    if (index === -1) return null;
+
+    seed[index] = { ...seed[index], ...data, id: Number(id) };
+    return seed[index];
+  }
+
+  return Place.findOneAndUpdate(
+    { id: Number(id) },
+    { $set: data },
+    { new: true, runValidators: true }
+  );
+};
+
+exports.deletePlace = async (id) => {
+  if (global.MOCK_MODE) {
+    const index = seed.findIndex(p => p.id === Number(id));
+    if (index === -1) return null;
+
+    return seed.splice(index, 1)[0];
+  }
+
+  return Place.findOneAndDelete({ id: Number(id) });
 };
 
 exports.updateAggregate = async (id, rating, reviewCount) => {

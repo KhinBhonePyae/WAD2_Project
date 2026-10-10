@@ -44,3 +44,39 @@ exports.getPlace = async (req, res, next) => {
     res.json(place);
   } catch (e) { next(e); }
 };
+
+/* POST /places */
+exports.addPlace = async (req, res, next) => {
+  try {
+    const data = req.body;
+    if (!data.name || !data.name.trim())
+      return res.status(400).json({ error: 'Place name is required' });
+
+    const newPlace = await placeModel.createPlace(data);
+    res.status(201).json(newPlace);
+  } catch (e) { next(e); }
+};
+
+/* PUT /places/:id */
+exports.editPlace = async (req, res, next) => {
+  try {
+    const data = req.body;
+    if (!data.name || !data.name.trim())
+      return res.status(400).json({ error: 'Place name is required' });
+
+    const updated = await placeModel.updatePlace(req.params.id, data);
+    if (!updated) return res.status(404).json({ error: 'Place not found' });
+
+    res.json(updated);
+  } catch (e) { next(e); }
+};
+
+/* DELETE /places/:id */
+exports.deletePlace = async (req, res, next) => {
+  try {
+    const deleted = await placeModel.deletePlace(req.params.id);
+    if (!deleted) return res.status(404).json({ error: 'Place not found' });
+
+    res.json(deleted);
+  } catch (e) { next(e); }
+};

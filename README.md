@@ -148,21 +148,21 @@ cd ../server && npm install
 
 ### 3. Environment variables
 
-Create `server/config.env` (the course convention — loaded with `dotenv.config({ path: './config.env' })`):
+Copy `server/config.env.example` to `server/config.env` (the course convention — loaded with `dotenv.config({ path: './config.env' })`) and fill in:
 
 ```
-PORT=8000
-MONGODB_URI=<your MongoDB connection string>
-GOOGLE_PLACES_API_KEY=<key>
-LLM_API_KEY=<Claude or OpenAI key>
-LLM_PROVIDER=<claude|openai>
+DB=<your MongoDB Atlas connection string>
+JWT_SECRET=<any long random string>
 ```
 
-Create `client/.env`:
+| Key | Required? | What happens without it |
+|---|---|---|
+| `JWT_SECRET` | **Yes** | Sign-up and login fail with a 500 error. |
+| `DB` | No | The server starts in **mock mode**: places load from `server/data/places.json`, and users and reviews are kept in memory (lost on restart). `GET /health` reports which mode is active. |
 
-```
-VITE_API_BASE_URL=http://localhost:8000
-```
+If `DB` is set but `/health` still reports `mock`, check that your IP is on the Atlas **Network Access** allowlist.
+
+The server always runs on port 8000. The client needs no env file — the API base URL is set in `client/src/utils/api.js`.
 
 > `config.env` is git-ignored and must **never** be committed. The repo is public at submission, so a committed password is a public password. Copy `server/config.env.example` and fill it in. Keys are shared within the team privately.
 > Open-Meteo requires no API key.

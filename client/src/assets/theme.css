@@ -363,3 +363,19 @@ select:focus-visible, textarea:focus-visible, .ss-chip:focus-visible,
                background: linear-gradient(135deg, var(--ss-sky-500), var(--ss-purple-500)); }
 .ss-nav a.nav-link { color: var(--ss-text-muted); font-weight:600; }
 .ss-nav a.nav-link:hover, .ss-nav a.router-link-active { color: var(--ss-primary); }
+
+/* ============================================================
+   PLACE DETAIL CAROUSEL
+   ============================================================ */
+
+.place-carousel-image {
+  width: 100%;
+  height: 380px;
+  object-fit: cover;
+}
+
+@media (max-width: 768px) {
+  .place-carousel-image {
+    height: 240px;
+  }
+}
