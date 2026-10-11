@@ -21,7 +21,7 @@ const FACILITY_OPTIONS = [
   { value: 'quiet', label: 'Quiet' }, { value: 'fnb', label: 'Food & drink' },
   { value: 'water', label: 'Water point' }, { value: 'toilets', label: 'Toilets' },
 ]
-const wanted = ref(['wifi'])
+const wanted = ref([])
 const indoorOnly = ref(false)
 const outdoorOnly = ref(false)
 const openOnly = ref(false)
