@@ -66,8 +66,8 @@ exports.deleteReview = async (id) => {
 /* Aggregate rating + crowd level for one place.
  * Crowd is the most recent report, because "how busy is it right now"
  * is a now-question, not an average. */
-exports.aggregateForPlace = async (placeId) => {
-  const list = await exports.findByPlace(placeId);
+// Average rating, count and latest crowd level for one place's reviews (newest first)
+function summarise(list) {
   if (!list.length) return { rating: 0, reviewCount: 0, crowdLevel: null };
   const sum = list.reduce((t, r) => t + r.rating, 0);
   return {
@@ -75,4 +75,22 @@ exports.aggregateForPlace = async (placeId) => {
     reviewCount: list.length,
     crowdLevel: list[0].crowdLevel || null,
   };
+}
+
+exports.aggregateForPlace = async (placeId) => {
+  return summarise(await exports.findByPlace(placeId));
+};
+
+// Same as aggregateForPlace, but for many places with ONE query instead of one per place.
+// Returns a Map: placeId -> { rating, reviewCount, crowdLevel }
+exports.aggregateForPlaces = async (placeIds) => {
+  const ids = placeIds.map(Number);
+  const all = global.MOCK_MODE
+    ? mem.filter(r => ids.includes(r.placeId)).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    : await Review.find({ placeId: { $in: ids } }).sort({ createdAt: -1 });
+
+  const byPlace = new Map(ids.map(id => [id, []]));
+  for (const r of all) byPlace.get(r.placeId)?.push(r);   // keeps newest-first order per place
+
+  return new Map([...byPlace].map(([id, list]) => [id, summarise(list)]));
 };

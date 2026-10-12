@@ -94,8 +94,10 @@ exports.getPlaces = async (req, res, next) => {
     if (req.query.openNow === 'true') list = list.filter(p => p.openNow === true);
 
     // attach the live crowd level from the latest review
+    // (one query for every place's reviews, instead of one query per place)
+    const aggregates = await reviewModel.aggregateForPlaces(list.map(p => p.id));
     for (const p of list) {
-      const agg = await reviewModel.aggregateForPlace(p.id);
+      const agg = aggregates.get(p.id);
       p.crowdLevel = agg.crowdLevel;
       if (agg.reviewCount) {
         p.rating = agg.rating;
