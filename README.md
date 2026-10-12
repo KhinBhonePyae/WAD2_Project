@@ -283,7 +283,7 @@ Parts of this project that rely **solely** on AI/LLM generation:
 
 | # | Name | Email ID | Responsibility |
 |---|---|---|---|
-| 1 | Leong Yew Kai | yk.leong.2025 | Map and location search, including location-based search, interactive map integration and Google Places API integration |
+| 1 | Leong Yew Kai | yk.leong.2025 | Location search, including location-based search, and Google Places API integration |
 | 2 | Khin Bhone Pyae | bp.khin.2025 | User authentication and profile management, including registration, login, logout, profile updates, account deletion and saved user preferences |
 | 3 | Thet Htar Nwe | hn.thet.2025 | Study space catalogue and management, including listing and detail pages, facility information, image carousel, CRUD functionality and responsive Vue/CSS interface development |
 | 4 | Gerena Lim | gerena.lim.2025 | Search, advanced filters and suitability scoring, including filtering study spaces by facilities, study preferences and location suitability |

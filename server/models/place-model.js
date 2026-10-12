@@ -6,6 +6,7 @@ const path = require('path');
 
 const placeSchema = new mongoose.Schema({
   id:          { type: Number, required: true },
+  branchCode:  { type: String, unique: true, sparse: true }, // NLB branch code, set by import-libraries.js
   name:        { type: String, required: true, trim: true },
   address:     { type: String, default: '' },
   area:        { type: String, default: '' },
@@ -24,7 +25,7 @@ const placeSchema = new mongoose.Schema({
 
 const Place = mongoose.model('Place', placeSchema, 'places');
 
-// --- mock-mode source -------------------------------------------------
+// mock-mode source 
 const seed = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'places.json'), 'utf8'));
 
 exports.retrieveAll = async () => {

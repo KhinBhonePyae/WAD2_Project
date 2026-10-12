@@ -22,7 +22,7 @@ const facilityLabels = { wifi: 'Wi-Fi', sockets: 'Sockets', fnb: 'F&B', water: '
 </script>
 
 <template>
-  <article class="ss-card position-relative" data-test="place-card">
+  <article class="ss-card position-relative" :class="{ 'ss-card--closed' :!place.openNow }" data-test="place-card">
     <div class="ss-card__media" :style="!place.photos?.length ? { background: art } : {}">
       <img v-if="place.photos?.length" :src="place.photos[0]" :alt="place.name"
           class="w-100 h-100" style="object-fit: cover;">

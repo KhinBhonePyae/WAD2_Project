@@ -43,27 +43,6 @@
   },
   {
     "id": 3,
-    "name": "National Library Level 7",
-    "address": "100 Victoria St, Singapore 188064",
-    "area": "Bugis",
-    "lat": 1.2975, "lon": 103.8554,
-    "indoor": true,
-    "openNow": true,
-    "hours": "10:00 - 21:00",
-    "facilities": ["wifi", "sockets", "toilets", "water", "quiet"],
-    "tags": ["Individual study", "Quiet"],
-    "photo": "lib2",
-    "photos": [
-      "/images/national1.jpg",
-      "/images/national2.jpg",
-      "/images/national3.jpg"
-    ],
-    "rating": 4.6,
-    "reviewCount": 58,
-    "description": "Large reading floor with river views. Sockets along the window seats fill up by 11am."
-  },
-  {
-    "id": 4,
     "name": "Funan Study Terrace",
     "address": "107 North Bridge Rd, Singapore 179105",
     "area": "City Hall",
@@ -84,7 +63,7 @@
     "description": "Open-air terrace above the atrium. Covered seating at the north end if it rains."
   },
   {
-    "id": 5,
+    "id": 4,
     "name": "SMU Connexion Pods",
     "address": "40 Stamford Rd, Singapore 178908",
     "area": "Bras Basah",
@@ -105,7 +84,7 @@
     "description": "Bookable glass pods for 4-6. Needs a student login to reserve."
   },
   {
-    "id": 6,
+    "id": 5,
     "name": "Kopi & Co, Armenian St",
     "address": "3 Armenian St, Singapore 179879",
     "area": "City Hall",
