@@ -32,7 +32,7 @@ const server = express();
 server.use(express.urlencoded({ extended: true }));
 server.use(cors());               // dev only: allows the Vite client on :5173
 server.use(express.json());
-server.use('/search', searchRoutes) // search bar
+
 
 server.get('/health', (req, res) => {
   res.json({ ok: true, mode: global.MOCK_MODE ? 'mock' : 'mongodb' });
@@ -41,6 +41,7 @@ server.get('/health', (req, res) => {
 server.use('/places', placesRoutes);
 server.use('/reviews', reviewsRoutes);
 server.use('/users', usersRoutes); 
+server.use('/search', searchRoutes) // search bar
 
 // 404 + error handler (borrowed from the better-engineered wk5 blog example)
 server.use((req, res) => res.status(404).json({ error: 'Not found' }));
