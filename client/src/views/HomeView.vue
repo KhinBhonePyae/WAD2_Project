@@ -6,7 +6,8 @@ import { BASE_URL } from '../utils/api.js'
 import { suitabilityScore } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'
 import PlaceCard from '../components/PlaceCard.vue'
-import WeatherStrip from '../components/WeatherStrip.vue'
+import WeatherScene from '../components/WeatherScene.vue'
+import WeatherPreview from '../components/WeatherPreview.vue' // DEV ONLY - delete with WeatherPreview.vue
 
 const router = useRouter()
 const places = ref([])
@@ -48,14 +49,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <header class="ss-hero">
+  <header class="ss-hero" :class="{ 'ss-hero--night': weather && !weather.isDay }">
     <div class="container">
       <div class="ss-rise">
         <span class="ss-badge ss-badge--purple mb-3">Built for students in Singapore</span>
-        <h1 class="mb-3">Find a study spot that actually suits you today.</h1>
+        <h1 class="mb-3">Find a study spot that suits you!</h1>
         <p class="mb-4">
-          Libraries, cafés and campus corners — filtered by Wi-Fi, power sockets and how busy
-          they are right now, and ranked against the weather outside.
+          Find your new favourite study spots! Including Libraries, cafés and campus corners...
         </p>
       </div>
 
@@ -66,18 +66,18 @@ onMounted(async () => {
         <button class="btn btn-primary" @click="search" data-test="hero-search-btn">Search</button>
       </div>
 
-      <div class="mt-4 ss-rise" style="max-width:640px">
-        <WeatherStrip :weather="weather" />
-      </div>
+      <!-- Not wrapped in .ss-rise: its transform would stop the scene filling the hero -->
+      <WeatherScene :weather="weather" variant="hero" />
     </div>
   </header>
+  <WeatherPreview v-model="weather" /> <!-- DEV ONLY - delete with WeatherPreview.vue -->
 
   <main class="container">
     <section class="ss-section">
       <div class="ss-section__head">
         <div>
           <h2 class="mb-1">Top picks right now</h2>
-          <p class="ss-muted mb-0">Scored on Wi-Fi, sockets, how busy each place is, and today's weather.</p>
+          <p class="ss-muted mb-0">Scored on Wi-Fi, sockets available, and how busy each place is.</p>
         </div>
         <RouterLink to="/places" class="btn btn-outline-primary btn-sm">Browse all</RouterLink>
       </div>
@@ -121,3 +121,14 @@ onMounted(async () => {
     </section>
   </main>
 </template>
+
+<style scoped>
+/* Keep the headline and search above the weather scene */
+.ss-hero .ss-rise { position: relative; z-index: 2; }
+
+/* Night skies are dark across the whole hero on wide screens, so use light text there */
+@media (min-width: 768px) {
+  .ss-hero--night h1,
+  .ss-hero--night p { color: var(--ss-text-invert); }
+}
+</style>
