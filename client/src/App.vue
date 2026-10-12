@@ -34,7 +34,7 @@ onUnmounted(() => {
       </RouterLink>
       <div class="d-flex align-items-center gap-1 gap-sm-3">
         <RouterLink to="/places" class="nav-link px-2" data-test="nav-browse">Browse</RouterLink>
-        <RouterLink to="/profile" class="nav-link px-2 d-none d-sm-inline">Saved</RouterLink>
+        <RouterLink to="/saved" class="nav-link px-2 d-none d-sm-inline">Saved</RouterLink>
         
         <template v-if="!user">
           <RouterLink to="/signup" class="nav-link px-2">Sign up</RouterLink>
@@ -52,7 +52,7 @@ onUnmounted(() => {
 
   <RouterView />
 
-  <footer class="py-4 mt-5" style="background:var(--ss-surface);border-top:1px solid var(--ss-border)">
+  <footer class="py-4" style="background:var(--ss-surface);border-top:1px solid var(--ss-border)">
     <div class="container ss-meta d-flex flex-wrap justify-content-between gap-2">
       <span>StudySpot SG — IS216 G10 Team T3 · prototype</span>
       <span>Weather by Open-Meteo</span>

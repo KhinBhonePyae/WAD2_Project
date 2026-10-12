@@ -7,6 +7,7 @@ import SignUpView from '../views/SignUpView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import PlaceFormView from '../views/PlaceFormView.vue'
 import AdminPlacesView from '../views/AdminPlacesView.vue'
+import SavedView from '../views/SavedView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,7 @@ const router = createRouter({
     { path: '/login', component: LoginView },
     { path: '/signup', component: SignUpView },
     { path: '/profile', component: ProfileView },
+    { path: '/saved', component: SavedView },
   ],
   scrollBehavior() { return { top: 0 } },
 })

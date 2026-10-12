@@ -1,6 +1,3 @@
-<!-- Stub - owner: Khin Bhone Pyae (authentication and profile management).
-The route and layout exist so the app's shape is complete; the form is not wired yet. -->
-
 <script setup>
 import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
@@ -8,7 +5,6 @@ import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
 
 const router = useRouter()
-
 const name = ref('')
 const email = ref('')
 const password = ref('')
@@ -19,7 +15,8 @@ const loading = ref(false)
 async function register() {
   errorMessage.value = ''
 
-  if (!name.value || !email.value || !password.value || !confirmPassword.value) {
+  if (!name.value || !email.value ||
+      !password.value || !confirmPassword.value) {
     errorMessage.value = 'Please fill in all fields.'
     return
   }
@@ -52,51 +49,476 @@ async function register() {
 </script>
 
 <template>
-  <main class="container ss-section">
-    <div class="ss-card p-4 p-md-5 mx-auto" style="max-width: 500px">
-      <div class="mb-4">
-        <h1 class="h3 mb-2">Create an account</h1>
-        <p class="ss-muted mb-0">Join StudySpot SG and save your study preferences.</p>
-      </div>
+  <main class="auth-page">
+    <div class="background-circle circle-one"></div>
+    <div class="background-circle circle-two"></div>
 
-      <div v-if="errorMessage" class="alert alert-danger" role="alert">
-        {{ errorMessage }}
-      </div>
+    <div class="container auth-container">
+      <div class="auth-card">
+        <section class="auth-side">
+          <div class="mini-brand">
+            <span class="brand-dot"></span>
+            <span>StudySpot SG</span>
+          </div>
 
-      <form @submit.prevent="register">
-        <div class="mb-3">
-          <label for="name" class="form-label">Name</label>
-          <input id="name" v-model="name" type="text" class="form-control"
-            placeholder="Enter your name">
-        </div>
+          <div class="side-content">
+            <h1>Set your study preferences.</h1>
 
-        <div class="mb-3">
-          <label for="email" class="form-label">Email</label>
-          <input id="email" v-model="email" type="email" class="form-control"
-            placeholder="Enter your email">
-        </div>
+            <div class="feature-list">
+              <div class="feature-item">
+                <span class="check">✓</span>
+                <span>Wi-Fi</span>
+              </div>
 
-        <div class="mb-3">
-          <label for="password" class="form-label">Password</label>
-          <input id="password" v-model="password" type="password" class="form-control"
-            placeholder="Enter your password">
-        </div>
+              <div class="feature-item">
+                <span class="check">✓</span>
+                <span>Power sockets</span>
+              </div>
 
-        <div class="mb-4">
-          <label for="confirmPassword" class="form-label">Confirm password</label>
-          <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control"
-            placeholder="Enter your password again">
-        </div>
+              <div class="feature-item">
+                <span class="check">✓</span>
+                <span>Quiet environment</span>
+              </div>
 
-        <button type="submit" class="btn btn-primary w-100" :disabled="loading">
-          {{ loading ? 'Creating account...' : 'Sign up' }}
-        </button>
-      </form>
+              <div class="feature-item">
+                <span class="check">✓</span>
+                <span>Indoor / outdoor</span>
+              </div>
+            </div>
+          </div>
+        </section>
 
-      <div class="text-center mt-4">
-        <span class="ss-muted">Already have an account? </span>
-        <RouterLink to="/login">Log in</RouterLink>
+        <section class="auth-form">
+          <div class="form-heading">
+            <span class="small-heading">GET STARTED</span>
+            <h2>Create account</h2>
+          </div>
+
+          <div
+            v-if="errorMessage"
+            class="alert alert-danger auth-alert"
+            role="alert"
+          >
+            {{ errorMessage }}
+          </div>
+
+          <form @submit.prevent="register">
+            <div class="form-group">
+              <label for="name" class="form-label">
+                Name
+              </label>
+
+              <input
+                id="name"
+                v-model="name"
+                type="text"
+                class="form-control auth-input"
+                placeholder="Enter your name"
+                autocomplete="name"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="email" class="form-label">
+                Email
+              </label>
+
+              <input
+                id="email"
+                v-model="email"
+                type="email"
+                class="form-control auth-input"
+                placeholder="Enter your email"
+                autocomplete="email"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="password" class="form-label">
+                Password
+              </label>
+
+              <input
+                id="password"
+                v-model="password"
+                type="password"
+                class="form-control auth-input"
+                placeholder="Enter your password"
+                autocomplete="new-password"
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword" class="form-label">
+                Confirm password
+              </label>
+
+              <input
+                id="confirmPassword"
+                v-model="confirmPassword"
+                type="password"
+                class="form-control auth-input"
+                placeholder="Enter your password again"
+                autocomplete="new-password"
+              >
+            </div>
+
+            <button
+              type="submit"
+              class="btn auth-button"
+              :disabled="loading"
+            >
+              <span
+                v-if="loading"
+                class="spinner-border spinner-border-sm me-2"
+              ></span>
+
+              {{ loading ? 'Creating account...' : 'Sign up' }}
+            </button>
+          </form>
+
+          <div class="auth-divider">
+            <span></span>
+            <p>Already have an account?</p>
+            <span></span>
+          </div>
+
+          <RouterLink
+            to="/login"
+            class="secondary-button"
+          >
+            Log in
+          </RouterLink>
+        </section>
       </div>
     </div>
   </main>
 </template>
+
+<style scoped>
+.auth-page {
+  min-height: calc(100vh - 70px);
+  padding: 3rem 1rem;
+  display: flex;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  background: #f7f8fb;
+}
+
+.auth-container {
+  position: relative;
+  z-index: 2;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 1050px;
+  min-height: 680px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  border: 1px solid #dfe4ec;
+  border-radius: 28px;
+  background: white;
+  box-shadow: 0 24px 60px rgba(35, 48, 78, .12);
+}
+
+.auth-side {
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    #294f73 0%,
+    #303d6b 48%,
+    #4a2d70 100%
+  );
+}
+
+.auth-side::before {
+  content: '';
+  position: absolute;
+  width: 270px;
+  height: 270px;
+  right: -100px;
+  bottom: -90px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .06);
+}
+
+.auth-side::after {
+  content: '';
+  position: absolute;
+  width: 170px;
+  height: 170px;
+  left: -80px;
+  top: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .05);
+}
+
+.mini-brand {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
+}
+
+.brand-dot {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #6d83e7;
+}
+
+.side-content {
+  margin: auto 0;
+  position: relative;
+  z-index: 1;
+}
+
+.side-content h1 {
+  max-width: 430px;
+  margin: 0 0 2.5rem;
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  line-height: 1.08;
+  font-weight: 800;
+}
+
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  font-size: 1rem;
+}
+
+.check {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .14);
+  font-weight: 700;
+}
+
+.auth-form {
+  padding: 3rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.form-heading {
+  margin-bottom: 1.7rem;
+}
+
+.small-heading {
+  color: #4b78b8;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.form-heading h2 {
+  margin: .45rem 0 0;
+  color: #171c2a;
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+
+.form-group {
+  margin-bottom: 1.15rem;
+}
+
+.form-label {
+  margin-bottom: .5rem;
+  color: #252b3b;
+  font-weight: 700;
+}
+
+.auth-input {
+  min-height: 52px;
+  padding: .75rem 1rem;
+  border: 1px solid #d7dee9;
+  border-radius: 14px;
+  background: #fafbfc;
+  transition: .2s ease;
+}
+
+.auth-input:focus {
+  border-color: #4b7ebd;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(75, 126, 189, .12);
+}
+
+.auth-button {
+  width: 100%;
+  min-height: 54px;
+  margin-top: .3rem;
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-weight: 700;
+  background: #4b7fc1;
+  box-shadow: 0 10px 24px rgba(57, 102, 157, .2);
+  transition: .2s ease;
+}
+
+.auth-button:hover:not(:disabled) {
+  color: white;
+  background: #3f70ae;
+  transform: translateY(-2px);
+}
+
+.auth-divider {
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+}
+
+.auth-divider span {
+  height: 1px;
+  flex: 1;
+  background: #e2e6ed;
+}
+
+.auth-divider p {
+  margin: 0;
+  color: #8b93a3;
+  font-size: .85rem;
+  white-space: nowrap;
+}
+
+.secondary-button {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #b8c3d2;
+  border-radius: 14px;
+  color: #315e91;
+  font-weight: 700;
+  text-decoration: none;
+  transition: .2s ease;
+}
+
+.secondary-button:hover {
+  border-color: #4b7fc1;
+  color: #315e91;
+  background: #f3f7fb;
+}
+
+.auth-alert {
+  border-radius: 12px;
+}
+
+.background-circle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.circle-one {
+  width: 260px;
+  height: 260px;
+  top: -100px;
+  right: 4%;
+  background: rgba(214, 209, 239, .3);
+}
+
+.circle-two {
+  width: 220px;
+  height: 220px;
+  left: 3%;
+  bottom: -90px;
+  background: rgba(211, 235, 228, .4);
+}
+
+@media (max-width: 991px) {
+  .auth-card {
+    max-width: 720px;
+    grid-template-columns: 1fr;
+  }
+
+  .auth-side {
+    min-height: 230px;
+    padding: 2rem;
+  }
+
+  .side-content {
+    margin-top: 2rem;
+  }
+
+  .side-content h1 {
+    margin-bottom: 0;
+    font-size: 2.3rem;
+  }
+
+  .feature-list {
+    display: none;
+  }
+
+  .auth-form {
+    padding: 2.5rem;
+  }
+}
+
+@media (max-width: 575px) {
+  .auth-page {
+    padding: 1.25rem .75rem;
+    align-items: flex-start;
+  }
+
+  .auth-card {
+    min-height: 0;
+    border-radius: 20px;
+  }
+
+  .auth-side {
+    min-height: 175px;
+    padding: 1.5rem;
+  }
+
+  .side-content {
+    margin-top: 1.3rem;
+  }
+
+  .side-content h1 {
+    font-size: 1.85rem;
+  }
+
+  .auth-form {
+    padding: 2rem 1.25rem;
+  }
+
+  .form-heading {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-heading h2 {
+    font-size: 1.8rem;
+  }
+
+  .auth-divider p {
+    font-size: .78rem;
+  }
+}
+</style>
