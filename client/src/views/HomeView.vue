@@ -8,6 +8,7 @@ import { fetchWeather } from '../utils/weather.js'
 import PlaceCard from '../components/PlaceCard.vue'
 import WeatherScene from '../components/WeatherScene.vue'
 import WeatherPreview from '../components/WeatherPreview.vue' // DEV ONLY - delete with WeatherPreview.vue
+import HomeSearchBox from '../components/HomeSearchBox.vue'
 
 const router = useRouter()
 const places = ref([])
@@ -28,6 +29,11 @@ const topPicks = computed(() => {
 function search() {
   router.push({ path: '/places', query: q.value ? { q: q.value } : {} })
 }
+
+function goToPlace(place) {
+  router.push(`/places/${place.id}`)
+}
+
 function toggleSave(id) {
   saved.value = saved.value.includes(id) ? saved.value.filter(x => x !== id) : [...saved.value, id]
 }
@@ -60,11 +66,9 @@ onMounted(async () => {
       </div>
 
       <div class="ss-search ss-rise" style="max-width:640px">
-        <span class="ss-muted" aria-hidden="true">⌕</span>
-        <input v-model="q" type="text" placeholder="Library, café or area — try “Bugis”"
-               aria-label="Search study spaces" data-test="hero-search" @keyup.enter="search">
-        <button class="btn btn-primary" @click="search" data-test="hero-search-btn">Search</button>
+        <HomeSearchBox v-model="q" :places="places" @search="search" @select="goToPlace" />
       </div>
+
 
       <!-- Not wrapped in .ss-rise: its transform would stop the scene filling the hero -->
       <WeatherScene :weather="weather" variant="hero" />
@@ -96,15 +100,15 @@ onMounted(async () => {
 
       <div v-else class="row g-3">
         <div v-for="item in topPicks" :key="item.place.id" class="col-12 col-md-6 col-lg-4 ss-rise">
-          <PlaceCard :place="item.place" :score="item.score"
-                     :saved="saved.includes(item.place.id)" @toggle-save="toggleSave" />
+          <PlaceCard :place="item.place" :score="item.score" :saved="saved.includes(item.place.id)"
+            @toggle-save="toggleSave" />
         </div>
       </div>
     </section>
 
     <section class="ss-section pt-0">
       <div class="ss-card p-4 p-md-5"
-           style="background:linear-gradient(135deg,var(--ss-purple-100),var(--ss-sky-100));border-color:var(--ss-purple-200)">
+        style="background:linear-gradient(135deg,var(--ss-purple-100),var(--ss-sky-100));border-color:var(--ss-purple-200)">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
           <div>
             <h2 class="mb-2">Not sure what you need?</h2>
@@ -124,11 +128,22 @@ onMounted(async () => {
 
 <style scoped>
 /* Keep the headline and search above the weather scene */
-.ss-hero .ss-rise { position: relative; z-index: 2; }
+.ss-hero{
+  z-index: 100;
+  overflow: visible;
+}
+
+.ss-rise {
+  position: relative;
+  z-index: 2;
+}
 
 /* Night skies are dark across the whole hero on wide screens, so use light text there */
 @media (min-width: 768px) {
+
   .ss-hero--night h1,
-  .ss-hero--night p { color: var(--ss-text-invert); }
+  .ss-hero--night p {
+    color: var(--ss-text-invert);
+  }
 }
 </style>
