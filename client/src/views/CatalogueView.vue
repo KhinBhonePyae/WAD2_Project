@@ -7,7 +7,7 @@ import { suitabilityScore } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'
 import PlaceCard from '../components/PlaceCard.vue'
 import FilterChips from '../components/FilterChips.vue'
-import WeatherStrip from '../components/WeatherStrip.vue'
+import WeatherScene from '../components/WeatherScene.vue'
 
 const route = useRoute()
 const places = ref([])
@@ -97,7 +97,7 @@ watch(() => route.query.q, v => { q.value = v || '' })
              aria-label="Search study spaces" data-test="cat-search">
     </div>
 
-    <WeatherStrip :weather="weather" class="mb-4" />
+    <WeatherScene :weather="weather" class="mb-4" />
 
     <div class="mb-3">
       <div class="ss-meta mb-2">Must have</div>

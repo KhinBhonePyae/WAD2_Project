@@ -9,7 +9,7 @@ const SG = { lat: 1.2966, lon: 103.8521 }   // city centre fallback
 export async function fetchWeather(lat = SG.lat, lon = SG.lon) {
   const url = 'https://api.open-meteo.com/v1/forecast'
   const { data } = await axios.get(url, {
-    params: { latitude: lat, longitude: lon, current: 'temperature_2m,precipitation,weather_code' },
+    params: { latitude: lat, longitude: lon, current: 'temperature_2m,precipitation,weather_code,is_day' },
   })
   const c = data.current
   const code = c.weather_code
@@ -22,10 +22,21 @@ export async function fetchWeather(lat = SG.lat, lon = SG.lon) {
     fair: !raining && code <= 2,
     label: describe(code, raining),
     icon: icon(code, raining),
+    isDay: c.is_day === 1,            
+    kind: sceneKind(code, raining),  
   }
 }
 
+
+function sceneKind(code, raining) {
+  if (raining || (code >= 51 && code <= 67) || (code >= 80 && code <= 82)) return 'rain'
+  if (code === 0) return 'clear'
+  if (code <= 2) return 'partly'
+  return 'cloudy'
+}
+
 function describe(code, raining) {
+  if (code >= 95) return 'Thunderstorm'
   if (raining) return 'Raining'
   if (code === 0) return 'Clear'
   if (code <= 2) return 'Mostly sunny'
