@@ -88,7 +88,8 @@ onUnmounted(() => ctx?.revert())
             <RouterLink :to="'/places/' + place.id" class="text-decoration-none stretched-link"
                         style="color:inherit" data-test="place-link">{{ place.name }}</RouterLink>
           </h3>
-          <SuitabilityScore :score="score" />
+          <!-- <SuitabilityScore :score="score" /> -->
+          <SuitabilityScore v-if="score !== undefined && score !== null" :score="score"/>
         </div>
         <div class="xc-meta">{{ place.area }} · {{ place.hours }}</div>
         <div v-if="place.intent" class="xc-intent" data-test="card-intent">
