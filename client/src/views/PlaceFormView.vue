@@ -121,8 +121,10 @@ function validateForm() {
   else if (!Number.isFinite(Number(lon.value))) validationErrors.value.push('Longitude must be a valid number.')
   else if (Number(lon.value) < -180 || Number(lon.value) > 180) validationErrors.value.push('Longitude must be between -180 and 180.')
 
-  if (!openTime.value) validationErrors.value.push('Opening time is required.')
-  if (!closeTime.value) validationErrors.value.push('Closing time is required.')
+  // A closed place (e.g. under renovation) may leave both times blank
+  const closedNoHours = !openNow.value && !openTime.value && !closeTime.value
+  if (!openTime.value && !closedNoHours) validationErrors.value.push('Opening time is required.')
+  if (!closeTime.value && !closedNoHours) validationErrors.value.push('Closing time is required.')
   if (openTime.value && closeTime.value && timeToMinutes(closeTime.value) <= timeToMinutes(openTime.value)) validationErrors.value.push('Closing time must be later than opening time.')
 
   if (allPhotos.length === 0) validationErrors.value.push('At least one photo is required.')
@@ -151,7 +153,7 @@ async function savePlace() {
     area: area.value.trim(),
     lat: Number(lat.value),
     lon: Number(lon.value),
-    hours: `${openTime.value} - ${closeTime.value}`,
+    hours: openTime.value && closeTime.value ? `${openTime.value} - ${closeTime.value}` : 'Closed for renovation',
     indoor: indoor.value,
     openNow: openNow.value,
     facilities: facilities.value,

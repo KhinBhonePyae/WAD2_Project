@@ -1,5 +1,5 @@
 /* Search controller. Follows the routes -> controllers -> models convention.
- * Uses Place.retrieveAll() so it works in both MOCK_MODE and MongoDB mode. */
+ * Uses placeModel.retrieveAll() so it works in both MOCK_MODE and MongoDB mode. */
 
 const placeModel = require('../models/place-model');
 
@@ -9,7 +9,7 @@ const plain = (p) => (p.toObject ? p.toObject() : p);
 // GET /search?q=&facilities=wifi,aircon&strict=true&area=&minRating=
 exports.search = async (req, res, next) => {
   try {
-    const all = (await Place.retrieveAll()).map(plain);
+    const all = (await placeModel.retrieveAll()).map(plain);
 
     const q = norm(req.query.q || '');
     const wanted = (req.query.facilities || '').split(',').map(norm).filter(Boolean);

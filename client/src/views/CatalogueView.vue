@@ -1,15 +1,17 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
 import { suitabilityScore } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'
+import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'
 import PlaceCard from '../components/PlaceCard.vue'
 import FilterChips from '../components/FilterChips.vue'
 import WeatherScene from '../components/WeatherScene.vue'
 
 const route = useRoute()
+const router = useRouter()
 const places = ref([])
 const weather = ref(null)
 const saved = ref([])
@@ -40,8 +42,16 @@ function toggleOutdoor() {
 function clearAll() {
   wanted.value = []; indoorOnly.value = false; outdoorOnly.value = false; openOnly.value = false; q.value = ''
 }
-function toggleSave(id) {
-  saved.value = saved.value.includes(id) ? saved.value.filter(x => x !== id) : [...saved.value, id]
+async function toggleSave(id) {
+  if (!isLoggedIn()) {
+    router.push('/login')
+    return
+  }
+  try {
+    saved.value = await toggleSavedId(saved.value, id)
+  } catch (e) {
+    console.error('Could not update saved place', e)
+  }
 }
 
 const results = computed(() => {
@@ -64,12 +74,14 @@ const results = computed(() => {
 async function load() {
   loading.value = true
   try {
-    const [res, w] = await Promise.all([
+    const [res, w, ids] = await Promise.all([
       axios.get(`${BASE_URL}/places`),
       fetchWeather().catch(() => null),
+      fetchSavedIds(),
     ])
     places.value = res.data
     weather.value = w
+    saved.value = ids
   } catch (e) {
     console.error('Failed to load places', e)
   } finally {

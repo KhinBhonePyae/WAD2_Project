@@ -37,9 +37,9 @@ function mapPlace(branch) {
     return {
         branchCode: branch.branchCode,
         name: branch.branchName,
-        address: [`${address.block} ${address.streetName}`.trim(), address.unit && `#${address.unit}`, address.buildingName, `Singapore ${address.postalCode}`]
+        address: [`${address.block} ${address.streetName}`.trim(), address.unit && `#${address.unit.replace(/^#/, '')}`, address.buildingName, `Singapore ${address.postalCode}`]
             .filter(Boolean).join(', '),
-        area: (branch.transportation.mrtStation || a.streetName).split(/[,(]/)[0].trim(),
+        area: (branch.transportation.mrtStation || address.streetName).split(/[,(]/)[0].trim(),
         lat: Number(branch.coordinates.geoLatitude),
         lon: Number(branch.coordinates.geoLongitude),
         indoor: true,

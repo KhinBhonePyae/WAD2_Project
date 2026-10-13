@@ -1,4 +1,5 @@
 const userModel = require('../models/user-model')
+const savedModel = require('../models/saved-model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
@@ -324,6 +325,9 @@ exports.deleteAccount = async (
         error: 'User not found'
       })
     }
+
+    // remove the deleted user's saved places too
+    await savedModel.deleteAllForUser(req.userId)
 
     res.json({
       message: 'Account deleted successfully'

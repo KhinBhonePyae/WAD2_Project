@@ -34,7 +34,7 @@ onUnmounted(() => {
       </RouterLink>
       <div class="d-flex align-items-center gap-1 gap-sm-3">
         <RouterLink to="/places" class="nav-link px-2" data-test="nav-browse">Browse</RouterLink>
-        <RouterLink to="/saved" class="nav-link px-2 d-none d-sm-inline">Saved</RouterLink>
+        <RouterLink to="/saved" class="nav-link px-2">Saved</RouterLink>
         
         <template v-if="!user">
           <RouterLink to="/signup" class="nav-link px-2">Sign up</RouterLink>

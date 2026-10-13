@@ -49,10 +49,14 @@ function validatePlace(data) {
   if (lon < -180 || lon > 180) return 'Longitude must be between -180 and 180.';
 
   if (!data.hours) return 'Opening hours are required.';
-  if (!/^([01]\d|2[0-3]):[0-5]\d - ([01]\d|2[0-3]):[0-5]\d$/.test(data.hours)) return 'Opening hours must use HH:MM - HH:MM format.';
+  // A closed place (e.g. NLB branches under renovation) has no opening times
+  const closedNoHours = data.openNow === false && data.hours === 'Closed for renovation';
+  if (!closedNoHours) {
+    if (!/^([01]\d|2[0-3]):[0-5]\d - ([01]\d|2[0-3]):[0-5]\d$/.test(data.hours)) return 'Opening hours must use HH:MM - HH:MM format.';
 
-  const [openTime, closeTime] = data.hours.split(' - ');
-  if (timeToMinutes(closeTime) <= timeToMinutes(openTime)) return 'Closing time must be later than opening time.';
+    const [openTime, closeTime] = data.hours.split(' - ');
+    if (timeToMinutes(closeTime) <= timeToMinutes(openTime)) return 'Closing time must be later than opening time.';
+  }
 
   if (typeof data.indoor !== 'boolean') return 'Location must be indoor or outdoor.';
   if (typeof data.openNow !== 'boolean') return 'Status must be open or closed.';
@@ -93,9 +97,10 @@ exports.getPlaces = async (req, res, next) => {
     if (req.query.indoor === 'false') list = list.filter(p => p.indoor === false);
     if (req.query.openNow === 'true') list = list.filter(p => p.openNow === true);
 
-    // attach the live crowd level from the latest review
+    // attach the live crowd level from the latest review (one query for all places)
+    const aggs = await reviewModel.aggregateAll();
     for (const p of list) {
-      const agg = await reviewModel.aggregateForPlace(p.id);
+      const agg = aggs[p.id] || { rating: 0, reviewCount: 0, crowdLevel: null };
       p.crowdLevel = agg.crowdLevel;
       if (agg.reviewCount) {
         p.rating = agg.rating;

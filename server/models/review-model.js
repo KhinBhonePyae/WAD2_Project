@@ -66,8 +66,7 @@ exports.deleteReview = async (id) => {
 /* Aggregate rating + crowd level for one place.
  * Crowd is the most recent report, because "how busy is it right now"
  * is a now-question, not an average. */
-exports.aggregateForPlace = async (placeId) => {
-  const list = await exports.findByPlace(placeId);
+function summarise(list) {
   if (!list.length) return { rating: 0, reviewCount: 0, crowdLevel: null };
   const sum = list.reduce((t, r) => t + r.rating, 0);
   return {
@@ -75,4 +74,26 @@ exports.aggregateForPlace = async (placeId) => {
     reviewCount: list.length,
     crowdLevel: list[0].crowdLevel || null,
   };
+}
+
+exports.aggregateForPlace = async (placeId) => {
+  return summarise(await exports.findByPlace(placeId));
+};
+
+/* Same aggregate for every place in one query, keyed by placeId.
+ * GET /places uses this instead of one query per place. */
+exports.aggregateAll = async () => {
+  const all = global.MOCK_MODE
+    ? [...mem].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    : await Review.find().sort({ createdAt: -1 });
+
+  const byPlace = {};
+  for (const r of all) {
+    if (!byPlace[r.placeId]) byPlace[r.placeId] = [];
+    byPlace[r.placeId].push(r);
+  }
+
+  const result = {};
+  for (const placeId in byPlace) result[placeId] = summarise(byPlace[placeId]);
+  return result;
 };

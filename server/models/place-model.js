@@ -34,6 +34,7 @@ exports.retrieveAll = async () => {
 };
 
 exports.findByID = async (id) => {
+  if (!Number.isInteger(Number(id))) return null; // e.g. /places/abc -> 404
   if (global.MOCK_MODE) return seed.find(p => p.id === Number(id)) || null;
   return Place.findOne({ id: Number(id) });
 };
@@ -59,6 +60,7 @@ exports.createPlace = async (data) => {
 };
 
 exports.updatePlace = async (id, data) => {
+  if (!Number.isInteger(Number(id))) return null; // e.g. /places/abc -> 404
   if (global.MOCK_MODE) {
     const index = seed.findIndex(p => p.id === Number(id));
     if (index === -1) return null;
@@ -75,6 +77,7 @@ exports.updatePlace = async (id, data) => {
 };
 
 exports.deletePlace = async (id) => {
+  if (!Number.isInteger(Number(id))) return null; // e.g. /places/abc -> 404
   if (global.MOCK_MODE) {
     const index = seed.findIndex(p => p.id === Number(id));
     if (index === -1) return null;

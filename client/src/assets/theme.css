@@ -350,6 +350,14 @@ select:focus-visible, textarea:focus-visible, .ss-chip:focus-visible,
                background: linear-gradient(135deg, var(--ss-sky-500), var(--ss-purple-500)); }
 .ss-nav a.nav-link { color: var(--ss-text-muted); font-weight:600; }
 .ss-nav a.nav-link:hover, .ss-nav a.router-link-active { color: var(--ss-primary); }
+.ss-nav a.nav-link, .ss-nav .btn { white-space: nowrap; }
+/* Phones: keep every nav item on one line */
+@media (max-width: 420px) {
+  .ss-nav__brand .ss-muted { display: none; }
+  .ss-nav a.nav-link { padding-left: .35rem !important; padding-right: .35rem !important;
+                       font-size: var(--ss-text-sm); max-width: 6rem;
+                       overflow: hidden; text-overflow: ellipsis; }
+}
 
 /* ============================================================
    PLACE DETAIL CAROUSEL

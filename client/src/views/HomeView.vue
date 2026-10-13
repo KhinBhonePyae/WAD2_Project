@@ -5,9 +5,9 @@ import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
 import { suitabilityScore } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'
+import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'
 import PlaceCard from '../components/PlaceCard.vue'
 import WeatherScene from '../components/WeatherScene.vue'
-import WeatherPreview from '../components/WeatherPreview.vue' // DEV ONLY - delete with WeatherPreview.vue
 import HomeSearchBox from '../components/HomeSearchBox.vue'
 
 const router = useRouter()
@@ -34,18 +34,28 @@ function goToPlace(place) {
   router.push(`/places/${place.id}`)
 }
 
-function toggleSave(id) {
-  saved.value = saved.value.includes(id) ? saved.value.filter(x => x !== id) : [...saved.value, id]
+async function toggleSave(id) {
+  if (!isLoggedIn()) {
+    router.push('/login')
+    return
+  }
+  try {
+    saved.value = await toggleSavedId(saved.value, id)
+  } catch (e) {
+    console.error('Could not update saved place', e)
+  }
 }
 
 onMounted(async () => {
   try {
-    const [placeRes, w] = await Promise.all([
+    const [placeRes, w, ids] = await Promise.all([
       axios.get(`${BASE_URL}/places`),
       fetchWeather().catch(() => null),
+      fetchSavedIds(),
     ])
     places.value = placeRes.data
     weather.value = w
+    saved.value = ids
   } catch (e) {
     console.error('Failed to load places', e)
   } finally {
@@ -74,7 +84,6 @@ onMounted(async () => {
       <WeatherScene :weather="weather" variant="hero" />
     </div>
   </header>
-  <WeatherPreview v-model="weather" /> <!-- DEV ONLY - delete with WeatherPreview.vue -->
 
   <main class="container">
     <section class="ss-section">
