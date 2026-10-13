@@ -142,11 +142,11 @@ function searchAll() { open.value = false; emit('search') }
     list-style: none;
     text-align: left;
 
-    color: var(--ss-text, #1f2340);
-    background: var(--ss-surface, #fff);
-    border: 1px solid var(--ss-border, #e5e7eb);
+    color: var(--ss-text, var(--x-ink));
+    background: var(--ss-surface, var(--x-card));
+    border: 1px solid var(--ss-border, var(--x-ink));
     border-radius: 18px;
-    box-shadow: 0 18px 40px rgba(20, 24, 60, 0.18);
+    box-shadow: var(--x-pop);
 
     max-height: min(60vh, 380px);
     overflow-y: auto;
@@ -182,7 +182,7 @@ function searchAll() { open.value = false; emit('search') }
 }
 
 .suggest__item.is-active {
-    background: var(--ss-purple-100, #efeafe);
+    background: var(--ss-purple-100, var(--x-paper));
 }
 
 @keyframes suggest-in {
@@ -211,7 +211,7 @@ function searchAll() { open.value = false; emit('search') }
 }
 
 .suggest__name mark {
-    background: var(--ss-sky-100, #dff1ff);
+    background: var(--ss-sky-100, var(--x-paper));
     color: inherit;
     border-radius: 4px;
     padding: 0 2px;
@@ -229,11 +229,11 @@ function searchAll() { open.value = false; emit('search') }
 }
 
 .suggest__status.is-open {
-    color: #1b7f4b;
+    color: var(--ss-success);
 }
 
 .suggest__status.is-closed {
-    color: #a3402f;
+    color: var(--ss-danger);
 }
 
 .suggest__empty {
@@ -244,14 +244,14 @@ function searchAll() { open.value = false; emit('search') }
 .suggest__all {
     margin-top: 4px;
     padding: 10px 14px;
-    border-top: 1px solid var(--ss-border, #e5e7eb);
+    border-top: 1px solid var(--ss-border, var(--x-ink));
     font-weight: 600;
     cursor: pointer;
     border-radius: 0 0 12px 12px;
 }
 
 .suggest__all:hover {
-    background: var(--ss-purple-100, #efeafe);
+    background: var(--ss-purple-100, var(--x-paper));
 }
 
 @media (prefers-reduced-motion: reduce) {

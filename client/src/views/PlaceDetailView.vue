@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { Carousel } from 'bootstrap'
 import { useRoute, RouterLink } from 'vue-router'
 import axios from 'axios'
@@ -9,7 +9,8 @@ import { fetchWeather } from '../utils/weather.js'
 import SuitabilityScore from '../components/SuitabilityScore.vue'
 import CrowdMeter from '../components/CrowdMeter.vue'
 import StarRating from '../components/StarRating.vue'
-import WeatherStrip from '../components/WeatherStrip.vue'
+import WeatherStage from '../components/WeatherStage.vue'
+import { gsap, reducedMotion } from '../utils/motion.js'
 import ReviewForm from '../components/ReviewForm.vue'
 import ReviewList from '../components/ReviewList.vue'
 import IntentPanel from '../components/IntentPanel.vue'
@@ -81,7 +82,23 @@ onMounted(async () => {
     })
     carousel.cycle()
   }
+
+  // title letters rise in; the photo drifts slower than the page as you scroll
+  if (!reducedMotion && place.value) {
+    ctx = gsap.context(() => {
+      gsap.from('.x-detail-title .x-char', { yPercent: 100, rotation: () => gsap.utils.random(-12, 12), autoAlpha: 0,
+                                             duration: 0.9, ease: 'expo.out', stagger: 0.025 })
+      gsap.from('.x-detail-head .ss-score, .x-detail-head .ss-badge', { scale: 0, rotation: -30, duration: 0.7, ease: 'back.out(2)', stagger: 0.08, delay: 0.3 })
+      if (carouselRef.value) {
+        gsap.to(carouselRef.value.querySelectorAll('img'), { yPercent: 12, ease: 'none',
+          scrollTrigger: { trigger: carouselRef.value, start: 'top top', end: 'bottom top', scrub: true } })
+      }
+    })
+  }
 })
+
+let ctx = null
+onUnmounted(() => ctx?.revert())
 </script>
 
 <template>
@@ -132,11 +149,11 @@ onMounted(async () => {
       <div class="ss-card__media" :style="{ background: art, aspectRatio: '21/8' }"></div>
     </div>
 
-      <div class="row g-4">
+      <div class="row g-4 x-detail-head">
         <div class="col-12 col-lg-7">
           <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
             <div>
-              <h1 class="mb-1" data-test="place-name">{{ place.name }}</h1>
+              <h1 class="mb-1 x-detail-title" data-test="place-name" :aria-label="place.name"><template v-for="(w, wi) in place.name.split(' ')" :key="wi"><span class="x-wordbox" aria-hidden="true"><span v-for="(c, ci) in w.split('')" :key="ci" class="x-char">{{ c }}</span></span>{{ wi < place.name.split(' ').length - 1 ? ' ' : '' }}</template></h1>
               <p class="ss-muted mb-2">{{ place.address }}</p>
               <div class="d-flex align-items-center gap-3 flex-wrap">
                 <StarRating :value="summary.rating || place.rating" :count="summary.reviewCount" />
@@ -169,7 +186,7 @@ onMounted(async () => {
         </div>
 
         <div class="col-12 col-lg-5">
-          <WeatherStrip :weather="weather" :area="place.area" class="mb-3" />
+          <WeatherStage :weather="weather" :area="place.area" compact class="mb-3" />
           <div class="ss-card h-auto p-4">
             <h2 class="h6 mb-2">Why this score?</h2>
             <ul class="ss-meta mb-0" style="padding-left:1.1rem;line-height:1.9">

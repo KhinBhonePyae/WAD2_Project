@@ -52,7 +52,7 @@ async function login() {
         <section class="auth-side">
           <div class="mini-brand">
             <span class="brand-dot"></span>
-            <span>StudySpot SG</span>
+            <span>LockIN</span>
           </div>
 
           <div class="side-content">
@@ -143,7 +143,7 @@ async function login() {
 
           <div class="auth-divider">
             <span></span>
-            <p>New to StudySpot?</p>
+            <p>New to LockIN?</p>
             <span></span>
           </div>
 
@@ -167,7 +167,7 @@ async function login() {
   align-items: center;
   position: relative;
   overflow: hidden;
-  background: #f7f8fb;
+  background: var(--x-card);
 }
 
 .auth-container {
@@ -183,25 +183,21 @@ async function login() {
   display: grid;
   grid-template-columns: 1fr 1fr;
   overflow: hidden;
-  border: 1px solid #dfe4ec;
+  border: 1px solid var(--x-ink);
   border-radius: 28px;
   background: white;
-  box-shadow: 0 24px 60px rgba(35, 48, 78, .12);
+  box-shadow: var(--x-pop);
 }
 
 .auth-side {
   padding: 3rem;
   display: flex;
   flex-direction: column;
-  color: white;
+  color: var(--x-ink);
+  border-right: var(--x-line);
   position: relative;
   overflow: hidden;
-  background: linear-gradient(
-    135deg,
-    #294f73 0%,
-    #303d6b 48%,
-    #4a2d70 100%
-  );
+  background: var(--x-orange);
 }
 
 .auth-side::before {
@@ -240,7 +236,7 @@ async function login() {
   height: 13px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #6d83e7;
+  background: var(--x-lilac);
 }
 
 .side-content {
@@ -278,7 +274,8 @@ async function login() {
   justify-content: center;
   flex-shrink: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .14);
+  background: var(--x-card);
+  border: var(--x-line);
   font-weight: 700;
 }
 
@@ -294,7 +291,7 @@ async function login() {
 }
 
 .small-heading {
-  color: #4b78b8;
+  color: var(--x-ink);
   font-size: .78rem;
   font-weight: 800;
   letter-spacing: .13em;
@@ -302,7 +299,7 @@ async function login() {
 
 .form-heading h2 {
   margin: .45rem 0 0;
-  color: #171c2a;
+  color: var(--x-ink);
   font-size: 2.2rem;
   font-weight: 800;
 }
@@ -313,23 +310,23 @@ async function login() {
 
 .form-label {
   margin-bottom: .55rem;
-  color: #252b3b;
+  color: var(--x-ink);
   font-weight: 700;
 }
 
 .auth-input {
   min-height: 54px;
   padding: .8rem 1rem;
-  border: 1px solid #d7dee9;
+  border: 1px solid var(--x-ink);
   border-radius: 14px;
-  background: #fafbfc;
+  background: var(--x-card);
   transition: .2s ease;
 }
 
 .auth-input:focus {
-  border-color: #4b7ebd;
+  border-color: var(--x-ink);
   background: white;
-  box-shadow: 0 0 0 4px rgba(75, 126, 189, .12);
+  box-shadow: 0 0 0 3px var(--x-lime);
 }
 
 .auth-button {
@@ -340,14 +337,14 @@ async function login() {
   border-radius: 14px;
   color: white;
   font-weight: 700;
-  background: #4b7fc1;
-  box-shadow: 0 10px 24px rgba(57, 102, 157, .2);
+  background: var(--x-orange);
+  box-shadow: var(--x-pop);
   transition: .2s ease;
 }
 
 .auth-button:hover:not(:disabled) {
   color: white;
-  background: #3f70ae;
+  background: var(--x-orange);
   transform: translateY(-2px);
 }
 
@@ -361,12 +358,12 @@ async function login() {
 .auth-divider span {
   height: 1px;
   flex: 1;
-  background: #e2e6ed;
+  background: var(--x-paper);
 }
 
 .auth-divider p {
   margin: 0;
-  color: #8b93a3;
+  color: var(--x-muted);
   font-size: .85rem;
   white-space: nowrap;
 }
@@ -376,18 +373,18 @@ async function login() {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid #b8c3d2;
+  border: 1px solid var(--x-ink);
   border-radius: 14px;
-  color: #315e91;
+  color: var(--x-ink);
   font-weight: 700;
   text-decoration: none;
   transition: .2s ease;
 }
 
 .secondary-button:hover {
-  border-color: #4b7fc1;
-  color: #315e91;
-  background: #f3f7fb;
+  border-color: var(--x-ink);
+  color: var(--x-ink);
+  background: var(--x-paper);
 }
 
 .auth-alert {

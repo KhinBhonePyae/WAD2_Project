@@ -3,11 +3,9 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
-import { fetchSavedIds } from '../utils/saved.js'
 
 const router = useRouter()
 const user = ref(null)
-const savedIds = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const deleting = ref(false)
@@ -21,6 +19,10 @@ const passwordError = ref('')
 const passwordSuccess = ref('')
 const name = ref('')
 const email = ref('')
+const wifiRequired = ref(false)
+const socketsRequired = ref(false)
+const quietPreferred = ref(false)
+const indoorPreferred = ref(false)
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -35,14 +37,6 @@ const initials = computed(() => {
     .slice(0, 2)
 })
 
-const memberSince = computed(() => {
-  if (!user.value?.createdAt) return ''
-  return new Date(user.value.createdAt).toLocaleDateString('en-SG', {
-    month: 'short',
-    year: 'numeric'
-  })
-})
-
 async function getProfile() {
   const token = localStorage.getItem('token')
   if (!token) {
@@ -50,14 +44,10 @@ async function getProfile() {
     return
   }
   try {
-    const [profileResponse, ids] = await Promise.all([
-      axios.get(`${BASE_URL}/users/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetchSavedIds()
-    ])
-    user.value = profileResponse.data
-    savedIds.value = ids
+    const response = await axios.get(`${BASE_URL}/users/profile`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    user.value = response.data
     setFormValues()
   } catch (error) {
     handleAuthError(error, 'Unable to load profile.')
@@ -69,6 +59,10 @@ async function getProfile() {
 function setFormValues() {
   name.value = user.value.name
   email.value = user.value.email
+  wifiRequired.value = user.value.preferences?.wifiRequired || false
+  socketsRequired.value = user.value.preferences?.socketsRequired || false
+  quietPreferred.value = user.value.preferences?.quietPreferred || false
+  indoorPreferred.value = user.value.preferences?.indoorPreferred || false
 }
 
 function editProfile() {
@@ -95,20 +89,21 @@ async function saveProfile() {
     errorMessage.value = 'Email is required.'
     return
   }
-
   const token = localStorage.getItem('token')
   try {
     saving.value = true
-    const response = await axios.put(
-      `${BASE_URL}/users/profile`,
-      {
-        name: name.value.trim(),
-        email: email.value.trim()
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` }
+    const response = await axios.put(`${BASE_URL}/users/profile`, {
+      name: name.value.trim(),
+      email: email.value.trim(),
+      preferences: {
+        wifiRequired: wifiRequired.value,
+        socketsRequired: socketsRequired.value,
+        quietPreferred: quietPreferred.value,
+        indoorPreferred: indoorPreferred.value
       }
-    )
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     user.value = response.data.user
     localStorage.setItem('user', JSON.stringify(response.data.user))
     window.dispatchEvent(new Event('user-login'))
@@ -143,32 +138,24 @@ function closePasswordModal() {
 async function changePassword() {
   passwordError.value = ''
   passwordSuccess.value = ''
-
   if (!currentPassword.value || !newPassword.value || !confirmPassword.value) {
     passwordError.value = 'All password fields are required.'
     return
   }
-
   if (newPassword.value !== confirmPassword.value) {
     passwordError.value = 'New passwords do not match.'
     return
   }
-
   const token = localStorage.getItem('token')
   try {
     changingPassword.value = true
-    const response = await axios.put(
-      `${BASE_URL}/users/profile/password`,
-      {
-        currentPassword: currentPassword.value,
-        newPassword: newPassword.value,
-        confirmPassword: confirmPassword.value
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    )
-
+    const response = await axios.put(`${BASE_URL}/users/profile/password`, {
+      currentPassword: currentPassword.value,
+      newPassword: newPassword.value,
+      confirmPassword: confirmPassword.value
+    }, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
     passwordSuccess.value = response.data.message
     currentPassword.value = ''
     newPassword.value = ''
@@ -181,8 +168,7 @@ async function changePassword() {
       router.push('/login')
       return
     }
-    passwordError.value =
-      error.response?.data?.error || 'Unable to change password.'
+    passwordError.value = error.response?.data?.error || 'Unable to change password.'
   } finally {
     changingPassword.value = false
   }
@@ -205,7 +191,6 @@ async function deleteAccount() {
     await axios.delete(`${BASE_URL}/users/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
-
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     window.dispatchEvent(new Event('user-login'))
@@ -229,16 +214,24 @@ function handleAuthError(error, defaultMessage) {
   errorMessage.value = error.response?.data?.error || defaultMessage
 }
 
-onMounted(getProfile)
+onMounted(() => {
+  getProfile()
+})
 </script>
 
 <template>
   <main class="profile-page">
-    <div class="profile-container">
-      <h1 class="page-title">My Profile</h1>
+    <div class="container profile-container">
+      <div class="page-heading">
+        <div>
+          <p class="page-label">ACCOUNT</p>
+          <h1>My Profile</h1>
+        </div>
+      </div>
 
-      <div v-if="loading" class="loading-state">
+      <div v-if="loading" class="profile-loading">
         <div class="spinner-border text-primary"></div>
+        <span>Loading profile...</span>
       </div>
 
       <template v-else>
@@ -246,175 +239,207 @@ onMounted(getProfile)
         <div v-if="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
         <div v-if="user && !editing" class="profile-card">
-          <section class="profile-top">
-            <div class="profile-person">
-              <div class="avatar">{{ initials }}</div>
-
-              <div class="profile-info">
+          <section class="profile-header">
+            <div class="profile-main">
+              <div class="profile-avatar">{{ initials }}</div>
+              <div>
                 <h2>{{ user.name }}</h2>
-                <p class="email">{{ user.email }}</p>
-
-                <div class="meta">
-                  <span>{{ savedIds.length }} Saved Places</span>
-                  <span class="divider"></span>
-                  <span>Member since {{ memberSince }}</span>
-                </div>
+                <p>{{ user.email }}</p>
               </div>
             </div>
-
-            <button class="primary-btn" @click="editProfile">
+            <button type="button" class="btn edit-button" @click="editProfile">
               Edit Profile
             </button>
           </section>
 
-          <section class="action-row">
-            <h3>Account & Security</h3>
+          <section class="profile-section">
+            <div class="section-heading">
+              <div>
+                <h3>Study Preferences</h3>
+                <p>Used to personalise your study space results.</p>
+              </div>
+            </div>
 
-            <button
-              class="outline-btn"
-              @click="openPasswordModal"
-            >
+            <div class="preferences-grid">
+              <div class="preference-row">
+                <div>
+                  <strong>Wi-Fi</strong>
+                  <span>Reliable internet access</span>
+                </div>
+                <span class="status" :class="{ active: user.preferences?.wifiRequired }">
+                  {{ user.preferences?.wifiRequired ? 'Required' : 'Not required' }}
+                </span>
+              </div>
+
+              <div class="preference-row">
+                <div>
+                  <strong>Power Sockets</strong>
+                  <span>Access to charging points</span>
+                </div>
+                <span class="status" :class="{ active: user.preferences?.socketsRequired }">
+                  {{ user.preferences?.socketsRequired ? 'Required' : 'Not required' }}
+                </span>
+              </div>
+
+              <div class="preference-row">
+                <div>
+                  <strong>Quiet Environment</strong>
+                  <span>Preference for quieter spaces</span>
+                </div>
+                <span class="status" :class="{ active: user.preferences?.quietPreferred }">
+                  {{ user.preferences?.quietPreferred ? 'Preferred' : 'No preference' }}
+                </span>
+              </div>
+
+              <div class="preference-row">
+                <div>
+                  <strong>Indoor Location</strong>
+                  <span>Preference for indoor spaces</span>
+                </div>
+                <span class="status" :class="{ active: user.preferences?.indoorPreferred }">
+                  {{ user.preferences?.indoorPreferred ? 'Preferred' : 'No preference' }}
+                </span>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-row">
+            <div>
+              <h3>Account & Security</h3>
+              <p>Update your account password.</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary" @click="openPasswordModal">
               Change Password
             </button>
           </section>
 
-          <section class="action-row delete-row">
-            <h3>Delete Account</h3>
-
-            <button
-              class="delete-btn"
-              @click="openDeleteModal"
-            >
+          <section class="settings-row danger-row">
+            <div>
+              <h3>Delete Account</h3>
+              <p>Permanently delete your LockIN account.</p>
+            </div>
+            <button type="button" class="btn btn-outline-danger" @click="openDeleteModal">
               Delete Account
             </button>
           </section>
         </div>
 
-        <div v-if="user && editing" class="edit-card">
-          <div class="edit-header">
-            <h2>Edit Profile</h2>
+        <div v-if="user && editing" class="profile-card edit-card">
+          <div class="edit-heading">
+            <div>
+              <p class="page-label">PROFILE SETTINGS</p>
+              <h2>Edit Profile</h2>
+            </div>
           </div>
 
           <form @submit.prevent="saveProfile">
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label" for="name">Name</label>
-                <input
-                  id="name"
-                  v-model="name"
-                  type="text"
-                  class="form-control profile-input"
-                  required
-                >
+                <label for="name" class="form-label fw-semibold">Name</label>
+                <input id="name" v-model="name" type="text" class="form-control profile-input" required>
               </div>
-
               <div class="col-md-6">
-                <label class="form-label" for="email">Email</label>
-                <input
-                  id="email"
-                  v-model="email"
-                  type="email"
-                  class="form-control profile-input"
-                  required
-                >
+                <label for="email" class="form-label fw-semibold">Email</label>
+                <input id="email" v-model="email" type="email" class="form-control profile-input" required>
               </div>
             </div>
 
-            <div class="form-actions">
-              <button
-                type="button"
-                class="cancel-btn"
-                :disabled="saving"
-                @click="cancelEdit"
-              >
+            <div class="edit-divider"></div>
+
+            <div class="section-heading">
+              <div>
+                <h3>Study Preferences</h3>
+                <p>Select what matters when finding a study space.</p>
+              </div>
+            </div>
+
+            <div class="edit-preferences">
+              <label class="edit-preference">
+                <div>
+                  <strong>Wi-Fi</strong>
+                  <span>Require reliable internet access</span>
+                </div>
+                <div class="form-check form-switch">
+                  <input v-model="wifiRequired" class="form-check-input" type="checkbox">
+                </div>
+              </label>
+
+              <label class="edit-preference">
+                <div>
+                  <strong>Power Sockets</strong>
+                  <span>Require access to charging points</span>
+                </div>
+                <div class="form-check form-switch">
+                  <input v-model="socketsRequired" class="form-check-input" type="checkbox">
+                </div>
+              </label>
+
+              <label class="edit-preference">
+                <div>
+                  <strong>Quiet Environment</strong>
+                  <span>Prefer quieter study spaces</span>
+                </div>
+                <div class="form-check form-switch">
+                  <input v-model="quietPreferred" class="form-check-input" type="checkbox">
+                </div>
+              </label>
+
+              <label class="edit-preference">
+                <div>
+                  <strong>Indoor Location</strong>
+                  <span>Prefer indoor study spaces</span>
+                </div>
+                <div class="form-check form-switch">
+                  <input v-model="indoorPreferred" class="form-check-input" type="checkbox">
+                </div>
+              </label>
+            </div>
+
+            <div class="edit-actions">
+              <button type="button" class="btn btn-outline-secondary" :disabled="saving" @click="cancelEdit">
                 Cancel
               </button>
-
-              <button
-                type="submit"
-                class="primary-btn"
-                :disabled="saving"
-              >
+              <button type="submit" class="btn save-button" :disabled="saving">
                 {{ saving ? 'Saving...' : 'Save Changes' }}
               </button>
             </div>
           </form>
         </div>
 
-        <div
-          v-if="showPasswordModal"
-          class="modal-overlay"
-          @click.self="closePasswordModal"
-        >
-          <div class="modal-box">
+        <div v-if="showPasswordModal" class="profile-modal-backdrop" @click.self="closePasswordModal">
+          <div class="profile-modal-card">
+            <p class="page-label">ACCOUNT SECURITY</p>
             <h2>Change Password</h2>
+            <p class="modal-description">Enter your current password and choose a new password.</p>
 
-            <div v-if="passwordError" class="alert alert-danger">
-              {{ passwordError }}
-            </div>
-
-            <div v-if="passwordSuccess" class="alert alert-success">
-              {{ passwordSuccess }}
-            </div>
+            <div v-if="passwordError" class="alert alert-danger">{{ passwordError }}</div>
+            <div v-if="passwordSuccess" class="alert alert-success">{{ passwordSuccess }}</div>
 
             <form @submit.prevent="changePassword">
               <div class="mb-3">
-                <label class="form-label" for="currentPassword">
-                  Current Password
-                </label>
-
-                <input
-                  id="currentPassword"
-                  v-model="currentPassword"
-                  type="password"
-                  class="form-control profile-input"
-                  required
-                >
+                <label for="currentPassword" class="form-label fw-semibold">Current Password</label>
+                <input id="currentPassword" v-model="currentPassword" type="password"
+                  class="form-control profile-input" autocomplete="current-password" required>
               </div>
 
               <div class="mb-3">
-                <label class="form-label" for="newPassword">
-                  New Password
-                </label>
-
-                <input
-                  id="newPassword"
-                  v-model="newPassword"
-                  type="password"
-                  class="form-control profile-input"
-                  required
-                >
+                <label for="newPassword" class="form-label fw-semibold">New Password</label>
+                <input id="newPassword" v-model="newPassword" type="password"
+                  class="form-control profile-input" autocomplete="new-password" required>
               </div>
 
               <div class="mb-3">
-                <label class="form-label" for="confirmPassword">
-                  Confirm New Password
-                </label>
-
-                <input
-                  id="confirmPassword"
-                  v-model="confirmPassword"
-                  type="password"
-                  class="form-control profile-input"
-                  required
-                >
+                <label for="confirmPassword" class="form-label fw-semibold">Confirm New Password</label>
+                <input id="confirmPassword" v-model="confirmPassword" type="password"
+                  class="form-control profile-input" autocomplete="new-password" required>
               </div>
 
-              <div class="form-actions">
-                <button
-                  type="button"
-                  class="cancel-btn"
-                  :disabled="changingPassword"
-                  @click="closePasswordModal"
-                >
+              <div class="modal-actions">
+                <button type="button" class="btn btn-outline-secondary"
+                  :disabled="changingPassword" @click="closePasswordModal">
                   Cancel
                 </button>
-
-                <button
-                  type="submit"
-                  class="primary-btn"
-                  :disabled="changingPassword"
-                >
+                <button type="submit" class="btn save-button" :disabled="changingPassword">
                   {{ changingPassword ? 'Changing...' : 'Change Password' }}
                 </button>
               </div>
@@ -422,31 +447,18 @@ onMounted(getProfile)
           </div>
         </div>
 
-        <div
-          v-if="showDeleteModal"
-          class="modal-overlay"
-          @click.self="closeDeleteModal"
-        >
-          <div class="modal-box">
+        <div v-if="showDeleteModal" class="profile-modal-backdrop" @click.self="closeDeleteModal">
+          <div class="profile-modal-card">
+            <div class="danger-icon">!</div>
             <h2>Delete Account?</h2>
-            <p class="modal-text">This action cannot be undone.</p>
-
-            <div class="form-actions">
-              <button
-                type="button"
-                class="cancel-btn"
-                :disabled="deleting"
-                @click="closeDeleteModal"
-              >
+            <p class="modal-description">
+              Your LockIN account will be permanently deleted. This action cannot be undone.
+            </p>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-outline-secondary" :disabled="deleting" @click="closeDeleteModal">
                 Cancel
               </button>
-
-              <button
-                type="button"
-                class="danger-filled-btn"
-                :disabled="deleting"
-                @click="deleteAccount"
-              >
+              <button type="button" class="btn btn-danger" :disabled="deleting" @click="deleteAccount">
                 {{ deleting ? 'Deleting...' : 'Delete Account' }}
               </button>
             </div>
@@ -459,366 +471,389 @@ onMounted(getProfile)
 
 <style scoped>
 .profile-page {
-  min-height: calc(100vh - 90px);
-  padding: 3.5rem 1.5rem;
-  background: #f7f8fb;
+  min-height: calc(100vh - 120px);
+  padding: 2rem 1rem 3rem;
+  background: var(--x-card);
 }
 
 .profile-container {
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
+  max-width: 1000px;
 }
 
-.page-title {
-  margin: 0 0 2rem;
-  color: #151827;
-  font-size: 2.6rem;
+.page-heading {
+  margin-bottom: 1.25rem;
+}
+
+.page-label {
+  margin: 0 0 .25rem;
+  color: var(--x-ink);
+  font-size: .73rem;
   font-weight: 800;
-  letter-spacing: -.04em;
+  letter-spacing: .14em;
 }
 
-.loading-state {
+.page-heading h1 {
+  margin: 0;
+  color: var(--x-ink);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.profile-loading {
   min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: .8rem;
 }
 
-.profile-card,
-.edit-card {
+.profile-card {
   overflow: hidden;
-  border: 1px solid #e4e7ee;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 18px 50px rgba(24, 35, 61, .07);
+  border: 1px solid var(--x-ink);
+  border-radius: 18px;
+  background: white;
+  box-shadow: var(--x-pop);
 }
 
-.profile-top {
-  min-height: 180px;
-  padding: 2.2rem 2.4rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 2rem;
-  border-bottom: 1px solid #edf0f4;
-  background:
-    radial-gradient(circle at 85% 20%, rgba(110, 115, 210, .09), transparent 30%),
-    linear-gradient(135deg, #fbfcff 0%, #f8f8ff 100%);
-}
-
-.profile-person {
-  display: flex;
-  align-items: center;
-  gap: 1.4rem;
-}
-
-.avatar {
-  width: 88px;
-  height: 88px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: linear-gradient(145deg, #dfe7ff, #dfdcf7);
-  color: #415590;
-  font-size: 2rem;
-  font-weight: 800;
-  box-shadow: 0 0 0 7px rgba(255, 255, 255, .65);
-}
-
-.profile-info h2 {
-  margin: 0;
-  color: #181c2b;
-  font-size: 1.9rem;
-  font-weight: 800;
-  letter-spacing: -.03em;
-}
-
-.email {
-  margin: .3rem 0 0;
-  color: #777f90;
-  font-size: 1rem;
-}
-
-.meta {
-  margin-top: .8rem;
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  color: #596274;
-  font-size: .88rem;
-  font-weight: 600;
-}
-
-.divider {
-  width: 1px;
-  height: 14px;
-  background: #cbd0da;
-}
-
-.action-row {
-  min-height: 92px;
-  padding: 1.25rem 2.4rem;
+.profile-header {
+  padding: 1.5rem 1.75rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1.5rem;
-  border-bottom: 1px solid #edf0f4;
+  border-bottom: 1px solid var(--x-ink);
+  background: var(--x-card);
 }
 
-.action-row:last-child {
-  border-bottom: 0;
+.profile-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
-.action-row h3 {
-  margin: 0;
-  color: #262b39;
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.delete-row h3 {
-  color: #b34951;
-}
-
-.primary-btn,
-.outline-btn,
-.delete-btn,
-.cancel-btn,
-.danger-filled-btn {
-  min-height: 44px;
-  padding: 0 1.2rem;
-  border-radius: 10px;
-  font-size: .92rem;
-  font-weight: 700;
-  transition: all .2s ease;
-}
-
-.primary-btn {
-  min-width: 130px;
-  border: 0;
-  color: #fff;
-  background: linear-gradient(135deg, #557bc4, #6665b9);
-  box-shadow: 0 5px 14px rgba(86, 105, 186, .22);
-}
-
-.primary-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(86, 105, 186, .28);
-}
-
-.outline-btn {
-  min-width: 150px;
-  border: 1px solid #b6bfd0;
-  color: #426db4;
-  background: #fff;
-}
-
-.outline-btn:hover {
-  border-color: #6787c1;
-  background: #f7f9fd;
-}
-
-.delete-btn {
-  min-width: 145px;
-  border: 1px solid #df8f96;
-  color: #c34851;
-  background: #fff;
-}
-
-.delete-btn:hover {
-  border-color: #c34851;
-  background: #fff7f7;
-}
-
-.edit-card {
-  padding: 2rem;
-}
-
-.edit-header h2 {
-  margin: 0 0 1.5rem;
-  color: #1b1f2e;
-  font-size: 1.45rem;
+.profile-avatar {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--x-paper);
+  color: var(--x-ink);
+  font-size: 1.2rem;
   font-weight: 800;
 }
 
-.form-label {
-  color: #343a49;
-  font-size: .88rem;
+.profile-main h2 {
+  margin: 0;
+  color: var(--x-ink);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.profile-main p {
+  margin: .2rem 0 0;
+  color: var(--x-muted);
+  font-size: .9rem;
+}
+
+.edit-button,
+.save-button {
+  border: 0;
+  color: white;
+  background: var(--x-orange);
+}
+
+.edit-button {
+  padding: .65rem 1.2rem;
+  border-radius: 10px;
   font-weight: 700;
 }
 
+.edit-button:hover,
+.save-button:hover {
+  color: white;
+  background: var(--x-orange);
+}
+
+.profile-section {
+  padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid var(--x-ink);
+}
+
+.section-heading {
+  margin-bottom: 1rem;
+}
+
+.section-heading h3,
+.settings-row h3 {
+  margin: 0;
+  color: var(--x-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.section-heading p,
+.settings-row p {
+  margin: .25rem 0 0;
+  color: var(--x-muted);
+  font-size: .85rem;
+}
+
+.preferences-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.preference-row {
+  min-height: 74px;
+  padding: .9rem 1rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--x-card);
+}
+
+.preference-row > div {
+  min-width: 0;
+}
+
+.preference-row strong,
+.edit-preference strong {
+  display: block;
+  color: var(--x-ink);
+  font-size: .9rem;
+}
+
+.preference-row div span,
+.edit-preference div span {
+  display: block;
+  margin-top: .15rem;
+  color: var(--x-muted);
+  font-size: .78rem;
+}
+
+.status {
+  flex-shrink: 0;
+  padding: .3rem .65rem;
+  border-radius: 999px;
+  background: var(--x-paper);
+  color: var(--x-muted);
+  font-size: .73rem;
+  font-weight: 700;
+}
+
+.status.active {
+  background: var(--x-lime);
+  color: var(--ss-success);
+}
+
+.settings-row {
+  padding: 1.15rem 1.75rem;
+  border-bottom: 1px solid var(--x-ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.danger-row {
+  border-bottom: 0;
+  background: var(--ss-danger-soft);
+}
+
+.danger-row h3 {
+  color: var(--ss-danger);
+}
+
+.edit-card {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.75rem;
+}
+
+.edit-heading {
+  margin-bottom: 1.5rem;
+}
+
+.edit-heading h2 {
+  margin: 0;
+  color: var(--x-ink);
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
 .profile-input {
-  min-height: 48px;
-  border: 1px solid #dce1e9;
-  border-radius: 10px;
-  background: #fafbfc;
+  min-height: 44px;
+  border-radius: 9px;
+  border-color: var(--x-ink);
 }
 
 .profile-input:focus {
-  border-color: #7189c8;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(87, 111, 182, .1);
+  border-color: var(--x-ink);
+  box-shadow: 0 0 0 3px var(--x-lime);
 }
 
-.form-actions {
+.edit-divider {
+  height: 1px;
+  margin: 1.5rem 0;
+  background: var(--x-paper);
+}
+
+.edit-preferences {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.edit-preference {
+  min-height: 72px;
+  padding: .9rem 1rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--x-card);
+  cursor: pointer;
+}
+
+.form-switch {
+  margin: 0;
+  padding-left: 2.8rem;
+}
+
+.form-switch .form-check-input {
+  width: 2.5rem;
+  height: 1.3rem;
+  cursor: pointer;
+}
+
+.edit-actions,
+.modal-actions {
   margin-top: 1.5rem;
   display: flex;
   justify-content: flex-end;
-  gap: .7rem;
+  gap: .75rem;
 }
 
-.cancel-btn {
-  border: 1px solid #d1d6df;
-  color: #555e6d;
-  background: #fff;
+.save-button {
+  padding-left: 1.2rem;
+  padding-right: 1.2rem;
 }
 
-.cancel-btn:hover {
-  background: #f7f8fa;
-}
-
-.modal-overlay {
+.profile-modal-backdrop {
   position: fixed;
   inset: 0;
   z-index: 1050;
   padding: 1rem;
-  display: grid;
-  place-items: center;
-  background: rgba(20, 25, 39, .42);
-  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(18, 24, 42, .5);
+  backdrop-filter: blur(3px);
 }
 
-.modal-box {
+.profile-modal-card {
   width: 100%;
-  max-width: 430px;
-  padding: 1.8rem;
-  border: 1px solid #e7e9ee;
+  max-width: 450px;
+  padding: 1.75rem;
   border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 24px 70px rgba(14, 20, 36, .2);
+  background: white;
+  box-shadow: var(--x-pop);
 }
 
-.modal-box h2 {
-  margin: 0 0 1.2rem;
-  color: #1c2030;
+.profile-modal-card h2 {
+  margin: 0 0 .4rem;
+  color: var(--x-ink);
   font-size: 1.35rem;
   font-weight: 800;
 }
 
-.modal-text {
-  margin: 0;
-  color: #747b89;
+.modal-description {
+  margin-bottom: 1.25rem;
+  color: var(--x-muted);
+  font-size: .9rem;
 }
 
-.danger-filled-btn {
-  border: 0;
-  color: #fff;
-  background: #c74952;
-}
-
-.danger-filled-btn:hover {
-  background: #b43d46;
+.danger-icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: .9rem;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ss-danger-soft);
+  color: var(--ss-danger);
+  font-weight: 900;
 }
 
 @media (max-width: 767px) {
   .profile-page {
-    padding: 2rem 1rem;
+    padding: 1.5rem .75rem 2.5rem;
   }
 
-  .page-title {
-    font-size: 2.1rem;
+  .page-heading h1 {
+    font-size: 1.75rem;
   }
 
-  .profile-top {
-    padding: 1.8rem;
+  .profile-header {
     align-items: flex-start;
-    flex-direction: column;
   }
 
-  .primary-btn {
-    width: 100%;
-  }
-
-  .action-row {
-    padding: 1.2rem 1.8rem;
+  .preferences-grid,
+  .edit-preferences {
+    grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 575px) {
-  .profile-page {
-    padding: 1.5rem .8rem;
+  .profile-header {
+    flex-direction: column;
   }
 
-  .page-title {
-    margin-bottom: 1.4rem;
-    font-size: 1.9rem;
+  .edit-button {
+    width: 100%;
   }
 
-  .profile-card,
+  .profile-section,
+  .profile-header,
+  .settings-row,
   .edit-card {
-    border-radius: 17px;
+    padding: 1.2rem;
   }
 
-  .profile-top {
-    padding: 1.5rem;
+  .settings-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .profile-person {
-    gap: 1rem;
+  .settings-row button {
+    width: 100%;
+  }
+
+  .preference-row {
     align-items: flex-start;
   }
 
-  .avatar {
-    width: 68px;
-    height: 68px;
-    font-size: 1.5rem;
-  }
-
-  .profile-info h2 {
-    font-size: 1.5rem;
-  }
-
-  .email {
-    font-size: .9rem;
-  }
-
-  .meta {
-    gap: .5rem;
-    flex-wrap: wrap;
-    font-size: .76rem;
-  }
-
-  .action-row {
-    min-height: auto;
-    padding: 1.25rem 1.5rem;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .action-row h3 {
-    font-size: .95rem;
-  }
-
-  .outline-btn,
-  .delete-btn {
-    width: 100%;
-  }
-
-  .edit-card {
-    padding: 1.4rem;
-  }
-
-  .form-actions {
+  .edit-actions,
+  .modal-actions {
     flex-direction: column-reverse;
   }
 
-  .form-actions button {
+  .edit-actions button,
+  .modal-actions button {
     width: 100%;
   }
 
-  .modal-box {
+  .profile-modal-card {
     padding: 1.4rem;
   }
 }

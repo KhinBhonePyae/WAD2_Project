@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
@@ -8,7 +8,8 @@ import { fetchWeather } from '../utils/weather.js'
 import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'
 import PlaceCard from '../components/PlaceCard.vue'
 import FilterChips from '../components/FilterChips.vue'
-import WeatherScene from '../components/WeatherScene.vue'
+import WeatherStage from '../components/WeatherStage.vue'
+import { gsap, ScrollTrigger, reducedMotion } from '../utils/motion.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -88,28 +89,53 @@ async function load() {
     loading.value = false
   }
 }
-onMounted(load)
+let ctx = null
+onMounted(async () => {
+  ctx = gsap.context(() => {
+    if (!reducedMotion) gsap.from('.x-page-title .x-word', { yPercent: 110, rotation: 5, duration: 1, ease: 'expo.out', stagger: 0.08 })
+  })
+  await load()
+  animateCards()
+})
+onUnmounted(() => ctx?.revert())
+
+// cards pop in as they scroll into view (re-run whenever the filtered list changes)
+async function animateCards() {
+  if (reducedMotion || !ctx) return
+  await nextTick()
+  ctx.add(() => {
+    ScrollTrigger.batch('.x-cat-card:not(.x-seen)', {
+      start: 'top 92%', once: true,
+      onEnter: els => {
+        els.forEach(e => e.classList.add('x-seen'))
+        gsap.from(els, { y: 60, rotation: () => gsap.utils.random(-5, 5), autoAlpha: 0, duration: 0.7, ease: 'back.out(1.5)', stagger: 0.07 })
+      },
+    })
+    ScrollTrigger.refresh()
+  })
+}
+watch(results, animateCards)
 watch(() => route.query.q, v => { q.value = v || '' })
 </script>
 
 <template>
   <main class="container ss-section">
-    <WeatherScene :weather="weather" class="mb-4">
-      <div class="ss-section__head">
-        <div>
-          <h1 class="mb-1">Study spaces</h1>
-          <p class="ss-muted mb-0" data-test="result-count">
-            {{ loading ? 'Loading…' : results.length + ' spot' + (results.length === 1 ? '' : 's') + ' match your filters' }}
-          </p>
-        </div>
+    <div class="ss-section__head">
+      <div>
+        <h1 class="mb-1 x-page-title" aria-label="Study spaces"><span class="x-mask"><span class="x-word">Study</span></span> <span class="x-mask"><span class="x-word">spaces</span></span></h1>
+        <p class="ss-muted mb-0" data-test="result-count">
+          {{ loading ? 'Loading…' : results.length + ' spot' + (results.length === 1 ? '' : 's') + ' match your filters' }}
+        </p>
       </div>
+    </div>
 
-      <div class="ss-search">
-        <span class="ss-muted" aria-hidden="true">⌕</span>
-        <input v-model="q" type="text" placeholder="Search by name or area"
-               aria-label="Search study spaces" data-test="cat-search">
-      </div>
-    </WeatherScene>
+    <div class="ss-search mb-3">
+      <span class="ss-muted" aria-hidden="true">⌕</span>
+      <input v-model="q" type="text" placeholder="Search by name or area"
+             aria-label="Search study spaces" data-test="cat-search">
+    </div>
+
+    <WeatherStage :weather="weather" area="Singapore" compact class="mb-4" />
 
     <div class="mb-3">
       <div class="ss-meta mb-2">Must have</div>
@@ -138,17 +164,23 @@ watch(() => route.query.q, v => { q.value = v || '' })
     </div>
 
     <div v-else-if="!results.length" class="ss-empty" data-test="empty-state">
-      <div style="font-size:2rem">🔍</div>
+      <div class="x-empty-icon" aria-hidden="true">?</div>
       <p class="mb-2" style="font-weight:600;color:var(--ss-text)">No spots match those filters</p>
       <p class="mb-3">Try removing a filter or widening the area.</p>
       <button class="btn btn-outline-primary btn-sm" @click="clearAll">Clear filters</button>
     </div>
 
-    <div v-else class="row g-3">
-      <div v-for="item in results" :key="item.place.id" class="col-12 col-md-6 col-lg-4 ss-rise">
+    <div v-else class="row g-4">
+      <div v-for="item in results" :key="item.place.id" class="col-12 col-md-6 col-lg-4 x-cat-card">
         <PlaceCard :place="item.place" :score="item.score"
                    :saved="saved.includes(item.place.id)" @toggle-save="toggleSave" />
       </div>
     </div>
   </main>
 </template>
+
+<style scoped>
+.x-mask { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; }
+.x-empty-icon { width: 64px; height: 64px; margin: 0 auto 12px; display: grid; place-items: center; border-radius: 50%;
+                background: var(--x-butter); border: var(--x-line); box-shadow: var(--x-pop); font-weight: 800; font-size: 2rem; }
+</style>

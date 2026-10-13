@@ -165,7 +165,7 @@ onMounted(() => {
 .saved-page {
   min-height: calc(100vh - 140px);
   padding: 3rem 1rem;
-  background: #f7f8fb;
+  background: var(--x-card);
 }
 
 .saved-container {
@@ -182,7 +182,7 @@ onMounted(() => {
 
 .saved-label {
   margin-bottom: .35rem;
-  color: #4b78b8;
+  color: var(--x-ink);
   font-size: .78rem;
   font-weight: 800;
   letter-spacing: .13em;
@@ -190,7 +190,7 @@ onMounted(() => {
 
 .saved-heading h1 {
   margin: 0;
-  color: #171c2a;
+  color: var(--x-ink);
   font-size: 2.2rem;
   font-weight: 800;
 }
@@ -198,8 +198,8 @@ onMounted(() => {
 .saved-count {
   padding: .45rem .9rem;
   border-radius: 999px;
-  background: #e9eef8;
-  color: #315e91;
+  background: var(--x-paper);
+  color: var(--x-ink);
   font-size: .9rem;
   font-weight: 700;
 }
@@ -223,14 +223,14 @@ onMounted(() => {
 
 .empty-card {
   padding: 2.5rem;
-  border: 1px solid #dfe4ec;
+  border: 1px solid var(--x-ink);
   border-radius: 24px;
   background: white;
 }
 
 .empty-card h2 {
   margin: 0;
-  color: #171c2a;
+  color: var(--x-ink);
   font-size: 1.5rem;
   font-weight: 800;
 }
@@ -238,7 +238,7 @@ onMounted(() => {
 .empty-card p {
   max-width: 420px;
   margin: 0;
-  color: #697386;
+  color: var(--x-muted);
 }
 
 .browse-button {
@@ -246,12 +246,12 @@ onMounted(() => {
   border-radius: 12px;
   color: white;
   font-weight: 700;
-  background: #4b7fc1;
+  background: var(--x-orange);
 }
 
 .browse-button:hover {
   color: white;
-  background: #3f70ae;
+  background: var(--x-orange);
 }
 
 @media (max-width: 991px) {
