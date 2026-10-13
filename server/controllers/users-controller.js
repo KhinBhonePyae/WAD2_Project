@@ -1,5 +1,6 @@
 const userModel = require('../models/user-model')
 const savedModel = require('../models/saved-model')
+const intentModel = require('../models/intent-model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
@@ -328,6 +329,7 @@ exports.deleteAccount = async (
 
     // remove the deleted user's saved places too
     await savedModel.deleteAllForUser(req.userId)
+    await intentModel.deleteAllForUser(req.userId)
 
     res.json({
       message: 'Account deleted successfully'

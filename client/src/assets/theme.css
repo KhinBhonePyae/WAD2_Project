@@ -315,7 +315,8 @@ select:focus-visible, textarea:focus-visible, .ss-chip:focus-visible,
 /* ============================================================
    SECTION + EMPTY/LOADING STATES
    ============================================================ */
-.ss-section { padding: var(--ss-7) 0; }
+/* top/bottom only, so .container keeps its side gutter on phones */
+.ss-section { padding-top: var(--ss-7); padding-bottom: var(--ss-7); }
 .ss-section__head { display:flex; align-items:end; justify-content:space-between;
                     gap: var(--ss-4); margin-bottom: var(--ss-5); flex-wrap:wrap; }
 .ss-empty { text-align:center; padding: var(--ss-7) var(--ss-4); color: var(--ss-text-muted);
@@ -351,11 +352,12 @@ select:focus-visible, textarea:focus-visible, .ss-chip:focus-visible,
 .ss-nav a.nav-link { color: var(--ss-text-muted); font-weight:600; }
 .ss-nav a.nav-link:hover, .ss-nav a.router-link-active { color: var(--ss-primary); }
 .ss-nav a.nav-link, .ss-nav .btn { white-space: nowrap; }
-/* Phones: keep every nav item on one line */
+/* Phones: brand on the first row, links on a second row */
 @media (max-width: 420px) {
-  .ss-nav__brand .ss-muted { display: none; }
+  .ss-nav .container { flex-wrap: wrap; row-gap: var(--ss-1); }
+  .ss-nav .container > div { width: 100%; justify-content: space-between; }
   .ss-nav a.nav-link { padding-left: .35rem !important; padding-right: .35rem !important;
-                       font-size: var(--ss-text-sm); max-width: 6rem;
+                       font-size: var(--ss-text-sm); max-width: 7rem;
                        overflow: hidden; text-overflow: ellipsis; }
 }
 

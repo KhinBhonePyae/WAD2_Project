@@ -18,6 +18,7 @@ const closeTime = ref('')
 const indoor = ref(true)
 const openNow = ref(true)
 const description = ref('')
+const capacity = ref('')
 const facilities = ref([])
 const photo1 = ref('')
 const photo2 = ref('')
@@ -53,6 +54,7 @@ onMounted(async () => {
     indoor.value = data.indoor ?? true
     openNow.value = data.openNow ?? true
     description.value = data.description || ''
+    capacity.value = data.capacity ?? ''
     facilities.value = data.facilities || []
 
     photo1.value = data.photos?.[0] || ''
@@ -132,6 +134,11 @@ function validateForm() {
   if (photo2.value.trim() && !validPhoto(photo2.value.trim(), 1)) validationErrors.value.push('Photo URL 2 must be a valid http or https URL.')
   if (photo3.value.trim() && !validPhoto(photo3.value.trim(), 2)) validationErrors.value.push('Photo URL 3 must be a valid http or https URL.')
 
+  if (capacity.value !== '' && capacity.value !== null) {
+    const cap = Number(capacity.value)
+    if (!Number.isInteger(cap) || cap < 1 || cap > 5000) validationErrors.value.push('Capacity must be a whole number between 1 and 5000.')
+  }
+
   if (!cleanDescription) validationErrors.value.push('Description is required.')
 
   return validationErrors.value.length === 0
@@ -158,7 +165,8 @@ async function savePlace() {
     openNow: openNow.value,
     facilities: facilities.value,
     photos: isEdit.value ? [...editablePhotos, ...extraPhotos.value] : editablePhotos,
-    description: description.value.trim()
+    description: description.value.trim(),
+    capacity: capacity.value === '' || capacity.value === null ? null : Number(capacity.value)
   }
 
   try {
@@ -223,6 +231,13 @@ async function savePlace() {
           <label class="form-label">Longitude</label>
           <input v-model="lon" type="number" step="any" min="-180" max="180" class="form-control" placeholder="e.g. 103.8502">
           <div class="form-text">Must be between -180 and 180.</div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <label class="form-label">Seats (approx.)</label>
+          <input v-model="capacity" type="number" min="1" max="5000" step="1" class="form-control"
+                 placeholder="e.g. 40" data-test="capacity-input">
+          <div class="form-text">Used to estimate how packed it will be.</div>
         </div>
 
         <div class="col-6 col-md-3">

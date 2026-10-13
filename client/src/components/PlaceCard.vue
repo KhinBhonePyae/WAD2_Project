@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import SuitabilityScore from './SuitabilityScore.vue'
 import CrowdMeter from './CrowdMeter.vue'
 import StarRating from './StarRating.vue'
+import { LEVEL_LABELS } from '../utils/intents.js'
 
 const props = defineProps({ place: Object, score: Number, saved: Boolean })
 const emit = defineEmits(['toggle-save'])
@@ -52,6 +53,12 @@ const facilityLabels = { wifi: 'Wi-Fi', sockets: 'Sockets', fnb: 'F&B', water: '
         <span v-for="f in place.facilities.slice(0, 3)" :key="f" class="ss-badge ss-badge--sky">
           {{ facilityLabels[f] || f }}
         </span>
+      </div>
+
+      <div v-if="place.intent" class="ss-meta" data-test="card-intent">
+        👥 {{ place.intent.count }} planning to go
+        {{ place.intent.day === 'Today' ? 'this' : 'tomorrow' }} {{ place.intent.label.toLowerCase() }}
+        · {{ LEVEL_LABELS[place.intent.level] }}
       </div>
 
       <div class="ss-card__foot">
