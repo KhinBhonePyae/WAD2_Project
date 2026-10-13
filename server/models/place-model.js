@@ -20,6 +20,7 @@ const placeSchema = new mongoose.Schema({
   photos:      { type: [String], default: [] },
   rating:      { type: Number, default: 0 },
   reviewCount: { type: Number, default: 0 },
+  capacity:    { type: Number, default: null }, // rough seat count, for the intent "how packed" level
   description: { type: String, default: '' },
 }, { versionKey: false });
 

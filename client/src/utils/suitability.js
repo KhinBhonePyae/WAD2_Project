@@ -10,6 +10,7 @@
  *   crowd level        0-20   quiet 20 / moderate 10 / packed 0
  *   star rating        0-15   rating / 5 * 15
  *   weather modifier  -25-+10 outdoor places only
+ *   planned visits    -10-0   next slot likely packed -10 / filling up -5
  */
 
 export const FACILITY_LABELS = {
@@ -41,6 +42,9 @@ export function suitabilityBreakdown(place, wanted = [], weather = null) {
   else if (place.crowdLevel === 'packed') reasons.push('Packed right now')
 
   score += (Number(place.rating) || 0) / 5 * 15
+
+  if (place.intent?.level === 'packed') { score -= 10; reasons.push('Many people planning to go') }
+  else if (place.intent?.level === 'filling') { score -= 5; reasons.push('Some people planning to go') }
 
   if (!place.indoor && weather) {
     if (weather.raining) { score -= 25; reasons.push('Outdoor - rain lowers the score') }

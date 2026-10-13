@@ -653,44 +653,17 @@ textarea:focus-visible,
 /* ============================================================
    SECTION + EMPTY/LOADING STATES
    ============================================================ */
-.ss-section {
-  padding: var(--ss-7) 0;
-}
-
-.ss-section__head {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: var(--ss-4);
-  margin-bottom: var(--ss-5);
-  flex-wrap: wrap;
-}
-
-.ss-empty {
-  text-align: center;
-  padding: var(--ss-7) var(--ss-4);
-  color: var(--ss-text-muted);
-  background: var(--ss-surface);
-  border: 1px dashed var(--ss-border-strong);
-  border-radius: var(--ss-radius);
-}
-
-.ss-skeleton {
-  background: linear-gradient(90deg, var(--ss-ink-100) 25%, var(--ss-ink-50) 37%, var(--ss-ink-100) 63%);
-  background-size: 400% 100%;
-  animation: ss-shimmer 1.3s ease-in-out infinite;
-  border-radius: var(--ss-radius-sm);
-}
-
-@keyframes ss-shimmer {
-  0% {
-    background-position: 100% 0
-  }
-
-  100% {
-    background-position: 0 0
-  }
-}
+/* top/bottom only, so .container keeps its side gutter on phones */
+.ss-section { padding-top: var(--ss-7); padding-bottom: var(--ss-7); }
+.ss-section__head { display:flex; align-items:end; justify-content:space-between;
+                    gap: var(--ss-4); margin-bottom: var(--ss-5); flex-wrap:wrap; }
+.ss-empty { text-align:center; padding: var(--ss-7) var(--ss-4); color: var(--ss-text-muted);
+            background: var(--ss-surface); border:1px dashed var(--ss-border-strong);
+            border-radius: var(--ss-radius); }
+.ss-skeleton { background: linear-gradient(90deg, var(--ss-ink-100) 25%, var(--ss-ink-50) 37%, var(--ss-ink-100) 63%);
+               background-size:400% 100%; animation: ss-shimmer 1.3s ease-in-out infinite;
+               border-radius: var(--ss-radius-sm); }
+@keyframes ss-shimmer { 0%{background-position:100% 0} 100%{background-position:0 0} }
 
 /* Entry animation — the proposal asks for "UI moves when you first load the page" */
 .ss-rise {
@@ -745,61 +718,22 @@ textarea:focus-visible,
 /* ============================================================
    NAVBAR
    ============================================================ */
-.ss-nav {
-  background: rgba(255, 255, 255, .88);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--ss-border);
-  position: sticky;
-  top: 0;
-  z-index: 1030;
-}
-
-.ss-nav__brand {
-  font-weight: 800;
-  font-size: var(--ss-text-lg);
-  color: var(--ss-text);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-}
-
-.ss-nav__dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--ss-sky-500), var(--ss-purple-500));
-}
-
-.ss-nav a.nav-link {
-  color: var(--ss-text-muted);
-  font-weight: 600;
-}
-
-.ss-nav a.nav-link:hover,
-.ss-nav a.router-link-active {
-  color: var(--ss-primary);
-}
-
-.ss-nav a.nav-link,
-.ss-nav .btn {
-  white-space: nowrap;
-}
-
-/* Phones: keep every nav item on one line */
+.ss-nav { background: rgba(255,255,255,.88); backdrop-filter: blur(10px);
+          border-bottom:1px solid var(--ss-border); position:sticky; top:0; z-index:1030; }
+.ss-nav__brand { font-weight:800; font-size: var(--ss-text-lg); color: var(--ss-text); text-decoration:none;
+                 display:inline-flex; align-items:center; gap:.5rem; }
+.ss-nav__dot { width:12px; height:12px; border-radius:50%;
+               background: linear-gradient(135deg, var(--ss-sky-500), var(--ss-purple-500)); }
+.ss-nav a.nav-link { color: var(--ss-text-muted); font-weight:600; }
+.ss-nav a.nav-link:hover, .ss-nav a.router-link-active { color: var(--ss-primary); }
+.ss-nav a.nav-link, .ss-nav .btn { white-space: nowrap; }
+/* Phones: brand on the first row, links on a second row */
 @media (max-width: 420px) {
-  .ss-nav__brand .ss-muted {
-    display: none;
-  }
-
-  .ss-nav a.nav-link {
-    padding-left: .35rem !important;
-    padding-right: .35rem !important;
-    font-size: var(--ss-text-sm);
-    max-width: 6rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .ss-nav .container { flex-wrap: wrap; row-gap: var(--ss-1); }
+  .ss-nav .container > div { width: 100%; justify-content: space-between; }
+  .ss-nav a.nav-link { padding-left: .35rem !important; padding-right: .35rem !important;
+                       font-size: var(--ss-text-sm); max-width: 7rem;
+                       overflow: hidden; text-overflow: ellipsis; }
 }
 
 /* ============================================================

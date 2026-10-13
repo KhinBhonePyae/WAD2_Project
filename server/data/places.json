@@ -18,6 +18,7 @@
     ],
     "rating": 4.4,
     "reviewCount": 36,
+    "capacity": 400,
     "description": "SMU's main library. Silent floors on levels 4 and 5, group pods on level 2, and plenty of power at every desk."
   },
   {
@@ -39,6 +40,7 @@
     ],
     "rating": 4.1,
     "reviewCount": 12,
+    "capacity": 30,
     "description": "Airy roastery with a sheltered courtyard. Good for pair work; gets loud over lunch."
   },
   {
@@ -60,6 +62,7 @@
     ],
     "rating": 3.9,
     "reviewCount": 21,
+    "capacity": 40,
     "description": "Open-air terrace above the atrium. Covered seating at the north end if it rains."
   },
   {
@@ -81,6 +84,7 @@
     ],
     "rating": 4.2,
     "reviewCount": 29,
+    "capacity": 24,
     "description": "Bookable glass pods for 4-6. Needs a student login to reserve."
   },
   {
@@ -102,6 +106,7 @@
     ],
     "rating": 4.0,
     "reviewCount": 17,
+    "capacity": 25,
     "description": "Small corner kopitiam-style cafe. Two sockets only, so arrive early."
   }
 ]
