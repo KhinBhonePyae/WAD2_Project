@@ -21,7 +21,13 @@ function onMove(e) {
   const target = e.target.closest?.('[data-cursor], a, button, input, select, textarea, label, [role="button"]')
   if (!target) { state.value = ''; label.value = ''; return }
   const text = target.getAttribute('data-cursor')
-  if (text) { state.value = 'label'; label.value = text }
+  if (text) {
+    // small buttons (e.g. the heart): a thin ring around it, label tucked underneath,
+    // so the icon itself stays visible
+    const box = target.getBoundingClientRect()
+    state.value = box.width < 70 && box.height < 70 ? 'label-sm' : 'label'
+    label.value = text
+  }
   else if (/INPUT|TEXTAREA|SELECT/.test(target.tagName)) { state.value = 'text'; label.value = '' }
   else { state.value = 'link'; label.value = '' }
 }
@@ -58,7 +64,7 @@ onUnmounted(() => {
     <div ref="ring" class="x-cursor__ring" :class="'x-cursor__ring--' + (state || 'idle')">
       <span class="x-cursor__label">{{ label }}</span>
     </div>
-    <div ref="dot" class="x-cursor__dot" :class="{ 'x-cursor__dot--hide': state === 'label' }"></div>
+    <div ref="dot" class="x-cursor__dot" :class="{ 'x-cursor__dot--hide': state === 'label' || state === 'label-sm' }"></div>
   </div>
 </template>
 
@@ -81,10 +87,13 @@ onUnmounted(() => {
 .x-cursor__ring--link { width: 58px; height: 58px; margin: -29px 0 0 -29px; background: rgba(198, 244, 50, .35); }
 .x-cursor__ring--text { width: 6px; height: 34px; margin: -17px 0 0 -3px; border-radius: 3px; background: var(--x-ink); }
 .x-cursor__ring--label { width: 86px; height: 86px; margin: -43px 0 0 -43px; background: var(--x-lime); }
+.x-cursor__ring--label-sm { width: 52px; height: 52px; margin: -26px 0 0 -26px; border: 2px solid var(--x-ink); background: transparent; }
 .x-cursor__ring--down { scale: .8; }
 .x-cursor__label {
   font-family: var(--x-mono); font-size: .68rem; font-weight: 500; text-transform: uppercase;
   letter-spacing: .06em; color: var(--x-ink); opacity: 0; transition: opacity .2s;
 }
 .x-cursor__ring--label .x-cursor__label { opacity: 1; }
+.x-cursor__ring--label-sm .x-cursor__label { opacity: 1; position: absolute; top: calc(100% + 6px);
+  padding: 2px 8px; border-radius: 999px; background: var(--x-lime); border: 1.5px solid var(--x-ink); white-space: nowrap; }
 </style>

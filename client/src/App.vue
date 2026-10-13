@@ -136,7 +136,7 @@ onUnmounted(() => {
 .x-footer__track {
   display: inline-flex; white-space: nowrap;
   font-weight: 800; font-size: clamp(1.75rem, 5.3vw, 4rem); letter-spacing: -.04em; color: var(--x-paper);   /* a third smaller */
-  animation: x-marquee 16s linear infinite;
+  animation: x-marquee 26s linear infinite;
 }
 .x-footer__track .x-serif { color: var(--x-lime); font-weight: 400; }
 .x-footer__meta { padding-top: 1rem; font-size: .85rem; color: rgba(243, 238, 227, .75); }

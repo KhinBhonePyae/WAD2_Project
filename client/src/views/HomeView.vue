@@ -104,15 +104,19 @@ let typeTimer = null
 function typeLoop(i = 0, c = 0, deleting = false) {
   const text = PROMPTS[i]
   typed.value = text.slice(0, c)
-  let next = 26, ni = i, nc = c + 1, nd = deleting
-  if (!deleting && c === text.length) { nd = true; next = 1100; nc = c }
-  else if (deleting) { nc = c - 1; next = 12; if (c === 0) { nd = false; ni = (i + 1) % PROMPTS.length; nc = 0; next = 300 } }
+  let next = 45, ni = i, nc = c + 1, nd = deleting
+  if (!deleting && c === text.length) { nd = true; next = 1800; nc = c }
+  else if (deleting) { nc = c - 1; next = 22; if (c === 0) { nd = false; ni = (i + 1) % PROMPTS.length; nc = 0; next = 300 } }
   typeTimer = setTimeout(() => typeLoop(ni, nc, nd), next)
 }
 
 /* ---------- actions ---------- */
 function search() {
   router.push({ path: '/places', query: q.value ? { q: q.value } : {} })
+}
+// "Ready to lock in?" -> new visitors sign up, logged-in users go straight to browsing
+function answerYes() {
+  router.push(isLoggedIn() ? '/places' : '/signup')
 }
 function goToPlace(place) {
   router.push(`/places/${place.id}`)
@@ -154,13 +158,31 @@ function wobble(e) {
 function setupScrollAnimations() {
   if (reducedMotion || !ctx) return
   ctx.add(() => {
+    // ScrollTriggers must be created in page order: the pinned area ride sits near the
+    // top, and it adds scroll space that every trigger below it needs to account for.
+    // explore by area: vertical scroll drives a horizontal ride (desktop only)
+    mm = gsap.matchMedia()
+    mm.add('(min-width: 768px)', () => {
+        const track = document.querySelector('.x-areas__track')
+        if (!track) return
+        const distance = () => track.scrollWidth - window.innerWidth + 48
+        const ride = gsap.to(track, { x: () => -distance(), ease: 'none',
+          // end is 40% of the travel distance, so it takes much less scrolling to get past
+          scrollTrigger: { trigger: '.x-areas', start: 'top top', end: () => '+=' + distance() * 0.4, pin: true, scrub: 0.8, invalidateOnRefresh: true } })
+        gsap.utils.toArray('.x-area__photo').forEach((photo, i) => {
+          gsap.fromTo(photo, { y: 40 + (i % 3) * 20, rotation: (i % 2 ? 6 : -6) },
+            { y: -30, rotation: (i % 2 ? -4 : 4), ease: 'none',
+              scrollTrigger: { trigger: photo, containerAnimation: ride, start: 'left right', end: 'right left', scrub: true } })
+        })
+    })
+
     // marquees: drift forever, and run faster/backwards with scroll speed
     const rows = gsap.utils.toArray('.x-marquee__track')
     // the text is duplicated, so sliding exactly half its width loops seamlessly;
     // the second row runs the other way (from -50% back to 0)
     const loops = rows.map((row, i) => i % 2
-      ? gsap.fromTo(row, { xPercent: -50 }, { xPercent: 0, duration: 22, ease: 'none', repeat: -1 })
-      : gsap.fromTo(row, { xPercent: 0 }, { xPercent: -50, duration: 22, ease: 'none', repeat: -1 }))
+      ? gsap.fromTo(row, { xPercent: -50 }, { xPercent: 0, duration: 40, ease: 'none', repeat: -1 })
+      : gsap.fromTo(row, { xPercent: 0 }, { xPercent: -50, duration: 40, ease: 'none', repeat: -1 }))
     ScrollTrigger.create({
       trigger: '.x-marquee', start: 'top bottom', end: 'bottom top',
       onUpdate: self => {
@@ -172,16 +194,15 @@ function setupScrollAnimations() {
 
     // section headings slide up word by word
     gsap.utils.toArray('.x-reveal').forEach(el => {
-      const quick = !!el.closest('.x-ai')   // below the picks: keep it brief
       gsap.from(el.querySelectorAll('.x-word'), {
-        yPercent: 110, rotation: 4, duration: quick ? 0.4 : 0.9, ease: 'expo.out', stagger: quick ? 0.025 : 0.06,
-        scrollTrigger: { trigger: el, start: quick ? 'top 95%' : 'top 85%' },
+        yPercent: 110, rotation: 4, duration: 0.9, ease: 'expo.out', stagger: 0.06,
+        scrollTrigger: { trigger: el, start: 'top 90%' },
       })
     })
 
     // vibe buttons pop in
-    gsap.from('.x-vibe', { y: 40, rotation: () => gsap.utils.random(-8, 8), autoAlpha: 0, duration: 0.8,
-      ease: 'back.out(1.6)', stagger: 0.08, scrollTrigger: { trigger: '.x-vibes', start: 'top 85%' } })
+    gsap.fromTo('.x-vibe', { y: 24, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.6,
+      ease: 'power3.out', stagger: 0.06, scrollTrigger: { trigger: '.x-vibes', start: 'top 90%' } })
 
     // stats are in the hero now, so they count up as soon as the data is in
     const target = { places: places.value.length, open: openCount.value, planning: planningCount.value, temp: weather.value?.temp ?? 0 }
@@ -192,25 +213,9 @@ function setupScrollAnimations() {
     gsap.fromTo('.x-stat', { y: 30, autoAlpha: 0 },
       { y: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.7)', stagger: 0.08 })
 
-    // explore by area: vertical scroll drives a horizontal ride (desktop only)
-    mm = gsap.matchMedia()
-    mm.add('(min-width: 768px)', () => {
-        const track = document.querySelector('.x-areas__track')
-        if (!track) return
-        const distance = () => track.scrollWidth - window.innerWidth + 48
-        const ride = gsap.to(track, { x: () => -distance(), ease: 'none',
-          // end is 40% of the travel distance, so it takes much less scrolling to get past
-          scrollTrigger: { trigger: '.x-areas', start: 'top top', end: () => '+=' + distance() * 0.4, pin: true, scrub: 0.3, invalidateOnRefresh: true } })
-        gsap.utils.toArray('.x-area__photo').forEach((photo, i) => {
-          gsap.fromTo(photo, { y: 40 + (i % 3) * 20, rotation: (i % 2 ? 6 : -6) },
-            { y: -30, rotation: (i % 2 ? -4 : 4), ease: 'none',
-              scrollTrigger: { trigger: photo, containerAnimation: ride, start: 'left right', end: 'right left', scrub: true } })
-        })
-    })
-
     // big closing line fills in letter by letter
-    gsap.from('.x-final .x-char', { yPercent: 100, opacity: 0, stagger: 0.01, ease: 'expo.out', duration: 0.45,
-      scrollTrigger: { trigger: '.x-final', start: 'top 95%' } })
+    gsap.from('.x-final .x-char', { yPercent: 100, opacity: 0, stagger: 0.03, ease: 'expo.out', duration: 0.9,
+      scrollTrigger: { trigger: '.x-final', start: 'top 90%' } })
 
     // magnetic buttons pull towards the cursor
     if (finePointer) {
@@ -234,8 +239,8 @@ function animatePicks() {
     ScrollTrigger.batch('.x-pick', {
       start: 'top 90%', once: true,
       // fromTo ends at fully visible, so a vibe switch mid-animation can't leave a card half-faded
-      onEnter: els => gsap.fromTo(els, { y: 80, rotation: () => gsap.utils.random(-7, 7), autoAlpha: 0 },
-                                       { y: 0, rotation: 0, autoAlpha: 1, duration: 0.9, ease: 'back.out(1.4)', stagger: 0.09 }),
+      onEnter: els => gsap.fromTo(els, { y: 40, autoAlpha: 0 },
+                                       { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }),
     })
   })
 }
@@ -295,7 +300,6 @@ const words = text => text.split(' ')
     <header class="x-hero">
       <div class="container x-hero__grid">
         <div class="x-hero__main">
-        <p class="x-hero__kicker x-mono">field notes for studying in singapore · {{ places.length || '…' }} spots and counting</p>
 
         <h1 class="x-hero__title" aria-label="Lock in.">
           <span class="x-hero__row">
@@ -334,7 +338,6 @@ const words = text => text.split(' ')
       <div class="x-areas__track">
         <div class="x-areas__intro">
           <h2 class="x-reveal"><span v-for="(w, i) in words('Explore by area')" :key="i" class="x-mask"><span class="x-word">{{ w }}</span></span></h2>
-          <p class="ss-meta">Keep scrolling. The city slides past.</p>
         </div>
         <RouterLink v-for="(a, i) in areas" :key="a.name" :to="{ path: '/places', query: { q: a.name } }"
                     class="x-area" :style="{ '--area': AREA_COLOURS[i] }" data-cursor="explore">
@@ -415,6 +418,7 @@ const words = text => text.split(' ')
       <p class="x-final__line" aria-label="Ready to lock in?">
         <template v-for="(w, wi) in words('Ready to lock in?')" :key="wi"><span class="x-wordbox" aria-hidden="true"><span v-for="(c, ci) in chars(w)" :key="ci" class="x-char">{{ c }}</span></span>{{ ' ' }}</template>
       </p>
+      <button type="button" class="btn btn-primary btn-lg x-yes" data-magnetic data-cursor="go" data-test="final-yes" @click="answerYes">Yes</button>
     </section>
   </div>
 </template>
@@ -463,18 +467,21 @@ const words = text => text.split(' ')
 .x-mask { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; margin-right: .22em; }
 .x-word { display: inline-block; }
 
-.x-vibes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 2.4rem; }
+.x-vibes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 2rem; }
 .x-vibe { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
           padding: 18px 18px 16px; border: var(--x-line); border-radius: 22px; background: var(--x-card);
           box-shadow: var(--x-pop); color: var(--x-ink);
           transition: transform .3s var(--x-ease), background-color .3s, box-shadow .3s var(--x-ease); }
-.x-vibe:hover { transform: translate(-3px, -3px) rotate(-1.5deg); box-shadow: 7px 7px 0 var(--x-ink); }
-.x-vibe[aria-checked="true"] { background: var(--vibe); transform: rotate(-2deg) scale(1.03); box-shadow: 7px 7px 0 var(--x-ink); }
+.x-vibe:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--x-ink); }
+.x-vibe[aria-checked="true"] { background: var(--vibe); transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--x-ink); }
+/* Bootstrap's .row pulls itself up by the gutter; cancel that so cards never ride up into the tiles */
+.x-vibes + .row { margin-top: 0; }
 .x-vibe__label { font-weight: 800; font-size: 1.35rem; letter-spacing: -.03em; }
 .x-vibe__note { color: var(--x-ink-2); font-size: .66rem; }
 .x-pick { will-change: transform; }
 
 .x-big-btn { font-size: 1.15rem; padding: .9rem 1.8rem; }
+.x-yes { font-size: 1.2rem; min-width: 160px; padding: .85rem 2.4rem; }
 
 /* ---------- stats ---------- */
 .x-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
@@ -529,9 +536,9 @@ const words = text => text.split(' ')
 @keyframes x-blink { 50% { opacity: 0; } }
 
 /* ---------- final ---------- */
-.x-final { text-align: center; padding-block: 4rem 2rem; }
+.x-final { text-align: center; padding-block: 4rem 3rem; }
 .x-final__line { font-weight: 800; font-size: clamp(2rem, 7vw, 6rem); line-height: .9; letter-spacing: -.06em;
-                 margin-bottom: 2rem; overflow: hidden; }
+                 margin-bottom: 1.6rem; overflow: hidden; }
 
 @media (max-width: 991.98px) {
   .x-vibes { grid-template-columns: repeat(2, 1fr); }

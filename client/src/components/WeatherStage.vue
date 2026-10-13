@@ -247,7 +247,7 @@ onUnmounted(() => {
 
     <div class="ws-clouds" aria-hidden="true">
       <svg v-for="n in 5" :key="n" class="ws-cloud" :class="{ 'ws-cloud--off': n > cloudCount }"
-           :style="{ '--i': n }" viewBox="0 0 200 90">
+           :style="{ '--i': n }" viewBox="-4 -30 208 116">
         <path d="M30 80a28 28 0 0 1 4-55 40 40 0 0 1 74-12 32 32 0 0 1 54 18 26 26 0 0 1 8 49z" />
       </svg>
     </div>
@@ -313,7 +313,7 @@ onUnmounted(() => {
 @keyframes ws-spin { to { transform: rotate(360deg); } }
 
 .ws-clouds { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-.ws-cloud { position: absolute; width: calc(150px + var(--i) * 22px); top: calc(var(--i) * 9% - 4%);
+.ws-cloud { position: absolute; overflow: visible; width: calc(150px + var(--i) * 22px); top: calc(var(--i) * 9% - 4%);
             left: calc(var(--i) * 17% - 12%); fill: #FFFDF8; stroke: var(--x-ink); stroke-width: 3;
             transition: opacity 1s, fill 1s; }
 .ws--rain .ws-cloud { fill: #C9D2DB; }
