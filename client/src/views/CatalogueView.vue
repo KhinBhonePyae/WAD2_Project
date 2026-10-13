@@ -94,22 +94,22 @@ watch(() => route.query.q, v => { q.value = v || '' })
 
 <template>
   <main class="container ss-section">
-    <div class="ss-section__head">
-      <div>
-        <h1 class="mb-1">Study spaces</h1>
-        <p class="ss-muted mb-0" data-test="result-count">
-          {{ loading ? 'Loading…' : results.length + ' spot' + (results.length === 1 ? '' : 's') + ' match your filters' }}
-        </p>
+    <WeatherScene :weather="weather" class="mb-4">
+      <div class="ss-section__head">
+        <div>
+          <h1 class="mb-1">Study spaces</h1>
+          <p class="ss-muted mb-0" data-test="result-count">
+            {{ loading ? 'Loading…' : results.length + ' spot' + (results.length === 1 ? '' : 's') + ' match your filters' }}
+          </p>
+        </div>
       </div>
-    </div>
 
-    <div class="ss-search mb-3">
-      <span class="ss-muted" aria-hidden="true">⌕</span>
-      <input v-model="q" type="text" placeholder="Search by name or area"
-             aria-label="Search study spaces" data-test="cat-search">
-    </div>
-
-    <WeatherScene :weather="weather" class="mb-4" />
+      <div class="ss-search">
+        <span class="ss-muted" aria-hidden="true">⌕</span>
+        <input v-model="q" type="text" placeholder="Search by name or area"
+               aria-label="Search study spaces" data-test="cat-search">
+      </div>
+    </WeatherScene>
 
     <div class="mb-3">
       <div class="ss-meta mb-2">Must have</div>
