@@ -1,5 +1,7 @@
 const placeModel = require('../models/place-model');
 const reviewModel = require('../models/review-model');
+const intentModel = require('../models/intent-model');
+const intentsController = require('./intents-controller');
 
 const ALLOWED_FACILITIES = ['wifi', 'sockets', 'toilets', 'water', 'fnb', 'quiet'];
 
@@ -68,6 +70,11 @@ function validatePlace(data) {
   if (data.photos.length === 0) return 'At least one photo is required.';
   if (data.photos.some(photo => typeof photo !== 'string' || !photo.trim() || !validPhotoSource(photo.trim()))) return 'One or more photo URLs are invalid.';
 
+  if (data.capacity !== undefined && data.capacity !== null && data.capacity !== '') {
+    const capacity = Number(data.capacity);
+    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 5000) return 'Capacity must be a whole number between 1 and 5000.';
+  }
+
   if (!description) return 'Description is required.';
 
   return null;
@@ -108,6 +115,10 @@ exports.getPlaces = async (req, res, next) => {
       }
     }
 
+    // attach how many people plan to go in the next time slot (one query for all places)
+    const intents = await intentsController.nextSlotSummary(list);
+    for (const p of list) p.intent = intents[p.id] || null;
+
     res.json(list);
   } catch (e) {
     next(e);
@@ -129,6 +140,9 @@ exports.getPlace = async (req, res, next) => {
       place.rating = agg.rating;
       place.reviewCount = agg.reviewCount;
     }
+
+    const intents = await intentsController.nextSlotSummary([place]);
+    place.intent = intents[place.id] || null;
 
     res.json(place);
   } catch (e) {
@@ -152,6 +166,7 @@ exports.addPlace = async (req, res, next) => {
       description: data.description.trim(),
       lat: Number(data.lat),
       lon: Number(data.lon),
+      capacity: data.capacity ? Number(data.capacity) : null,
       photos: data.photos.map(photo => photo.trim())
     });
 
@@ -177,6 +192,7 @@ exports.editPlace = async (req, res, next) => {
       description: data.description.trim(),
       lat: Number(data.lat),
       lon: Number(data.lon),
+      capacity: data.capacity ? Number(data.capacity) : null,
       photos: data.photos.map(photo => photo.trim())
     });
 
@@ -193,6 +209,8 @@ exports.deletePlace = async (req, res, next) => {
   try {
     const deleted = await placeModel.deletePlace(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Place not found' });
+
+    await intentModel.deleteAllForPlace(deleted.id);
 
     res.json(deleted);
   } catch (e) {

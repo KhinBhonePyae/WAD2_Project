@@ -12,6 +12,7 @@ import StarRating from '../components/StarRating.vue'
 import WeatherStrip from '../components/WeatherStrip.vue'
 import ReviewForm from '../components/ReviewForm.vue'
 import ReviewList from '../components/ReviewList.vue'
+import IntentPanel from '../components/IntentPanel.vue'
 
 const route = useRoute()
 const carouselRef = ref(null)
@@ -164,11 +165,12 @@ onMounted(async () => {
               {{ FACILITY_LABELS[f] || f }}
             </span>
           </div>
+
         </div>
 
         <div class="col-12 col-lg-5">
           <WeatherStrip :weather="weather" :area="place.area" class="mb-3" />
-          <div class="ss-card p-4">
+          <div class="ss-card h-auto p-4">
             <h2 class="h6 mb-2">Why this score?</h2>
             <ul class="ss-meta mb-0" style="padding-left:1.1rem;line-height:1.9">
               <li>Facilities matched against Wi-Fi and power sockets</li>
@@ -178,11 +180,13 @@ onMounted(async () => {
             </ul>
           </div>
           <!-- Map goes here: Leong Yew Kai's area -->
-          <div class="ss-card p-4 mt-3 text-center ss-muted" style="border-style:dashed">
+          <div class="ss-card h-auto p-4 mt-3 text-center ss-muted" style="border-style:dashed">
             Map view — to be added
           </div>
         </div>
       </div>
+
+      <IntentPanel :place="place" class="mt-4" />
 
       <section class="mt-5">
         <h2 class="mb-3">Reviews &amp; crowd reports</h2>

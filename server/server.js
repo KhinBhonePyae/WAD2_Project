@@ -27,6 +27,7 @@ const reviewsRoutes = require('./routes/reviews-routes');
 const usersRoutes = require('./routes/users-routes');
 const searchRoutes = require('./routes/search-routes'); // search bar
 const savedRoutes = require('./routes/saved-routes');
+const intentsRoutes = require('./routes/intents-routes');
 
 const server = express();
 
@@ -44,6 +45,7 @@ server.use('/reviews', reviewsRoutes);
 server.use('/users', usersRoutes); 
 server.use('/search', searchRoutes) // search bar
 server.use('/saved', savedRoutes); // saved places
+server.use('/intents', intentsRoutes); // "planning to go" intents
 
 // 404 + error handler (borrowed from the better-engineered wk5 blog example)
 server.use((req, res) => res.status(404).json({ error: 'Not found' }));

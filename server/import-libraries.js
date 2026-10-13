@@ -43,6 +43,7 @@ function mapPlace(branch) {
         lat: Number(branch.coordinates.geoLatitude),
         lon: Number(branch.coordinates.geoLongitude),
         indoor: true,
+        capacity: 200, // rough default; adjust per branch in the admin form
         openNow: schedules.length > 0,
         hours: schedules.length
             ? `${schedules[0].openingTime.slice(0, 5)} - ${schedules[0].closingTime.slice(0, 5)}`
