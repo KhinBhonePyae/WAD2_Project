@@ -1,3 +1,6 @@
 node_modules/
 config.env
 .env
+# Local AI tooling notes (kept out of the public repo)
+CLAUDE.md
+.claude/
