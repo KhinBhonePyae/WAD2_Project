@@ -1,5 +1,5 @@
 <script setup>
-/* LockIN notebook intro (Design 2).
+/* LockedIN notebook intro (Design 2).
  * A 3D notebook with stickers tilts with the mouse. Opening plays one GSAP
  * timeline: stickers pop, cover swings, pages riffle, camera dives into the
  * first page, then the homepage is revealed through a growing circle.
@@ -108,7 +108,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="root" class="x-intro" data-test="notebook-intro" role="dialog" aria-label="LockIN notebook opening">
+  <div ref="root" class="x-intro" data-test="notebook-intro" role="dialog" aria-label="LockedIN notebook opening">
     <div class="x-intro__blob x-intro__blob--a" aria-hidden="true"></div>
     <div class="x-intro__blob x-intro__blob--b" aria-hidden="true"></div>
 
@@ -135,7 +135,7 @@ onUnmounted(() => {
           <div class="x-book__cover">
             <div class="x-book__front">
               <img :src="logoUrl" alt="" class="x-book__logo">
-              <span class="x-book__title">LockIN</span>
+              <span class="x-book__title">LockedIN</span>
               <span class="x-book__sub">field notes for studying in SG</span>
               <span class="x-book__elastic"></span>
 

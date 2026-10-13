@@ -324,7 +324,7 @@ const words = text => text.split(' ')
         </div>
 
         <!-- numbers sit beside the intro so the key facts are visible without scrolling -->
-        <div class="x-stats" aria-label="LockIN in numbers">
+        <div class="x-stats" aria-label="LockedIN in numbers">
           <div class="x-stat x-stat--a"><b>{{ stats.places }}</b><span>study spots mapped</span></div>
           <div class="x-stat x-stat--b"><b>{{ stats.open }}</b><span>open right now</span></div>
           <div class="x-stat x-stat--c"><b>{{ stats.planning }}</b><span>people heading out next</span></div>

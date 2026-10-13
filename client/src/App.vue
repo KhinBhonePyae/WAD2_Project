@@ -62,7 +62,7 @@ onUnmounted(() => {
 
   <nav class="x-nav" :class="{ 'x-nav--hidden': navHidden }">
     <RouterLink to="/" class="x-nav__brand" data-cursor="home">
-      <img :src="logoUrl" alt="" class="x-nav__logo"> <span class="x-nav__name">LockIN</span>
+      <img :src="logoUrl" alt="" class="x-nav__logo"> <span class="x-nav__name">LockedIN</span>
     </RouterLink>
     <div class="x-nav__links">
       <RouterLink to="/places" class="x-nav__link" data-test="nav-browse">Browse</RouterLink>
@@ -93,7 +93,7 @@ onUnmounted(() => {
       </div>
     </div>
     <div class="container d-flex flex-wrap justify-content-between gap-2 x-footer__meta">
-      <span>LockIN — IS216 G10 Team T3 · prototype</span>
+      <span>LockedIN — IS216 G10 Team T3 · prototype</span>
       <span>Weather by Open-Meteo · Libraries by NLB</span>
     </div>
   </footer>

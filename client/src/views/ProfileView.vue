@@ -321,7 +321,7 @@ onMounted(() => {
           <section class="settings-row danger-row">
             <div>
               <h3>Delete Account</h3>
-              <p>Permanently delete your LockIN account.</p>
+              <p>Permanently delete your LockedIN account.</p>
             </div>
 
             <button
@@ -519,7 +519,7 @@ onMounted(() => {
             <h2>Delete Account?</h2>
 
             <p class="modal-description">
-              Your LockIN account will be permanently deleted.
+              Your LockedIN account will be permanently deleted.
               This action cannot be undone.
             </p>
 

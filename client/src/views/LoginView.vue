@@ -116,7 +116,7 @@ async function login() {
 
           <div class="auth-divider">
             <span></span>
-            <p>New to LockIN?</p>
+            <p>New to LockedIN?</p>
             <span></span>
           </div>
 
