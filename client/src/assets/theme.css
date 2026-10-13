@@ -505,18 +505,19 @@ footer { background: var(--x-ink) !important; color: var(--x-paper); border: 0 !
 }
 
 /* ---------- Route transition ---------- */
-.x-route-enter-active, .x-route-leave-active { transition: opacity .35s var(--x-ease-out), transform .45s var(--x-ease-out); }
+.x-route-enter-active { transition: opacity .35s var(--x-ease-out), transform .45s var(--x-ease-out); }
 .x-route-enter-from { opacity: 0; transform: translateY(24px); }
-.x-route-leave-to   { opacity: 0; transform: translateY(-12px); }
+.x-route-leave-active { display: none; }   /* old page goes immediately */
 
 @media (prefers-reduced-motion: reduce) {
   body::after { animation: none; }
   .btn, .ss-chip { transition: none; }
-  .x-route-enter-active, .x-route-leave-active { transition: none; }
+  .x-route-enter-active { transition: none; }
 }
 
 /* every page clears the floating nav */
 main.container.ss-section { padding-top: 7.5rem; }
+.x-page { padding-top: 7.5rem !important; }
 main.auth-page, main.profile-page, main.saved-page { padding-top: 7.5rem !important; }
 
 /* page headings on inner pages get the same kinetic entrance */

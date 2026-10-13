@@ -24,6 +24,7 @@ const router = createRouter({
     { path: '/profile', component: ProfileView },
     { path: '/saved', component: SavedView },
     { path: '/search', component: SearchView },
+    { path: '/:pathMatch(.*)*', redirect: '/' },   // unknown URLs go home instead of a blank page
   ],
   scrollBehavior() { return { top: 0 } },
 })

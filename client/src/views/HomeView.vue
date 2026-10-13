@@ -8,7 +8,6 @@ import { fetchWeather } from '../utils/weather.js'
 import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'
 import { gsap, ScrollTrigger, Flip, reducedMotion, finePointer } from '../utils/motion.js'
 import PlaceCard from '../components/PlaceCard.vue'
-import WeatherStage from '../components/WeatherStage.vue'
 import HomeSearchBox from '../components/HomeSearchBox.vue'
 import NotebookIntro from '../components/NotebookIntro.vue'
 import logoUrl from '../assets/logo.svg'
@@ -59,6 +58,9 @@ const topPicks = computed(() => places.value
 async function pickVibe(v) {
   if (v.key === vibe.value.key) return
   if (reducedMotion) { vibe.value = v; return }
+  // finish any entrance animation first so Flip measures cards at full size
+  gsap.killTweensOf('.x-pick')
+  gsap.set('.x-pick', { autoAlpha: 1, y: 0, rotation: 0 })
   // FLIP: remember where every card is, change the order, then animate from old to new spots
   const state = Flip.getState('.x-pick')
   vibe.value = v
@@ -71,7 +73,6 @@ async function pickVibe(v) {
 }
 
 /* ---------- data for the other sections ---------- */
-const heroPhotos = computed(() => places.value.filter(p => p.photos?.length).slice(0, 3).map(p => p.photos[0]))
 const marqueeNames = computed(() => places.value.map(p => p.name))
 const openCount = computed(() => places.value.filter(p => p.openNow).length)
 const planningCount = computed(() => places.value.reduce((t, p) => t + (p.intent?.count || 0), 0))
@@ -103,9 +104,9 @@ let typeTimer = null
 function typeLoop(i = 0, c = 0, deleting = false) {
   const text = PROMPTS[i]
   typed.value = text.slice(0, c)
-  let next = 45, ni = i, nc = c + 1, nd = deleting
-  if (!deleting && c === text.length) { nd = true; next = 1800; nc = c }
-  else if (deleting) { nc = c - 1; next = 22; if (c === 0) { nd = false; ni = (i + 1) % PROMPTS.length; nc = 0; next = 300 } }
+  let next = 26, ni = i, nc = c + 1, nd = deleting
+  if (!deleting && c === text.length) { nd = true; next = 1100; nc = c }
+  else if (deleting) { nc = c - 1; next = 12; if (c === 0) { nd = false; ni = (i + 1) % PROMPTS.length; nc = 0; next = 300 } }
   typeTimer = setTimeout(() => typeLoop(ni, nc, nd), next)
 }
 
@@ -155,9 +156,11 @@ function setupScrollAnimations() {
   ctx.add(() => {
     // marquees: drift forever, and run faster/backwards with scroll speed
     const rows = gsap.utils.toArray('.x-marquee__track')
-    const loops = rows.map((row, i) =>
-      gsap.to(row, { xPercent: i % 2 ? 50 : -50, duration: 40, ease: 'none', repeat: -1 }))
-    if (rows[1]) gsap.set(rows[1], { xPercent: -50 })
+    // the text is duplicated, so sliding exactly half its width loops seamlessly;
+    // the second row runs the other way (from -50% back to 0)
+    const loops = rows.map((row, i) => i % 2
+      ? gsap.fromTo(row, { xPercent: -50 }, { xPercent: 0, duration: 22, ease: 'none', repeat: -1 })
+      : gsap.fromTo(row, { xPercent: 0 }, { xPercent: -50, duration: 22, ease: 'none', repeat: -1 }))
     ScrollTrigger.create({
       trigger: '.x-marquee', start: 'top bottom', end: 'bottom top',
       onUpdate: self => {
@@ -169,9 +172,10 @@ function setupScrollAnimations() {
 
     // section headings slide up word by word
     gsap.utils.toArray('.x-reveal').forEach(el => {
+      const quick = !!el.closest('.x-ai')   // below the picks: keep it brief
       gsap.from(el.querySelectorAll('.x-word'), {
-        yPercent: 110, rotation: 4, duration: 0.9, ease: 'expo.out', stagger: 0.06,
-        scrollTrigger: { trigger: el, start: 'top 85%' },
+        yPercent: 110, rotation: 4, duration: quick ? 0.4 : 0.9, ease: 'expo.out', stagger: quick ? 0.025 : 0.06,
+        scrollTrigger: { trigger: el, start: quick ? 'top 95%' : 'top 85%' },
       })
     })
 
@@ -179,18 +183,14 @@ function setupScrollAnimations() {
     gsap.from('.x-vibe', { y: 40, rotation: () => gsap.utils.random(-8, 8), autoAlpha: 0, duration: 0.8,
       ease: 'back.out(1.6)', stagger: 0.08, scrollTrigger: { trigger: '.x-vibes', start: 'top 85%' } })
 
-    // stats count up when they come into view
-    ScrollTrigger.create({
-      trigger: '.x-stats', start: 'top 80%', once: true,
-      onEnter: () => {
-        const target = { places: places.value.length, open: openCount.value, planning: planningCount.value, temp: weather.value?.temp ?? 0 }
-        const obj = { places: 0, open: 0, planning: 0, temp: 0 }
-        gsap.to(obj, { ...target, duration: 1.8, ease: 'power3.out',
-          onUpdate: () => { stats.value = { places: Math.round(obj.places), open: Math.round(obj.open),
-                                            planning: Math.round(obj.planning), temp: Math.round(obj.temp) } } })
-        gsap.from('.x-stat', { y: 50, rotation: () => gsap.utils.random(-6, 6), duration: 0.9, ease: 'back.out(1.7)', stagger: 0.1 })
-      },
-    })
+    // stats are in the hero now, so they count up as soon as the data is in
+    const target = { places: places.value.length, open: openCount.value, planning: planningCount.value, temp: weather.value?.temp ?? 0 }
+    const obj = { places: 0, open: 0, planning: 0, temp: 0 }
+    gsap.to(obj, { ...target, duration: 1.4, ease: 'power3.out',
+      onUpdate: () => { stats.value = { places: Math.round(obj.places), open: Math.round(obj.open),
+                                        planning: Math.round(obj.planning), temp: Math.round(obj.temp) } } })
+    gsap.fromTo('.x-stat', { y: 30, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.7)', stagger: 0.08 })
 
     // explore by area: vertical scroll drives a horizontal ride (desktop only)
     mm = gsap.matchMedia()
@@ -199,7 +199,8 @@ function setupScrollAnimations() {
         if (!track) return
         const distance = () => track.scrollWidth - window.innerWidth + 48
         const ride = gsap.to(track, { x: () => -distance(), ease: 'none',
-          scrollTrigger: { trigger: '.x-areas', start: 'top top', end: () => '+=' + distance(), pin: true, scrub: 0.8, invalidateOnRefresh: true } })
+          // end is 40% of the travel distance, so it takes much less scrolling to get past
+          scrollTrigger: { trigger: '.x-areas', start: 'top top', end: () => '+=' + distance() * 0.4, pin: true, scrub: 0.3, invalidateOnRefresh: true } })
         gsap.utils.toArray('.x-area__photo').forEach((photo, i) => {
           gsap.fromTo(photo, { y: 40 + (i % 3) * 20, rotation: (i % 2 ? 6 : -6) },
             { y: -30, rotation: (i % 2 ? -4 : 4), ease: 'none',
@@ -208,8 +209,8 @@ function setupScrollAnimations() {
     })
 
     // big closing line fills in letter by letter
-    gsap.from('.x-final .x-char', { yPercent: 100, opacity: 0, stagger: 0.03, ease: 'expo.out', duration: 1,
-      scrollTrigger: { trigger: '.x-final', start: 'top 80%' } })
+    gsap.from('.x-final .x-char', { yPercent: 100, opacity: 0, stagger: 0.01, ease: 'expo.out', duration: 0.45,
+      scrollTrigger: { trigger: '.x-final', start: 'top 95%' } })
 
     // magnetic buttons pull towards the cursor
     if (finePointer) {
@@ -232,8 +233,9 @@ function animatePicks() {
   ctx.add(() => {
     ScrollTrigger.batch('.x-pick', {
       start: 'top 90%', once: true,
-      onEnter: els => gsap.from(els, { y: 80, rotation: () => gsap.utils.random(-7, 7), autoAlpha: 0,
-                                       duration: 0.9, ease: 'back.out(1.4)', stagger: 0.09 }),
+      // fromTo ends at fully visible, so a vibe switch mid-animation can't leave a card half-faded
+      onEnter: els => gsap.fromTo(els, { y: 80, rotation: () => gsap.utils.random(-7, 7), autoAlpha: 0 },
+                                       { y: 0, rotation: 0, autoAlpha: 1, duration: 0.9, ease: 'back.out(1.4)', stagger: 0.09 }),
     })
   })
 }
@@ -291,7 +293,8 @@ const words = text => text.split(' ')
 
     <!-- ===== HERO ===== -->
     <header class="x-hero">
-      <div class="container">
+      <div class="container x-hero__grid">
+        <div class="x-hero__main">
         <p class="x-hero__kicker x-mono">field notes for studying in singapore · {{ places.length || '…' }} spots and counting</p>
 
         <h1 class="x-hero__title" aria-label="Lock in.">
@@ -306,15 +309,7 @@ const words = text => text.split(' ')
         </h1>
 
         <p class="x-hero__line">
-          <span>Find the</span>
-          <span class="x-pill"><img v-if="heroPhotos[0]" :src="heroPhotos[0]" alt=""></span>
-          <span>spot where you</span>
-          <span class="x-hl">focus</span>
-          <span>— libraries,</span>
-          <span class="x-pill x-pill--b"><img v-if="heroPhotos[1]" :src="heroPhotos[1]" alt=""></span>
-          <span>cafés and</span>
-          <span class="x-pill x-pill--c"><img v-if="heroPhotos[2]" :src="heroPhotos[2]" alt=""></span>
-          <span>campus corners, ranked live.</span>
+          Find the spot where you <span class="x-hl">focus</span> — libraries, cafés and campus corners, ranked live.
         </p>
 
         <div class="x-hero__search">
@@ -322,24 +317,36 @@ const words = text => text.split(' ')
             <HomeSearchBox v-model="q" :places="places" @search="search" @select="goToPlace" />
           </div>
         </div>
+        </div>
 
-        <WeatherStage :weather="weather" area="Singapore" class="x-hero__weather" />
+        <!-- numbers sit beside the intro so the key facts are visible without scrolling -->
+        <div class="x-stats" aria-label="LockIN in numbers">
+          <div class="x-stat x-stat--a"><b>{{ stats.places }}</b><span>study spots mapped</span></div>
+          <div class="x-stat x-stat--b"><b>{{ stats.open }}</b><span>open right now</span></div>
+          <div class="x-stat x-stat--c"><b>{{ stats.planning }}</b><span>people heading out next</span></div>
+          <div class="x-stat x-stat--d"><b>{{ stats.temp }}°</b><span>outside, live</span></div>
+        </div>
       </div>
     </header>
 
-    <!-- ===== MARQUEE ===== -->
-    <div class="x-marquee" aria-hidden="true">
-      <div class="x-marquee__row">
-        <div class="x-marquee__track">
-          <span v-for="(n, i) in [...marqueeNames, ...marqueeNames]" :key="'m1' + i">{{ n }} <b>✶</b></span>
+    <!-- ===== EXPLORE BY AREA (pinned horizontal ride) ===== -->
+    <section class="x-areas" aria-label="Explore by area">
+      <div class="x-areas__track">
+        <div class="x-areas__intro">
+          <h2 class="x-reveal"><span v-for="(w, i) in words('Explore by area')" :key="i" class="x-mask"><span class="x-word">{{ w }}</span></span></h2>
+          <p class="ss-meta">Keep scrolling. The city slides past.</p>
         </div>
+        <RouterLink v-for="(a, i) in areas" :key="a.name" :to="{ path: '/places', query: { q: a.name } }"
+                    class="x-area" :style="{ '--area': AREA_COLOURS[i] }" data-cursor="explore">
+          <span class="x-area__count x-mono">{{ String(i + 1).padStart(2, '0') }} · {{ a.list.length }} spot{{ a.list.length === 1 ? '' : 's' }}</span>
+          <span class="x-area__name">{{ a.name }}</span>
+          <span class="x-area__photos">
+            <img v-for="(src, j) in a.photos" :key="j" :src="src" alt="" class="x-area__photo" loading="lazy">
+          </span>
+        </RouterLink>
       </div>
-      <div class="x-marquee__row x-marquee__row--alt">
-        <div class="x-marquee__track">
-          <span v-for="(n, i) in [...marqueeNames, ...marqueeNames].reverse()" :key="'m2' + i">{{ n }} <b>●</b></span>
-        </div>
-      </div>
-    </div>
+    </section>
+
 
     <!-- ===== VIBE + TOP PICKS ===== -->
     <section class="x-section container">
@@ -373,31 +380,19 @@ const words = text => text.split(' ')
       </div>
     </section>
 
-    <!-- ===== STATS ===== -->
-    <section class="x-stats container" aria-label="LockIN in numbers">
-      <div class="x-stat x-stat--a"><b>{{ stats.places }}</b><span>study spots mapped</span></div>
-      <div class="x-stat x-stat--b"><b>{{ stats.open }}</b><span>open right now</span></div>
-      <div class="x-stat x-stat--c"><b>{{ stats.planning }}</b><span>people heading out next</span></div>
-      <div class="x-stat x-stat--d"><b>{{ stats.temp }}°</b><span>outside, live</span></div>
-    </section>
-
-    <!-- ===== EXPLORE BY AREA (pinned horizontal ride) ===== -->
-    <section class="x-areas" aria-label="Explore by area">
-      <div class="x-areas__track">
-        <div class="x-areas__intro">
-          <h2 class="x-reveal"><span v-for="(w, i) in words('Explore by area')" :key="i" class="x-mask"><span class="x-word">{{ w }}</span></span></h2>
-          <p class="ss-meta">Keep scrolling. The city slides past.</p>
+    <!-- ===== MARQUEE ===== -->
+    <div class="x-marquee" aria-hidden="true">
+      <div class="x-marquee__row">
+        <div class="x-marquee__track">
+          <span v-for="(n, i) in [...marqueeNames, ...marqueeNames]" :key="'m1' + i">{{ n }} <b>✶</b></span>
         </div>
-        <RouterLink v-for="(a, i) in areas" :key="a.name" :to="{ path: '/places', query: { q: a.name } }"
-                    class="x-area" :style="{ '--area': AREA_COLOURS[i] }" data-cursor="explore">
-          <span class="x-area__count x-mono">{{ String(i + 1).padStart(2, '0') }} · {{ a.list.length }} spot{{ a.list.length === 1 ? '' : 's' }}</span>
-          <span class="x-area__name">{{ a.name }}</span>
-          <span class="x-area__photos">
-            <img v-for="(src, j) in a.photos" :key="j" :src="src" alt="" class="x-area__photo" loading="lazy">
-          </span>
-        </RouterLink>
       </div>
-    </section>
+      <div class="x-marquee__row x-marquee__row--alt">
+        <div class="x-marquee__track">
+          <span v-for="(n, i) in [...marqueeNames, ...marqueeNames].reverse()" :key="'m2' + i">{{ n }} <b>●</b></span>
+        </div>
+      </div>
+    </div>
 
     <!-- ===== ASSISTANT TEASER ===== -->
     <section class="x-section container">
@@ -420,7 +415,6 @@ const words = text => text.split(' ')
       <p class="x-final__line" aria-label="Ready to lock in?">
         <template v-for="(w, wi) in words('Ready to lock in?')" :key="wi"><span class="x-wordbox" aria-hidden="true"><span v-for="(c, ci) in chars(w)" :key="ci" class="x-char">{{ c }}</span></span>{{ ' ' }}</template>
       </p>
-      <RouterLink to="/places" class="btn btn-primary btn-lg x-big-btn" data-magnetic data-cursor="go">Find my spot</RouterLink>
     </section>
   </div>
 </template>
@@ -429,34 +423,28 @@ const words = text => text.split(' ')
 .x-home { overflow-x: clip; }
 
 /* ---------- hero ---------- */
-.x-hero { padding-top: 120px; padding-bottom: 3rem; }
+.x-hero { padding-top: 120px; padding-bottom: 2rem; }
+.x-hero__grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 2.5rem; align-items: center; }
 .x-hero__kicker { color: var(--x-muted); margin-bottom: 1rem; }
-.x-hero__title { margin: 0; font-size: clamp(5.5rem, 21vw, 17rem); line-height: .8; letter-spacing: -.07em; font-weight: 800; }
+/* one third of the original giant size */
+.x-hero__title { margin: 0; font-size: clamp(1.85rem, 7vw, 5.7rem); line-height: .85; letter-spacing: -.06em; font-weight: 800; }
 .x-hero__row { display: flex; align-items: center; overflow: visible; }
-.x-hero__row--2 { padding-left: 8vw; }
+.x-hero__row--2 { padding-left: 2.6vw; }
 .x-char { display: inline-block; will-change: transform; }
 .x-hero .x-char:nth-child(2) { color: var(--x-orange); }
 .x-hero__row--2 .x-char:first-child { -webkit-text-stroke: 3px var(--x-ink); color: transparent; }
-.x-hero__logo { width: clamp(70px, 13vw, 180px); margin-left: 2vw; animation: x-spin 18s linear infinite; }
+.x-hero__logo { width: clamp(24px, 4.3vw, 60px); margin-left: .6vw; animation: x-spin 18s linear infinite; }
 @keyframes x-spin { to { transform: rotate(360deg); } }
-.x-hero__aside { font-size: clamp(1.1rem, 2.4vw, 2rem); line-height: 1; letter-spacing: 0; margin-left: 2.5vw;
-                 align-self: flex-end; margin-bottom: 2vw; color: var(--x-ink); }
+.x-hero__aside { font-size: clamp(.85rem, 1vw, 1rem); line-height: 1; letter-spacing: 0; margin-left: 1vw;
+                 align-self: flex-end; margin-bottom: .6vw; color: var(--x-ink); }
 
-.x-hero__line { display: flex; flex-wrap: wrap; align-items: center; gap: .35em .45em; max-width: 1000px;
-                margin: 2.2rem 0 2rem; font-size: clamp(1.35rem, 2.8vw, 2.4rem); font-weight: 600;
-                line-height: 1.15; letter-spacing: -.02em; }
-.x-pill { display: inline-block; width: 2.2em; height: 1.05em; border-radius: 999px; overflow: hidden;
-          border: var(--x-line); background: var(--x-orange); vertical-align: middle;
-          transition: width .5s var(--x-ease); }
-.x-pill--b { background: var(--x-lime); }
-.x-pill--c { background: var(--x-lilac); }
-.x-pill:hover { width: 4.2em; }
-.x-pill img { width: 100%; height: 100%; object-fit: cover; }
+/* a third of the old size would be unreadable on phones, so it bottoms out at body size */
+.x-hero__line { max-width: 560px; margin: 1.2rem 0 1.4rem; font-size: clamp(1rem, 1.1vw, 1.1rem); font-weight: 600;
+                line-height: 1.45; letter-spacing: -.01em; }
 .x-hl { background: var(--x-lime); padding: 0 .2em; border-radius: 8px; transform: rotate(-2deg); display: inline-block; }
 
-.x-hero__search { max-width: 680px; margin-bottom: 2.5rem; position: relative; z-index: 5; }
+.x-hero__search { max-width: 560px; position: relative; z-index: 5; }
 .x-search { padding: 4px 4px 4px 14px; }
-.x-hero__weather { margin-top: 1rem; }
 
 /* ---------- marquee ---------- */
 .x-marquee { margin: 3rem 0; transform-origin: center; }
@@ -489,11 +477,11 @@ const words = text => text.split(' ')
 .x-big-btn { font-size: 1.15rem; padding: .9rem 1.8rem; }
 
 /* ---------- stats ---------- */
-.x-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; padding-block: 2rem 4rem; }
-.x-stat { display: flex; flex-direction: column; gap: 4px; padding: 22px; border: var(--x-line); border-radius: 26px;
+.x-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.x-stat { display: flex; flex-direction: column; gap: 2px; padding: 16px 18px; border: var(--x-line); border-radius: 22px;
           box-shadow: var(--x-pop); }
-.x-stat b { font-size: clamp(3rem, 7vw, 5.5rem); font-weight: 800; line-height: .9; letter-spacing: -.06em; }
-.x-stat span { font-weight: 600; }
+.x-stat b { font-size: clamp(2rem, 3.4vw, 3rem); font-weight: 800; line-height: .9; letter-spacing: -.06em; }
+.x-stat span { font-weight: 600; font-size: .88rem; }
 .x-stat--a { background: var(--x-butter); transform: rotate(-2deg); }
 .x-stat--b { background: var(--x-lime); transform: rotate(1.5deg); }
 .x-stat--c { background: var(--x-lilac); transform: rotate(-1deg); }
@@ -518,11 +506,12 @@ const words = text => text.split(' ')
 .x-area__photo:nth-child(3) { left: 24%; bottom: 8%; width: 46%; }
 
 /* ---------- assistant teaser ---------- */
-.x-ai { position: relative; overflow: hidden; display: grid; grid-template-columns: 1fr 1.2fr; align-items: center; gap: 2rem;
-        padding: clamp(24px, 5vw, 56px); background: var(--x-ink); color: var(--x-paper);
+.x-ai { position: relative; overflow: hidden; display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 1.5rem;
+        max-width: 860px; margin-inline: auto;
+        padding: clamp(18px, 3vw, 30px); background: var(--x-ink); color: var(--x-paper);
         border: var(--x-line); border-radius: 34px; box-shadow: 8px 8px 0 var(--x-orange); }
-.x-ai h2 { color: var(--x-paper); }
-.x-ai__blob { aspect-ratio: 1; width: 100%; max-width: 340px; justify-self: center;
+.x-ai h2 { color: var(--x-paper); font-size: clamp(1.4rem, 2.6vw, 2rem); margin-bottom: .2rem; }
+.x-ai__blob { aspect-ratio: 1; width: 100%; max-width: 120px; justify-self: center;
               background: conic-gradient(from 0deg, var(--x-orange), var(--x-lilac), var(--x-lime), var(--x-sky), var(--x-orange));
               border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; filter: blur(1px);
               animation: x-morph 9s ease-in-out infinite, x-spin 22s linear infinite; }
@@ -531,24 +520,24 @@ const words = text => text.split(' ')
   66% { border-radius: 37% 63% 51% 49% / 37% 45% 55% 63%; }
 }
 .x-ai__soon { color: var(--x-lime); }
-.x-ai__prompt { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin: 1rem 0 1.4rem; padding: 14px 18px;
+.x-ai__prompt { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin: .6rem 0 .9rem; padding: 10px 14px;
                 background: rgba(243, 238, 227, .08); border: 1.5px solid rgba(243, 238, 227, .3); border-radius: 18px; }
 .x-ai__prompt .x-mono { color: var(--x-lime); }
-.x-ai__typed { font-size: 1.15rem; min-height: 1.4em; }
+.x-ai__typed { font-size: .98rem; min-height: 1.4em; }
 .x-caret { display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: text-bottom;
            background: var(--x-lime); animation: x-blink 1s steps(1) infinite; }
 @keyframes x-blink { 50% { opacity: 0; } }
 
 /* ---------- final ---------- */
 .x-final { text-align: center; padding-block: 4rem 2rem; }
-.x-final__line { font-weight: 800; font-size: clamp(3rem, 11vw, 9rem); line-height: .9; letter-spacing: -.06em;
+.x-final__line { font-weight: 800; font-size: clamp(2rem, 7vw, 6rem); line-height: .9; letter-spacing: -.06em;
                  margin-bottom: 2rem; overflow: hidden; }
 
 @media (max-width: 991.98px) {
   .x-vibes { grid-template-columns: repeat(2, 1fr); }
-  .x-stats { grid-template-columns: repeat(2, 1fr); }
+  .x-hero__grid { grid-template-columns: 1fr; gap: 1.6rem; }
   .x-ai { grid-template-columns: 1fr; }
-  .x-ai__blob { max-width: 220px; }
+  .x-ai__blob { max-width: 90px; }
 }
 @media (max-width: 767.98px) {
   /* no pinning on phones: swipe sideways instead */

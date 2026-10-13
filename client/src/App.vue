@@ -11,6 +11,11 @@ const navHidden = ref(false)
 const progress = ref(0)
 let lastY = 0
 
+// Remove the outgoing page straight away (no waiting on animation frames)
+function removeNow(el, done) {
+  done()
+}
+
 function logout() {
   localStorage.removeItem('user')
   localStorage.removeItem('token')
@@ -74,7 +79,9 @@ onUnmounted(() => {
   </nav>
 
   <RouterView v-slot="{ Component, route }">
-    <Transition :name="reducedMotion ? '' : 'x-route'" mode="out-in">
+    <!-- Enter-only transition: the old page is removed at once and the new one
+         fades in. (out-in mode could freeze navigation if a leave never finished.) -->
+    <Transition :name="reducedMotion ? '' : 'x-route'" @leave="removeNow">
       <component :is="Component" :key="route.path" />
     </Transition>
   </RouterView>
@@ -125,11 +132,11 @@ onUnmounted(() => {
 .x-nav__user { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .x-footer { margin-top: 4rem; padding-bottom: 1.5rem; overflow: hidden; }
-.x-footer__marquee { padding: 1.4rem 0 1rem; border-bottom: 1px solid rgba(243, 238, 227, .2); }
+.x-footer__marquee { padding: .9rem 0 .7rem; border-bottom: 1px solid rgba(243, 238, 227, .2); }
 .x-footer__track {
   display: inline-flex; white-space: nowrap;
-  font-weight: 800; font-size: clamp(2.6rem, 8vw, 6rem); letter-spacing: -.04em; color: var(--x-paper);
-  animation: x-marquee 26s linear infinite;
+  font-weight: 800; font-size: clamp(1.75rem, 5.3vw, 4rem); letter-spacing: -.04em; color: var(--x-paper);   /* a third smaller */
+  animation: x-marquee 16s linear infinite;
 }
 .x-footer__track .x-serif { color: var(--x-lime); font-weight: 400; }
 .x-footer__meta { padding-top: 1rem; font-size: .85rem; color: rgba(243, 238, 227, .75); }

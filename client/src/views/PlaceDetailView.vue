@@ -9,7 +9,6 @@ import { fetchWeather } from '../utils/weather.js'
 import SuitabilityScore from '../components/SuitabilityScore.vue'
 import CrowdMeter from '../components/CrowdMeter.vue'
 import StarRating from '../components/StarRating.vue'
-import WeatherStage from '../components/WeatherStage.vue'
 import { gsap, reducedMotion } from '../utils/motion.js'
 import ReviewForm from '../components/ReviewForm.vue'
 import ReviewList from '../components/ReviewList.vue'
@@ -186,7 +185,6 @@ onUnmounted(() => ctx?.revert())
         </div>
 
         <div class="col-12 col-lg-5">
-          <WeatherStage :weather="weather" :area="place.area" compact class="mb-3" />
           <div class="ss-card h-auto p-4">
             <h2 class="h6 mb-2">Why this score?</h2>
             <ul class="ss-meta mb-0" style="padding-left:1.1rem;line-height:1.9">
@@ -195,10 +193,6 @@ onUnmounted(() => ctx?.revert())
               <li>Crowd level from the latest student report</li>
               <li v-if="!place.indoor">Outdoor — adjusted for current weather</li>
             </ul>
-          </div>
-          <!-- Map goes here: Leong Yew Kai's area -->
-          <div class="ss-card h-auto p-4 mt-3 text-center ss-muted" style="border-style:dashed">
-            Map view — to be added
           </div>
         </div>
       </div>

@@ -94,25 +94,37 @@ onMounted(async () => {
   ctx = gsap.context(() => {
     if (!reducedMotion) gsap.from('.x-page-title .x-word', { yPercent: 110, rotation: 5, duration: 1, ease: 'expo.out', stagger: 0.08 })
   })
-  await load()
-  animateCards()
+  await load()   // loading fills `results`, which triggers the watcher below
 })
-onUnmounted(() => ctx?.revert())
+onUnmounted(() => {
+  clearTimeout(cardTimer)
+  ctx?.revert()
+})
 
-// cards pop in as they scroll into view (re-run whenever the filtered list changes)
-async function animateCards() {
+/* Cards pop in as they scroll into view. Re-set up (once, debounced) whenever
+ * the filtered list changes. Old triggers are killed first, and fromTo ends at
+ * fully visible, so a card can never be left half-faded by overlapping runs. */
+let cardTriggers = []
+let cardTimer = null
+function animateCards() {
   if (reducedMotion || !ctx) return
-  await nextTick()
-  ctx.add(() => {
-    ScrollTrigger.batch('.x-cat-card:not(.x-seen)', {
-      start: 'top 92%', once: true,
-      onEnter: els => {
-        els.forEach(e => e.classList.add('x-seen'))
-        gsap.from(els, { y: 60, rotation: () => gsap.utils.random(-5, 5), autoAlpha: 0, duration: 0.7, ease: 'back.out(1.5)', stagger: 0.07 })
-      },
+  clearTimeout(cardTimer)
+  cardTimer = setTimeout(async () => {
+    await nextTick()
+    cardTriggers.forEach(t => t.kill())
+    ctx.add(() => {
+      const cards = gsap.utils.toArray('.x-cat-card')
+      gsap.killTweensOf(cards)
+      gsap.set(cards, { autoAlpha: 1, y: 0, rotation: 0 })
+      cardTriggers = ScrollTrigger.batch(cards, {
+        start: 'top 92%', once: true,
+        onEnter: els => gsap.fromTo(els,
+          { y: 60, rotation: () => gsap.utils.random(-5, 5), autoAlpha: 0 },
+          { y: 0, rotation: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.5)', stagger: 0.07, overwrite: true }),
+      })
+      ScrollTrigger.refresh()
     })
-    ScrollTrigger.refresh()
-  })
+  }, 120)
 }
 watch(results, animateCards)
 watch(() => route.query.q, v => { q.value = v || '' })

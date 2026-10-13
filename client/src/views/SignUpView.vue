@@ -56,35 +56,8 @@ async function register() {
     <div class="container auth-container">
       <div class="auth-card">
         <section class="auth-side">
-          <div class="mini-brand">
-            <span class="brand-dot"></span>
-            <span>LockIN</span>
-          </div>
-
           <div class="side-content">
-            <h1>Set your study preferences.</h1>
-
-            <div class="feature-list">
-              <div class="feature-item">
-                <span class="check">✓</span>
-                <span>Wi-Fi</span>
-              </div>
-
-              <div class="feature-item">
-                <span class="check">✓</span>
-                <span>Power sockets</span>
-              </div>
-
-              <div class="feature-item">
-                <span class="check">✓</span>
-                <span>Quiet environment</span>
-              </div>
-
-              <div class="feature-item">
-                <span class="check">✓</span>
-                <span>Indoor / outdoor</span>
-              </div>
-            </div>
+            <h1>Ready to Lock IN?</h1>
           </div>
         </section>
 

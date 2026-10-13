@@ -78,7 +78,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="container py-4">
+  <div class="container py-4 x-page">
     <h2 class="mb-3">Find a study spot</h2>
 
     <WeatherStrip :weather="weather" area="Singapore" class="mb-3" />
