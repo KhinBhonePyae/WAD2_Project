@@ -61,6 +61,7 @@ onUnmounted(() => {
     </RouterLink>
     <div class="x-nav__links">
       <RouterLink to="/places" class="x-nav__link" data-test="nav-browse">Browse</RouterLink>
+
       <template v-if="!user">
         <RouterLink to="/signup" class="x-nav__link">Sign up</RouterLink>
         <RouterLink to="/login" class="btn btn-primary btn-sm">Log in</RouterLink>
@@ -73,11 +74,10 @@ onUnmounted(() => {
       <RouterLink to="/saved" class="x-nav__saved" aria-label="Saved places" title="Saved places"
                   data-test="nav-saved" data-cursor="saved">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path d="M6.5 3.5h11v17l-5.5-4.6-5.5 4.6z" fill="none" stroke="currentColor"
-                stroke-width="2.2" stroke-linejoin="round" />
+          <path d="M6.5 3.5h11v17l-5.5-4.6-5.5 4.6z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
         </svg>
       </RouterLink>
-    </div>
+</div>
   </nav>
 
   <RouterView v-slot="{ Component, route }">
