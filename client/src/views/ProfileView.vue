@@ -21,6 +21,10 @@ const passwordError = ref('')
 const passwordSuccess = ref('')
 const name = ref('')
 const email = ref('')
+const wifiRequired = ref(false)
+const socketsRequired = ref(false)
+const quietPreferred = ref(false)
+const indoorPreferred = ref(false)
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -45,7 +49,6 @@ const memberSince = computed(() => {
 
 async function getProfile() {
   const token = localStorage.getItem('token')
-
   if (!token) {
     router.push('/login')
     return
@@ -72,6 +75,10 @@ async function getProfile() {
 function setFormValues() {
   name.value = user.value.name
   email.value = user.value.email
+  wifiRequired.value = user.value.preferences?.wifiRequired || false
+  socketsRequired.value = user.value.preferences?.socketsRequired || false
+  quietPreferred.value = user.value.preferences?.quietPreferred || false
+  indoorPreferred.value = user.value.preferences?.indoorPreferred || false
 }
 
 function editProfile() {
@@ -110,7 +117,13 @@ async function saveProfile() {
       `${BASE_URL}/users/profile`,
       {
         name: name.value.trim(),
-        email: email.value.trim()
+        email: email.value.trim(),
+        preferences: {
+          wifiRequired: wifiRequired.value,
+          socketsRequired: socketsRequired.value,
+          quietPreferred: quietPreferred.value,
+          indoorPreferred: indoorPreferred.value
+        }
       },
       {
         headers: { Authorization: `Bearer ${token}` }
@@ -129,11 +142,10 @@ async function saveProfile() {
   }
 }
 
-// Log out (moved here from the nav bar)
 function logout() {
   localStorage.removeItem('token')
   localStorage.removeItem('user')
-  window.dispatchEvent(new Event('user-login'))   // tells the nav to update
+  window.dispatchEvent(new Event('user-login'))
   router.push('/')
 }
 
@@ -284,9 +296,7 @@ onMounted(() => {
         <div v-if="user && !editing" class="profile-card">
           <section class="profile-header">
             <div class="profile-main">
-              <div class="profile-avatar">
-                {{ initials }}
-              </div>
+              <div class="profile-avatar">{{ initials }}</div>
 
               <div class="profile-info">
                 <h2>{{ user.name }}</h2>
@@ -309,6 +319,87 @@ onMounted(() => {
             >
               Edit Profile
             </button>
+          </section>
+
+          <section class="profile-section">
+            <div class="section-heading">
+              <h3>Study Preferences</h3>
+              <p>Used to personalise your study space results.</p>
+            </div>
+
+            <div class="preferences-grid">
+              <div class="preference-row">
+                <div>
+                  <strong>Wi-Fi</strong>
+                  <span>Reliable internet access</span>
+                </div>
+
+                <span
+                  class="status"
+                  :class="{ active: user.preferences?.wifiRequired }"
+                >
+                  {{
+                    user.preferences?.wifiRequired
+                      ? 'Required'
+                      : 'Not required'
+                  }}
+                </span>
+              </div>
+
+              <div class="preference-row">
+                <div>
+                  <strong>Power Sockets</strong>
+                  <span>Access to charging points</span>
+                </div>
+
+                <span
+                  class="status"
+                  :class="{ active: user.preferences?.socketsRequired }"
+                >
+                  {{
+                    user.preferences?.socketsRequired
+                      ? 'Required'
+                      : 'Not required'
+                  }}
+                </span>
+              </div>
+
+              <div class="preference-row">
+                <div>
+                  <strong>Quiet Environment</strong>
+                  <span>Preference for quieter spaces</span>
+                </div>
+
+                <span
+                  class="status"
+                  :class="{ active: user.preferences?.quietPreferred }"
+                >
+                  {{
+                    user.preferences?.quietPreferred
+                      ? 'Preferred'
+                      : 'No preference'
+                  }}
+                </span>
+              </div>
+
+              <div class="preference-row">
+                <div>
+                  <strong>Indoor Location</strong>
+                  <span>Preference for indoor spaces</span>
+                </div>
+
+                <span
+                  class="status"
+                  :class="{ active: user.preferences?.indoorPreferred }"
+                >
+                  {{
+                    user.preferences?.indoorPreferred
+                      ? 'Preferred'
+                      : 'No preference'
+                  }}
+                </span>
+              </div>
+            </div>
           </section>
 
           <section class="settings-row">
@@ -360,19 +451,14 @@ onMounted(() => {
 
         <div v-if="user && editing" class="profile-card edit-card">
           <div class="edit-heading">
-            <div>
-              <p class="page-label">PROFILE SETTINGS</p>
-              <h2>Edit Profile</h2>
-            </div>
+            <p class="page-label">PROFILE SETTINGS</p>
+            <h2>Edit Profile</h2>
           </div>
 
           <form @submit.prevent="saveProfile">
             <div class="row g-3">
               <div class="col-md-6">
-                <label
-                  for="name"
-                  class="form-label fw-semibold"
-                >
+                <label for="name" class="form-label fw-semibold">
                   Name
                 </label>
 
@@ -386,10 +472,7 @@ onMounted(() => {
               </div>
 
               <div class="col-md-6">
-                <label
-                  for="email"
-                  class="form-label fw-semibold"
-                >
+                <label for="email" class="form-label fw-semibold">
                   Email
                 </label>
 
@@ -401,6 +484,75 @@ onMounted(() => {
                   required
                 >
               </div>
+            </div>
+
+            <div class="edit-divider"></div>
+
+            <div class="section-heading">
+              <h3>Study Preferences</h3>
+              <p>Select what matters when finding a study space.</p>
+            </div>
+
+            <div class="edit-preferences">
+              <label class="edit-preference">
+                <div>
+                  <strong>Wi-Fi</strong>
+                  <span>Require reliable internet access</span>
+                </div>
+
+                <div class="form-check form-switch">
+                  <input
+                    v-model="wifiRequired"
+                    class="form-check-input"
+                    type="checkbox"
+                  >
+                </div>
+              </label>
+
+              <label class="edit-preference">
+                <div>
+                  <strong>Power Sockets</strong>
+                  <span>Require access to charging points</span>
+                </div>
+
+                <div class="form-check form-switch">
+                  <input
+                    v-model="socketsRequired"
+                    class="form-check-input"
+                    type="checkbox"
+                  >
+                </div>
+              </label>
+
+              <label class="edit-preference">
+                <div>
+                  <strong>Quiet Environment</strong>
+                  <span>Prefer quieter study spaces</span>
+                </div>
+
+                <div class="form-check form-switch">
+                  <input
+                    v-model="quietPreferred"
+                    class="form-check-input"
+                    type="checkbox"
+                  >
+                </div>
+              </label>
+
+              <label class="edit-preference">
+                <div>
+                  <strong>Indoor Location</strong>
+                  <span>Prefer indoor study spaces</span>
+                </div>
+
+                <div class="form-check form-switch">
+                  <input
+                    v-model="indoorPreferred"
+                    class="form-check-input"
+                    type="checkbox"
+                  >
+                </div>
+              </label>
             </div>
 
             <div class="edit-actions">
@@ -698,15 +850,16 @@ onMounted(() => {
   background: var(--x-orange);
 }
 
-.settings-row {
-  padding: 1.15rem 1.75rem;
+.profile-section {
+  padding: 1.5rem 1.75rem;
   border-bottom: 1px solid var(--x-ink);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
 }
 
+.section-heading {
+  margin-bottom: 1rem;
+}
+
+.section-heading h3,
 .settings-row h3 {
   margin: 0;
   color: var(--x-ink);
@@ -714,10 +867,72 @@ onMounted(() => {
   font-weight: 800;
 }
 
+.section-heading p,
 .settings-row p {
   margin: .25rem 0 0;
   color: var(--x-muted);
   font-size: .85rem;
+}
+
+.preferences-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.preference-row {
+  min-height: 74px;
+  padding: .9rem 1rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--x-card);
+}
+
+.preference-row > div {
+  min-width: 0;
+}
+
+.preference-row strong,
+.edit-preference strong {
+  display: block;
+  color: var(--x-ink);
+  font-size: .9rem;
+}
+
+.preference-row div span,
+.edit-preference div span {
+  display: block;
+  margin-top: .15rem;
+  color: var(--x-muted);
+  font-size: .78rem;
+}
+
+.status {
+  flex-shrink: 0;
+  padding: .3rem .65rem;
+  border-radius: 999px;
+  background: var(--x-paper);
+  color: var(--x-muted);
+  font-size: .73rem;
+  font-weight: 700;
+}
+
+.status.active {
+  background: var(--x-lime);
+  color: var(--ss-success);
+}
+
+.settings-row {
+  padding: 1.15rem 1.75rem;
+  border-bottom: 1px solid var(--x-ink);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
 }
 
 .danger-row {
@@ -755,6 +970,42 @@ onMounted(() => {
 .profile-input:focus {
   border-color: var(--x-ink);
   box-shadow: 0 0 0 3px var(--x-lime);
+}
+
+.edit-divider {
+  height: 1px;
+  margin: 1.5rem 0;
+  background: var(--x-paper);
+}
+
+.edit-preferences {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.edit-preference {
+  min-height: 72px;
+  padding: .9rem 1rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--x-card);
+  cursor: pointer;
+}
+
+.form-switch {
+  margin: 0;
+  padding-left: 2.8rem;
+}
+
+.form-switch .form-check-input {
+  width: 2.5rem;
+  height: 1.3rem;
+  cursor: pointer;
 }
 
 .edit-actions,
@@ -829,6 +1080,11 @@ onMounted(() => {
   .profile-header {
     align-items: flex-start;
   }
+
+  .preferences-grid,
+  .edit-preferences {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 575px) {
@@ -841,6 +1097,7 @@ onMounted(() => {
     width: 100%;
   }
 
+  .profile-section,
   .settings-row,
   .edit-card {
     padding: 1.2rem;
@@ -859,6 +1116,10 @@ onMounted(() => {
     flex-wrap: wrap;
     gap: .45rem;
     font-size: .7rem;
+  }
+
+  .preference-row {
+    align-items: flex-start;
   }
 
   .edit-actions,
