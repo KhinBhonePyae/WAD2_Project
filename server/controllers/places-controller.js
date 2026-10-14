@@ -2,9 +2,50 @@ const placeModel = require('../models/place-model');
 const reviewModel = require('../models/review-model');
 const intentModel = require('../models/intent-model');
 const intentsController = require('./intents-controller');
+const axios = require('axios');
 
 const ALLOWED_FACILITIES = ['wifi', 'sockets', 'toilets', 'water', 'fnb', 'quiet'];
 const ALLOWED_CLOSURE_STATUSES = ['normal', 'temporary', 'permanent'];
+
+async function resolveOneMapLocation(place) {
+  if (!process.env.ONEMAP_TOKEN) {
+    const error = new Error('OneMap is not configured on the server.');
+    error.status = 503;
+    throw error;
+  }
+
+  const postalCode = place.address?.match(/\b\d{6}\b/)?.[0];
+  const searchVal = postalCode || place.address?.replace(/,\s*Singapore\b.*$/i, '').trim() || place.name;
+  const { data } = await axios.get('https://www.onemap.gov.sg/api/common/elastic/search', {
+    params: {
+      searchVal,
+      returnGeom: 'Y',
+      getAddrDetails: 'Y',
+      pageNum: 1
+    },
+    headers: { Authorization: process.env.ONEMAP_TOKEN },
+    timeout: 8000
+  });
+
+  const result = data.results?.find(candidate => {
+    const lat = Number(candidate.LATITUDE);
+    const lon = Number(candidate.LONGITUDE);
+    return Number.isFinite(lat) && Number.isFinite(lon);
+  });
+
+  if (!result) {
+    const error = new Error('OneMap could not find this address.');
+    error.status = 404;
+    throw error;
+  }
+
+  return {
+    lat: Number(result.LATITUDE),
+    lon: Number(result.LONGITUDE),
+    address: result.ADDRESS || place.address,
+    source: 'onemap'
+  };
+}
 
 function inferClosureStatus(place) {
   const hours = (place.hours || '').toLowerCase();
@@ -164,6 +205,149 @@ exports.getPlace = async (req, res, next) => {
     res.json(place);
   } catch (e) {
     next(e);
+  }
+};
+
+/* GET /places/:id/map-location - resolve the saved address through OneMap */
+exports.getMapLocation = async (req, res, next) => {
+  try {
+    const found = await placeModel.findByID(req.params.id);
+    if (!found) return res.status(404).json({ error: 'Place not found' });
+
+    const place = found.toObject ? found.toObject() : { ...found };
+    res.json(await resolveOneMapLocation(place));
+  } catch (error) {
+    console.error('OneMap location lookup failed:', error.message);
+    res.status(error.status || 502).json({
+      error: error.status === 404 || error.status === 503
+        ? error.message
+        : 'Could not look up this location with OneMap.'
+    });
+  }
+};
+
+/* POST /places/:id/map-route - get a route from the browser location */
+exports.getMapRoute = async (req, res) => {
+  try {
+    const found = await placeModel.findByID(req.params.id);
+    if (!found) return res.status(404).json({ error: 'Place not found' });
+
+    const mode = req.body?.mode || 'walk';
+    const allowedModes = ['walk', 'car', 'bus', 'train'];
+    if (!allowedModes.includes(mode)) {
+      return res.status(400).json({ error: 'Choose walking, car, bus, or train directions.' });
+    }
+
+    const startLat = Number(req.body?.lat);
+    const startLon = Number(req.body?.lon);
+    if (!Number.isFinite(startLat) || !Number.isFinite(startLon)) {
+      return res.status(400).json({ error: 'A valid starting location is required.' });
+    }
+    if (startLat < 1.1 || startLat > 1.5 || startLon < 103.5 || startLon > 104.2) {
+      return res.status(400).json({ error: 'Routes are available for locations in Singapore.' });
+    }
+
+    const place = found.toObject ? found.toObject() : { ...found };
+    const destination = await resolveOneMapLocation(place);
+    const isPublicTransport = mode === 'bus' || mode === 'train';
+    const routeType = isPublicTransport ? 'pt' : mode === 'car' ? 'drive' : 'walk';
+    const requestParams = {
+      start: `${startLat},${startLon}`,
+      end: `${destination.lat},${destination.lon}`,
+      routeType
+    };
+
+    if (isPublicTransport) {
+      const now = new Date();
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Singapore',
+        month: '2-digit',
+        day: '2-digit',
+        year: 'numeric'
+      }).formatToParts(now).reduce((values, part) => {
+        values[part.type] = part.value;
+        return values;
+      }, {});
+      requestParams.mode = mode === 'bus' ? 'bus' : 'rail';
+      requestParams.date = `${parts.month}-${parts.day}-${parts.year}`;
+      requestParams.time = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Asia/Singapore',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23'
+      }).format(now);
+      requestParams.maxWalkDistance = 1000;
+      requestParams.numItineraries = 3;
+    }
+
+    const { data } = await axios.get('https://www.onemap.gov.sg/api/public/routingsvc/route', {
+      params: requestParams,
+      headers: { Authorization: process.env.ONEMAP_TOKEN },
+      timeout: 15000
+    });
+
+    if (isPublicTransport) {
+      const itinerary = data.plan?.itineraries?.[0];
+      const legs = itinerary?.legs || [];
+      const hasRequestedTransport = legs.some(leg => {
+        if (mode === 'bus') return leg.mode === 'BUS';
+        return ['RAIL', 'SUBWAY', 'TRAM'].includes(leg.mode);
+      });
+      if (!legs.length || !hasRequestedTransport) {
+        return res.status(404).json({
+          error: `${mode === 'bus' ? 'Bus' : 'Train'} service has ended for the day. Please try another route.`
+        });
+      }
+
+      return res.json({
+        mode,
+        duration: Number(itinerary.duration) || 0,
+        distance: legs.reduce((total, leg) => total + (Number(leg.distance) || 0), 0),
+        transfers: Number(itinerary.transfers) || 0,
+        legs: legs.map(leg => ({
+          mode: String(leg.mode || ''),
+          route: String(leg.route || ''),
+          from: String(leg.from?.name || ''),
+          to: String(leg.to?.name || ''),
+          duration: Number(leg.duration) || 0,
+          distance: Number(leg.distance) || 0,
+          geometry: String(leg.legGeometry?.points || '')
+        })),
+        destination
+      });
+    }
+
+    if (data.status !== 0 || typeof data.route_geometry !== 'string' || !data.route_geometry) {
+      return res.status(404).json({ error: `OneMap could not find a ${mode} route to this place.` });
+    }
+
+    const instructions = (data.route_instructions || []).map(step => ({
+      action: String(step[0] || 'Continue'),
+      road: String(step[1] || ''),
+      distance: Number(step[2]) || 0
+    }));
+
+    res.json({
+      mode,
+      geometry: data.route_geometry,
+      distance: Number(data.route_summary?.total_distance) || 0,
+      duration: Number(data.route_summary?.total_time) || 0,
+      instructions,
+      destination
+    });
+  } catch (error) {
+    console.error('OneMap route request failed:', error.message);
+    if (error.response?.status === 404 && ['bus', 'train'].includes(req.body?.mode)) {
+      return res.status(404).json({
+        error: `${req.body.mode === 'bus' ? 'Bus' : 'Train'} service has ended for the day. Please try another route.`
+      });
+    }
+    res.status(error.status || 502).json({
+      error: error.status === 404 || error.status === 503
+        ? error.message
+        : 'Could not get directions from OneMap. Please try again.'
+    });
   }
 };
 

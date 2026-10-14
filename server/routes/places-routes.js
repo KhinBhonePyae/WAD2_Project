@@ -6,6 +6,8 @@ const requireAdmin = require('../middleware/admin-middleware')
 const router = express.Router()
 
 router.get('/', placesController.getPlaces)
+router.get('/:id/map-location', placesController.getMapLocation)
+router.post('/:id/map-route', placesController.getMapRoute)
 router.get('/:id', placesController.getPlace)
 
 router.post('/', authenticate, requireAdmin, placesController.addPlace)
