@@ -2,10 +2,9 @@
 /* Owner: Jeffrey Wen - ratings, reviews and crowd reporting. */
 import { ref } from 'vue'
 
-const props = defineProps({ placeId: Number, busy: Boolean })
+const props = defineProps({ placeId: Number, busy: Boolean, authorName: String })
 const emit = defineEmits(['submit-review'])
 
-const author = ref('')
 const rating = ref(5)
 const comment = ref('')
 const crowdLevel = ref('moderate')
@@ -13,16 +12,14 @@ const error = ref('')
 
 function submit() {
   error.value = ''
-  if (!author.value.trim()) { error.value = 'Please enter your name.'; return }
   if (rating.value < 1 || rating.value > 5) { error.value = 'Rating must be 1 to 5.'; return }
   emit('submit-review', {
     placeId: props.placeId,
-    author: author.value.trim(),
     rating: Number(rating.value),
     comment: comment.value.trim(),
     crowdLevel: crowdLevel.value,
   })
-  author.value = ''; comment.value = ''; rating.value = 5; crowdLevel.value = 'moderate'
+  comment.value = ''; rating.value = 5; crowdLevel.value = 'moderate'
 }
 </script>
 
@@ -31,11 +28,7 @@ function submit() {
     <h3 class="ss-card__title mb-3">Leave a review</h3>
 
     <div class="row g-3">
-      <div class="col-12">
-        <label class="form-label ss-meta" for="rv-name">Your name</label>
-        <input id="rv-name" v-model="author" class="form-control" type="text"
-               placeholder="e.g. Jeffrey" data-test="rv-name">
-      </div>
+      <div class="col-12 ss-meta" data-test="rv-author">Posting as <strong>{{ authorName }}</strong></div>
       <div class="col-6">
         <label class="form-label ss-meta" for="rv-rating">Rating</label>
         <select id="rv-rating" v-model.number="rating" class="form-select" data-test="rv-rating">

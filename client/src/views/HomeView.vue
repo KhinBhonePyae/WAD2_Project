@@ -6,10 +6,11 @@ import { BASE_URL } from '../utils/api.js'
 import { suitabilityScore } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'
 import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'
-import { gsap, ScrollTrigger, Flip, reducedMotion, finePointer } from '../utils/motion.js'
+import { gsap, ScrollTrigger, reducedMotion, finePointer } from '../utils/motion.js'
 import PlaceCard from '../components/PlaceCard.vue'
 import HomeSearchBox from '../components/HomeSearchBox.vue'
 import NotebookIntro from '../components/NotebookIntro.vue'
+import AreaCarousel from '../components/AreaCarousel.vue'
 import logoUrl from '../assets/logo.svg'
 
 const router = useRouter()
@@ -19,6 +20,7 @@ const saved = ref([])
 const loading = ref(true)
 const q = ref('')
 const root = ref(null)
+const loggedIn = ref(isLoggedIn())   // decides where the area carousel sits
 
 /* ---------- notebook intro: once per browser tab ---------- */
 const INTRO_KEY = 'lk-notebook-opened'
@@ -55,21 +57,26 @@ const topPicks = computed(() => places.value
   .sort((a, b) => b.score - a.score)
   .slice(0, 6))
 
+let switching = false
+let pendingVibe = null   // clicked while a switch was still running
+const selectedKey = ref(VIBES[0].key)   // highlight follows the click straight away
 async function pickVibe(v) {
+  selectedKey.value = v.key
+  if (switching) { pendingVibe = v; return }
   if (v.key === vibe.value.key) return
   if (reducedMotion) { vibe.value = v; return }
-  // finish any entrance animation first so Flip measures cards at full size
+  // crossfade: current cards fade down, the list changes, the new six fade up in turn.
+  // (Moving cards between grid slots made them jump around in the responsive grid.)
+  switching = true
   gsap.killTweensOf('.x-pick')
-  gsap.set('.x-pick', { autoAlpha: 1, y: 0, rotation: 0 })
-  // FLIP: remember where every card is, change the order, then animate from old to new spots
-  const state = Flip.getState('.x-pick')
+  await gsap.to('.x-pick', { autoAlpha: 0, y: 12, duration: 0.18, ease: 'power2.in' })
   vibe.value = v
   await nextTick()
-  Flip.from(state, {
-    duration: 0.8, ease: 'power3.inOut', stagger: 0.03, absolute: true,
-    onEnter: els => gsap.fromTo(els, { scale: 0.6, opacity: 0, rotation: -6 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.6, ease: 'back.out(1.8)' }),
-    onLeave: els => gsap.to(els, { scale: 0.6, opacity: 0, duration: 0.35 }),
-  })
+  await gsap.fromTo('.x-pick', { autoAlpha: 0, y: 16 },
+    { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out', stagger: 0.05 })
+  switching = false
+  // honour the most recent click once this switch has finished
+  if (pendingVibe) { const next = pendingVibe; pendingVibe = null; pickVibe(next) }
 }
 
 /* ---------- data for the other sections ---------- */
@@ -88,27 +95,8 @@ const areas = computed(() => {
     .sort((a, b) => b.list.length - a.list.length)
     .slice(0, 7)
 })
-const AREA_COLOURS = ['var(--x-lime)', 'var(--x-lilac)', 'var(--x-butter)', 'var(--x-sky)', 'var(--x-pink)', 'var(--x-orange)', 'var(--x-lime)']
 
 const stats = ref({ places: 0, open: 0, planning: 0, temp: 0 })
-
-/* ---------- assistant teaser: typewriter of example questions ---------- */
-const PROMPTS = [
-  'quiet spot near SMU for four people this afternoon',
-  'somewhere open past 9pm with sockets',
-  'a café in Bugis that won\'t kick me out',
-  'indoor, cold aircon, no crowds please',
-]
-const typed = ref('')
-let typeTimer = null
-function typeLoop(i = 0, c = 0, deleting = false) {
-  const text = PROMPTS[i]
-  typed.value = text.slice(0, c)
-  let next = 45, ni = i, nc = c + 1, nd = deleting
-  if (!deleting && c === text.length) { nd = true; next = 1800; nc = c }
-  else if (deleting) { nc = c - 1; next = 22; if (c === 0) { nd = false; ni = (i + 1) % PROMPTS.length; nc = 0; next = 300 } }
-  typeTimer = setTimeout(() => typeLoop(ni, nc, nd), next)
-}
 
 /* ---------- actions ---------- */
 function search() {
@@ -158,8 +146,8 @@ function wobble(e) {
 function setupScrollAnimations() {
   if (reducedMotion || !ctx) return
   ctx.add(() => {
-    // ScrollTriggers must be created in page order: the pinned area ride sits near the
-    // top, and it adds scroll space that every trigger below it needs to account for.
+    // the pinned area ride adds scroll space that every trigger below it must account
+    // for; ScrollTrigger.sort() in onMounted keeps them in page order wherever it sits
     // explore by area: vertical scroll drives a horizontal ride (desktop only)
     mm = gsap.matchMedia()
     mm.add('(min-width: 768px)', () => {
@@ -183,7 +171,8 @@ function setupScrollAnimations() {
     const loops = rows.map((row, i) => i % 2
       ? gsap.fromTo(row, { xPercent: -50 }, { xPercent: 0, duration: 40, ease: 'none', repeat: -1 })
       : gsap.fromTo(row, { xPercent: 0 }, { xPercent: -50, duration: 40, ease: 'none', repeat: -1 }))
-    ScrollTrigger.create({
+    // (logged-in users don't get the marquee or the closing line)
+    if (rows.length) ScrollTrigger.create({
       trigger: '.x-marquee', start: 'top bottom', end: 'bottom top',
       onUpdate: self => {
         const speed = gsap.utils.clamp(-6, 6, self.getVelocity() / 300)
@@ -214,7 +203,7 @@ function setupScrollAnimations() {
       { y: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.7)', stagger: 0.08 })
 
     // big closing line fills in letter by letter
-    gsap.from('.x-final .x-char', { yPercent: 100, opacity: 0, stagger: 0.03, ease: 'expo.out', duration: 0.9,
+    if (!loggedIn.value) gsap.from('.x-final .x-char', { yPercent: 100, opacity: 0, stagger: 0.03, ease: 'expo.out', duration: 0.9,
       scrollTrigger: { trigger: '.x-final', start: 'top 90%' } })
 
     // magnetic buttons pull towards the cursor
@@ -248,8 +237,6 @@ function animatePicks() {
 onMounted(async () => {
   ctx = gsap.context(() => {}, root.value)
   if (!showIntro.value) playHero()
-  if (!reducedMotion) typeLoop()
-  else typed.value = PROMPTS[0]
 
   try {
     const [placeRes, w, ids] = await Promise.all([
@@ -272,13 +259,15 @@ onMounted(async () => {
   }
   setupScrollAnimations()
   animatePicks()
+  // the area ride can sit above or below the cards, so put every trigger
+  // back into page order before measuring
+  ScrollTrigger.sort()
   ScrollTrigger.refresh()
 })
 
 watch(weather, w => { if (reducedMotion && w) stats.value.temp = w.temp })
 
 onUnmounted(() => {
-  clearTimeout(typeTimer)
   mm?.revert()
   ctx?.revert()
 })
@@ -333,22 +322,9 @@ const words = text => text.split(' ')
       </div>
     </header>
 
-    <!-- ===== EXPLORE BY AREA (pinned horizontal ride) ===== -->
-    <section class="x-areas" aria-label="Explore by area">
-      <div class="x-areas__track">
-        <div class="x-areas__intro">
-          <h2 class="x-reveal"><span v-for="(w, i) in words('Explore by area')" :key="i" class="x-mask"><span class="x-word">{{ w }}</span></span></h2>
-        </div>
-        <RouterLink v-for="(a, i) in areas" :key="a.name" :to="{ path: '/places', query: { q: a.name } }"
-                    class="x-area" :style="{ '--area': AREA_COLOURS[i] }" data-cursor="explore">
-          <span class="x-area__count x-mono">{{ String(i + 1).padStart(2, '0') }} · {{ a.list.length }} spot{{ a.list.length === 1 ? '' : 's' }}</span>
-          <span class="x-area__name">{{ a.name }}</span>
-          <span class="x-area__photos">
-            <img v-for="(src, j) in a.photos" :key="j" :src="src" alt="" class="x-area__photo" loading="lazy">
-          </span>
-        </RouterLink>
-      </div>
-    </section>
+    <!-- first-time visitors explore by area first; logged-in users get it below the cards -->
+    <AreaCarousel v-if="!loggedIn" :areas="areas" />
+
 
 
     <!-- ===== VIBE + TOP PICKS ===== -->
@@ -360,8 +336,8 @@ const words = text => text.split(' ')
 
       <div class="x-vibes" role="radiogroup" aria-label="Study vibe">
         <button v-for="v in VIBES" :key="v.key" type="button" class="x-vibe" role="radio"
-                :aria-checked="vibe.key === v.key" :style="{ '--vibe': v.colour }"
-                :data-cursor="vibe.key === v.key ? 'picked' : 'pick'" data-test="vibe" @click="pickVibe(v)">
+                :aria-checked="selectedKey === v.key" :style="{ '--vibe': v.colour }"
+                :data-cursor="selectedKey === v.key ? 'picked' : 'pick'" data-test="vibe" @click="pickVibe(v)">
           <span class="x-vibe__label">{{ v.label }}</span>
           <span class="x-vibe__note x-mono">{{ v.note }}</span>
         </button>
@@ -383,8 +359,10 @@ const words = text => text.split(' ')
       </div>
     </section>
 
-    <!-- ===== MARQUEE ===== -->
-    <div class="x-marquee" aria-hidden="true">
+    <AreaCarousel v-if="loggedIn" :areas="areas" />
+
+    <!-- ===== MARQUEE ===== (first-time visitors only) -->
+    <div v-if="!loggedIn" class="x-marquee" aria-hidden="true">
       <div class="x-marquee__row">
         <div class="x-marquee__track">
           <span v-for="(n, i) in [...marqueeNames, ...marqueeNames]" :key="'m1' + i">{{ n }} <b>✶</b></span>
@@ -397,24 +375,9 @@ const words = text => text.split(' ')
       </div>
     </div>
 
-    <!-- ===== ASSISTANT TEASER ===== -->
-    <section class="x-section container">
-      <div class="x-ai">
-        <div class="x-ai__blob" aria-hidden="true"></div>
-        <div class="x-ai__text">
-          <span class="x-mono x-ai__soon">coming soon</span>
-          <h2 class="x-reveal"><span v-for="(w, i) in words('Just tell it what you need.')" :key="i" class="x-mask"><span class="x-word">{{ w }}</span></span></h2>
-          <div class="x-ai__prompt">
-            <span class="x-mono">ask lockin ›</span>
-            <span class="x-ai__typed">{{ typed }}<i class="x-caret"></i></span>
-          </div>
-          <button class="btn btn-accent" disabled title="Coming in a later sprint">Ask the assistant</button>
-        </div>
-      </div>
-    </section>
 
-    <!-- ===== FINAL CTA ===== -->
-    <section class="x-final container">
+    <!-- ===== FINAL CTA ===== (first-time visitors only) -->
+    <section v-if="!loggedIn" class="x-final container">
       <p class="x-final__line" aria-label="Ready to lock in?">
         <template v-for="(w, wi) in words('Ready to lock in?')" :key="wi"><span class="x-wordbox" aria-hidden="true"><span v-for="(c, ci) in chars(w)" :key="ci" class="x-char">{{ c }}</span></span>{{ ' ' }}</template>
       </p>
@@ -494,47 +457,6 @@ const words = text => text.split(' ')
 .x-stat--c { background: var(--x-lilac); transform: rotate(-1deg); }
 .x-stat--d { background: var(--x-sky); transform: rotate(2deg); }
 
-/* ---------- areas ---------- */
-.x-areas { overflow: hidden; padding: 4rem 0; }
-.x-areas__track { display: flex; align-items: stretch; gap: 24px; padding-inline: 24px; width: max-content; will-change: transform; }
-.x-areas__intro { width: min(420px, 80vw); display: flex; flex-direction: column; justify-content: center; }
-.x-area { position: relative; width: min(460px, 82vw); min-height: min(68vh, 560px); flex-shrink: 0;
-          display: flex; flex-direction: column; padding: 26px; overflow: hidden;
-          background: var(--area); border: var(--x-line); border-radius: 30px; box-shadow: var(--x-pop-lg);
-          color: var(--x-ink); text-decoration: none; transition: transform .4s var(--x-ease); }
-.x-area:hover { transform: rotate(-1.5deg) scale(1.02); }
-.x-area__count { font-size: .72rem; }
-.x-area__name { font-weight: 800; font-size: clamp(2.6rem, 5vw, 4.2rem); letter-spacing: -.05em; line-height: .9; margin-top: .4rem; }
-.x-area__photos { position: relative; flex: 1; margin-top: 1rem; }
-.x-area__photo { position: absolute; width: 58%; aspect-ratio: 4 / 5; object-fit: cover; border: var(--x-line);
-                 border-radius: 18px; box-shadow: var(--x-pop); }
-.x-area__photo:nth-child(1) { left: 0; bottom: 0; }
-.x-area__photo:nth-child(2) { right: 0; top: 0; }
-.x-area__photo:nth-child(3) { left: 24%; bottom: 8%; width: 46%; }
-
-/* ---------- assistant teaser ---------- */
-.x-ai { position: relative; overflow: hidden; display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 1.5rem;
-        max-width: 860px; margin-inline: auto;
-        padding: clamp(18px, 3vw, 30px); background: var(--x-ink); color: var(--x-paper);
-        border: var(--x-line); border-radius: 34px; box-shadow: 8px 8px 0 var(--x-orange); }
-.x-ai h2 { color: var(--x-paper); font-size: clamp(1.4rem, 2.6vw, 2rem); margin-bottom: .2rem; }
-.x-ai__blob { aspect-ratio: 1; width: 100%; max-width: 120px; justify-self: center;
-              background: conic-gradient(from 0deg, var(--x-orange), var(--x-lilac), var(--x-lime), var(--x-sky), var(--x-orange));
-              border-radius: 42% 58% 63% 37% / 41% 44% 56% 59%; filter: blur(1px);
-              animation: x-morph 9s ease-in-out infinite, x-spin 22s linear infinite; }
-@keyframes x-morph {
-  33% { border-radius: 63% 37% 41% 59% / 56% 59% 41% 44%; }
-  66% { border-radius: 37% 63% 51% 49% / 37% 45% 55% 63%; }
-}
-.x-ai__soon { color: var(--x-lime); }
-.x-ai__prompt { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; margin: .6rem 0 .9rem; padding: 10px 14px;
-                background: rgba(243, 238, 227, .08); border: 1.5px solid rgba(243, 238, 227, .3); border-radius: 18px; }
-.x-ai__prompt .x-mono { color: var(--x-lime); }
-.x-ai__typed { font-size: .98rem; min-height: 1.4em; }
-.x-caret { display: inline-block; width: 2px; height: 1.1em; margin-left: 2px; vertical-align: text-bottom;
-           background: var(--x-lime); animation: x-blink 1s steps(1) infinite; }
-@keyframes x-blink { 50% { opacity: 0; } }
-
 /* ---------- final ---------- */
 .x-final { text-align: center; padding-block: 4rem 3rem; }
 .x-final__line { font-weight: 800; font-size: clamp(2rem, 7vw, 6rem); line-height: .9; letter-spacing: -.06em;
@@ -543,19 +465,13 @@ const words = text => text.split(' ')
 @media (max-width: 991.98px) {
   .x-vibes { grid-template-columns: repeat(2, 1fr); }
   .x-hero__grid { grid-template-columns: 1fr; gap: 1.6rem; }
-  .x-ai { grid-template-columns: 1fr; }
-  .x-ai__blob { max-width: 90px; }
 }
 @media (max-width: 767.98px) {
-  /* no pinning on phones: swipe sideways instead */
-  .x-areas { overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; }
-  .x-area, .x-areas__intro { scroll-snap-align: center; }
-  .x-area { min-height: 440px; }
   .x-hero { padding-top: 96px; }
   .x-hero__row--2 { padding-left: 0; }
   .x-hero__aside { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .x-hero__logo, .x-ai__blob, .x-caret { animation: none; }
+  .x-hero__logo { animation: none; }
 }
 </style>

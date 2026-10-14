@@ -10,3 +10,9 @@ import './assets/theme.css'
 const app = createApp(App)
 app.use(router)
 app.mount('#app')
+
+// Installable app: register the service worker on the built site only
+// (in dev it would cache files you are still editing)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js'))
+}

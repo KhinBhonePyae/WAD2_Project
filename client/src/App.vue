@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import CustomCursor from './components/CustomCursor.vue'
+import AssistantBubble from './components/AssistantBubble.vue'
 import { startSmoothScroll, scrollToTop, ScrollTrigger, reducedMotion } from './utils/motion.js'
 import logoUrl from './assets/logo.svg'
 
@@ -14,13 +15,6 @@ let lastY = 0
 // Remove the outgoing page straight away (no waiting on animation frames)
 function removeNow(el, done) {
   done()
-}
-
-function logout() {
-  localStorage.removeItem('user')
-  localStorage.removeItem('token')
-  user.value = null
-  router.push('/')
 }
 
 function updateUser() {
@@ -58,6 +52,7 @@ onUnmounted(() => {
 
 <template>
   <CustomCursor />
+  <AssistantBubble />
   <div class="x-progress" :style="{ transform: `scaleX(${progress})` }" aria-hidden="true"></div>
 
   <nav class="x-nav" :class="{ 'x-nav--hidden': navHidden }">
@@ -66,15 +61,20 @@ onUnmounted(() => {
     </RouterLink>
     <div class="x-nav__links">
       <RouterLink to="/places" class="x-nav__link" data-test="nav-browse">Browse</RouterLink>
-      <RouterLink to="/saved" class="x-nav__link">Saved</RouterLink>
       <template v-if="!user">
         <RouterLink to="/signup" class="x-nav__link">Sign up</RouterLink>
         <RouterLink to="/login" class="btn btn-primary btn-sm">Log in</RouterLink>
       </template>
-      <template v-else>
-        <RouterLink to="/profile" class="x-nav__link x-nav__user">{{ user.name }}</RouterLink>
-        <button class="btn btn-outline-primary btn-sm" @click="logout">Log out</button>
-      </template>
+      <!-- logging out now lives on the profile page -->
+      <RouterLink v-else to="/profile" class="x-nav__link x-nav__user">{{ user.name }}</RouterLink>
+      <!-- saved places: bookmark icon, always the last item -->
+      <RouterLink to="/saved" class="x-nav__saved" aria-label="Saved places" title="Saved places"
+                  data-test="nav-saved" data-cursor="saved">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M6.5 3.5h11v17l-5.5-4.6-5.5 4.6z" fill="none" stroke="currentColor"
+                stroke-width="2.2" stroke-linejoin="round" />
+        </svg>
+      </RouterLink>
     </div>
   </nav>
 
@@ -129,6 +129,12 @@ onUnmounted(() => {
 .x-nav__link:hover { background: var(--x-lime); }
 .x-nav__link.router-link-active { background: var(--x-ink); color: var(--x-paper); }
 .x-nav__link, .x-nav .btn { white-space: nowrap; }
+.x-nav__saved { display: grid; place-items: center; width: 38px; height: 38px; margin-left: 4px; flex-shrink: 0;
+                border-radius: 50%; background: var(--x-ink); color: var(--x-paper);
+                transition: transform .2s var(--x-ease), background-color .2s; }
+.x-nav__saved:hover { transform: scale(1.08); background: var(--x-orange); color: var(--x-ink); }
+.x-nav__saved.router-link-active { background: var(--x-orange); color: var(--x-ink); }
+.x-nav__saved.router-link-active path { fill: currentColor; }
 .x-nav__user { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .x-footer { margin-top: 4rem; padding-bottom: 1.5rem; overflow: hidden; }

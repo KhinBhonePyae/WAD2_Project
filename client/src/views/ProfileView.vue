@@ -129,6 +129,14 @@ async function saveProfile() {
   }
 }
 
+// Log out (moved here from the nav bar)
+function logout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  window.dispatchEvent(new Event('user-login'))   // tells the nav to update
+  router.push('/')
+}
+
 function openPasswordModal() {
   currentPassword.value = ''
   newPassword.value = ''
@@ -315,6 +323,22 @@ onMounted(() => {
               @click="openPasswordModal"
             >
               Change Password
+            </button>
+          </section>
+
+          <section class="settings-row">
+            <div>
+              <h3>Log Out</h3>
+              <p>Sign out of LockedIN on this device.</p>
+            </div>
+
+            <button
+              type="button"
+              class="btn btn-outline-primary"
+              data-test="logout"
+              @click="logout"
+            >
+              Log Out
             </button>
           </section>
 

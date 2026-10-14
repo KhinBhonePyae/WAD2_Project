@@ -2,6 +2,18 @@
  * Owner: Jeffrey Wen. Full CRUD - this is the pitch's "functioning task". */
 const reviewModel = require('../models/review-model');
 const placeModel = require('../models/place-model');
+const userModel = require('../models/user-model');
+
+// Only the person who wrote a review may change or delete it
+async function findOwnReview(id, userId, res) {
+  const review = await reviewModel.findById(id);
+  if (!review) { res.status(404).json({ error: 'Review not found' }); return null; }
+  if (!review.userId || String(review.userId) !== String(userId)) {
+    res.status(403).json({ error: 'You can only change your own reviews' });
+    return null;
+  }
+  return review;
+}
 
 async function resync(placeId) {
   const agg = await reviewModel.aggregateForPlace(placeId);
@@ -21,16 +33,19 @@ exports.getByPlace = async (req, res, next) => {
 /* POST /reviews */
 exports.addReview = async (req, res, next) => {
   try {
-    const { placeId, author, rating, comment, crowdLevel } = req.body;
-    if (!placeId || !author || !rating) {
-      return res.status(400).json({ error: 'placeId, author and rating are required' });
+    const { placeId, rating, comment, crowdLevel } = req.body;
+    if (!placeId || !rating) {
+      return res.status(400).json({ error: 'placeId and rating are required' });
     }
+    // the author name comes from the logged-in account, not from the form
+    const user = await userModel.findByID(req.userId);
+    if (!user) return res.status(401).json({ error: 'Please log in again' });
     const n = Number(rating);
     if (Number.isNaN(n) || n < 1 || n > 5) {
       return res.status(400).json({ error: 'rating must be a number from 1 to 5' });
     }
     const doc = await reviewModel.addReview({
-      placeId: Number(placeId), author: String(author).trim(), rating: n,
+      placeId: Number(placeId), userId: user._id, author: user.name, rating: n,
       comment: (comment || '').trim(),
       crowdLevel: ['quiet', 'moderate', 'packed'].includes(crowdLevel) ? crowdLevel : 'moderate',
     });
@@ -55,6 +70,7 @@ exports.editReview = async (req, res, next) => {
     if (crowdLevel !== undefined && ['quiet', 'moderate', 'packed'].includes(crowdLevel)) {
       fields.crowdLevel = crowdLevel;
     }
+    if (!(await findOwnReview(req.params.id, req.userId, res))) return;
     const updated = await reviewModel.editReview(req.params.id, fields);
     if (!updated) return res.status(404).json({ error: 'Review not found' });
     const summary = await resync(updated.placeId);
@@ -65,11 +81,13 @@ exports.editReview = async (req, res, next) => {
 /* DELETE /reviews/:id?placeId=1 */
 exports.deleteReview = async (req, res, next) => {
   try {
+    const own = await findOwnReview(req.params.id, req.userId, res);
+    if (!own) return;
     const result = await reviewModel.deleteReview(req.params.id);
     if (!result || result.deletedCount !== 1) {
       return res.status(404).json({ error: 'Review not found' });
     }
-    const summary = req.query.placeId ? await resync(req.query.placeId) : null;
+    const summary = await resync(own.placeId);
     res.json({ deleted: true, summary });
   } catch (e) { next(e); }
 };

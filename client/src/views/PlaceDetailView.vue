@@ -33,6 +33,12 @@ const score = computed(() =>
 
 const art = computed(() => 'linear-gradient(135deg,#9DD1F6,#C4AAE9)')
 
+// who is looking at the page (null when logged out)
+const currentUser = ref(JSON.parse(localStorage.getItem('user')))
+function authHeader() {
+  return { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+}
+
 async function loadReviews(id) {
   const { data } = await axios.get(`${BASE_URL}/reviews/place/${id}`)
   reviews.value = data.reviews
@@ -42,7 +48,7 @@ async function loadReviews(id) {
 async function addReview(payload) {
   busy.value = true
   try {
-    await axios.post(`${BASE_URL}/reviews`, payload)
+    await axios.post(`${BASE_URL}/reviews`, payload, authHeader())
     await loadReviews(route.params.id)
   } catch (e) {
     console.error('Could not post review', e)
@@ -50,13 +56,13 @@ async function addReview(payload) {
 }
 async function editReview({ id, rating, comment }) {
   try {
-    await axios.put(`${BASE_URL}/reviews/${id}`, { rating, comment })
+    await axios.put(`${BASE_URL}/reviews/${id}`, { rating, comment }, authHeader())
     await loadReviews(route.params.id)
   } catch (e) { console.error('Could not edit review', e) }
 }
 async function deleteReview(id) {
   try {
-    await axios.delete(`${BASE_URL}/reviews/${id}`, { params: { placeId: route.params.id } })
+    await axios.delete(`${BASE_URL}/reviews/${id}`, authHeader())
     await loadReviews(route.params.id)
   } catch (e) { console.error('Could not delete review', e) }
 }
@@ -203,10 +209,17 @@ onUnmounted(() => ctx?.revert())
         <h2 class="mb-3">Reviews &amp; crowd reports</h2>
         <div class="row g-4">
           <div class="col-12 col-lg-5">
-            <ReviewForm :place-id="Number(place.id)" :busy="busy" @submit-review="addReview" />
+            <ReviewForm v-if="currentUser" :place-id="Number(place.id)" :busy="busy"
+                        :author-name="currentUser.name" @submit-review="addReview" />
+            <div v-else class="ss-card p-4" data-test="review-login">
+              <h3 class="ss-card__title mb-2">Leave a review</h3>
+              <p class="ss-meta mb-3">Log in to rate this spot and report how busy it is.</p>
+              <RouterLink to="/login" class="btn btn-primary">Log in</RouterLink>
+            </div>
           </div>
           <div class="col-12 col-lg-7">
-            <ReviewList :reviews="reviews" @edit-review="editReview" @delete-review="deleteReview" />
+            <ReviewList :reviews="reviews" :current-user-id="currentUser?._id"
+                        @edit-review="editReview" @delete-review="deleteReview" />
           </div>
         </div>
       </section>

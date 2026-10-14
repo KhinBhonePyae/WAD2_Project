@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema({
   placeId:    { type: Number, required: true },
+  userId:     { type: mongoose.Schema.Types.ObjectId, default: null }, // who wrote it (null on older reviews)
   author:     { type: String, required: true, trim: true, maxlength: 60 },
   rating:     { type: Number, required: true, min: 1, max: 5 },
   comment:    { type: String, default: '', maxlength: 600, trim: true },
@@ -33,6 +34,12 @@ exports.findByPlace = async (placeId) => {
               .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
   return Review.find({ placeId: Number(placeId) }).sort({ createdAt: -1 });
+};
+
+exports.findById = async (id) => {
+  if (global.MOCK_MODE) return mem.find(r => r._id === id) || null;
+  if (!mongoose.Types.ObjectId.isValid(id)) return null;
+  return Review.findById(id);
 };
 
 exports.addReview = async (data) => {

@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import StarRating from './StarRating.vue'
 import CrowdMeter from './CrowdMeter.vue'
 
-defineProps({ reviews: Array })
+defineProps({ reviews: Array, currentUserId: String })
 const emit = defineEmits(['edit-review', 'delete-review'])
 
 const editingId = ref(null)
@@ -61,7 +61,8 @@ function fmt(d) {
 
       <template v-else>
         <p class="mt-2 mb-2" v-if="r.comment">{{ r.comment }}</p>
-        <div class="d-flex gap-2">
+        <!-- only the author sees these (the server checks this too) -->
+        <div v-if="currentUserId && r.userId === currentUserId" class="d-flex gap-2">
           <button class="btn btn-ghost btn-sm" @click="startEdit(r)" data-test="edit-btn">Edit</button>
           <button class="btn btn-ghost btn-sm" style="color:var(--ss-danger)"
                   @click="$emit('delete-review', r._id)" data-test="delete-btn">Delete</button>
