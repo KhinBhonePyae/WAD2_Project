@@ -9,38 +9,31 @@ exports.register = async (req, res, next) => {
   try {
     const { name, email, password } = req.body
 
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        error: 'Name, email and password are required'
-      })
-    }
+    if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' })
 
     const cleanEmail = email.trim().toLowerCase()
     const existingUser = await userModel.findByEmail(cleanEmail)
 
-    if (existingUser) {
-      return res.status(409).json({
-        error: 'Email is already registered'
-      })
-    }
+    if (existingUser) return res.status(409).json({ error: 'Email is already registered' })
 
     const hashedPassword = await bcrypt.hash(password, 10)
+
     const newUser = await userModel.createUser({
       name: name.trim(),
       email: cleanEmail,
-      password: hashedPassword
+      password: hashedPassword,
+      role: 'user'
     })
-
-    const user = {
-      _id: newUser._id,
-      name: newUser.name,
-      email: newUser.email,
-      preferences: newUser.preferences
-    }
 
     res.status(201).json({
       message: 'Account created successfully',
-      user
+      user: {
+        _id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role || 'user',
+        preferences: newUser.preferences
+      }
     })
   } catch (e) {
     next(e)
@@ -52,38 +45,15 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body
 
-    if (!email || !password) {
-      return res.status(400).json({
-        error: 'Email and password are required'
-      })
-    }
+    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' })
 
-    const user = await userModel.findByEmail(
-      email.trim().toLowerCase()
-    )
+    const user = await userModel.findByEmail(email.trim().toLowerCase())
+    if (!user) return res.status(401).json({ error: 'Invalid email or password' })
 
-    if (!user) {
-      return res.status(401).json({
-        error: 'Invalid email or password'
-      })
-    }
+    const passwordMatch = await bcrypt.compare(password, user.password)
+    if (!passwordMatch) return res.status(401).json({ error: 'Invalid email or password' })
 
-    const passwordMatch = await bcrypt.compare(
-      password,
-      user.password
-    )
-
-    if (!passwordMatch) {
-      return res.status(401).json({
-        error: 'Invalid email or password'
-      })
-    }
-
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    )
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' })
 
     res.json({
       message: 'Login successful',
@@ -92,6 +62,7 @@ exports.login = async (req, res, next) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        role: user.role || 'user',
         preferences: user.preferences
       }
     })
@@ -104,17 +75,13 @@ exports.login = async (req, res, next) => {
 exports.getProfile = async (req, res, next) => {
   try {
     const user = await userModel.findByID(req.userId)
-
-    if (!user) {
-      return res.status(404).json({
-        error: 'User not found'
-      })
-    }
+    if (!user) return res.status(404).json({ error: 'User not found' })
 
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
+      role: user.role || 'user',
       createdAt: user.createdAt,
       preferences: user.preferences
     })
@@ -128,51 +95,23 @@ exports.updateProfile = async (req, res, next) => {
   try {
     const { name, email, preferences } = req.body
 
-    if (!name || !email) {
-      return res.status(400).json({
-        error: 'Name and email are required'
-      })
-    }
+    if (!name || !email) return res.status(400).json({ error: 'Name and email are required' })
 
     const currentUser = await userModel.findByID(req.userId)
-
-    if (!currentUser) {
-      return res.status(404).json({
-        error: 'User not found'
-      })
-    }
+    if (!currentUser) return res.status(404).json({ error: 'User not found' })
 
     const cleanEmail = email.trim().toLowerCase()
 
     if (cleanEmail !== currentUser.email) {
       const existingUser = await userModel.findByEmail(cleanEmail)
-
-      if (existingUser) {
-        return res.status(409).json({
-          error: 'Email is already registered'
-        })
-      }
+      if (existingUser) return res.status(409).json({ error: 'Email is already registered' })
     }
 
-    const updateData = {
-      name: name.trim(),
-      email: cleanEmail
-    }
+    const updateData = { name: name.trim(), email: cleanEmail }
+    if (preferences !== undefined) updateData.preferences = preferences
 
-    if (preferences !== undefined) {
-      updateData.preferences = preferences
-    }
-
-    const updatedUser = await userModel.updateUser(
-      req.userId,
-      updateData
-    )
-
-    if (!updatedUser) {
-      return res.status(404).json({
-        error: 'User not found'
-      })
-    }
+    const updatedUser = await userModel.updateUser(req.userId, updateData)
+    if (!updatedUser) return res.status(404).json({ error: 'User not found' })
 
     res.json({
       message: 'Profile updated successfully',
@@ -180,17 +119,13 @@ exports.updateProfile = async (req, res, next) => {
         _id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
+        role: updatedUser.role || 'user',
         createdAt: updatedUser.createdAt,
         preferences: updatedUser.preferences
       }
     })
   } catch (e) {
-    if (e.code === 11000) {
-      return res.status(409).json({
-        error: 'Email is already registered'
-      })
-    }
-
+    if (e.code === 11000) return res.status(409).json({ error: 'Email is already registered' })
     next(e)
   }
 }
@@ -198,64 +133,24 @@ exports.updateProfile = async (req, res, next) => {
 /* PUT /users/profile/password */
 exports.changePassword = async (req, res, next) => {
   try {
-    const {
-      currentPassword,
-      newPassword,
-      confirmPassword
-    } = req.body
+    const { currentPassword, newPassword, confirmPassword } = req.body
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      return res.status(400).json({
-        error: 'All password fields are required'
-      })
-    }
-
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({
-        error: 'New passwords do not match'
-      })
-    }
+    if (!currentPassword || !newPassword || !confirmPassword) return res.status(400).json({ error: 'All password fields are required' })
+    if (newPassword !== confirmPassword) return res.status(400).json({ error: 'New passwords do not match' })
 
     const user = await userModel.findByID(req.userId)
+    if (!user) return res.status(404).json({ error: 'User not found' })
 
-    if (!user) {
-      return res.status(404).json({
-        error: 'User not found'
-      })
-    }
+    const passwordMatch = await bcrypt.compare(currentPassword, user.password)
+    if (!passwordMatch) return res.status(400).json({ error: 'Current password is incorrect' })
 
-    const passwordMatch = await bcrypt.compare(
-      currentPassword,
-      user.password
-    )
-
-    if (!passwordMatch) {
-      return res.status(400).json({
-        error: 'Current password is incorrect'
-      })
-    }
-
-    const samePassword = await bcrypt.compare(
-      newPassword,
-      user.password
-    )
-
-    if (samePassword) {
-      return res.status(400).json({
-        error: 'New password must be different from the current password'
-      })
-    }
+    const samePassword = await bcrypt.compare(newPassword, user.password)
+    if (samePassword) return res.status(400).json({ error: 'New password must be different from the current password' })
 
     const hashedPassword = await bcrypt.hash(newPassword, 10)
+    await userModel.updateUser(req.userId, { password: hashedPassword })
 
-    await userModel.updateUser(
-      req.userId,
-      { password: hashedPassword }
-    )
-
-    res.json({
-      message: 'Password changed successfully'
-    })
+    res.json({ message: 'Password changed successfully' })
   } catch (e) {
     next(e)
   }
@@ -265,19 +160,12 @@ exports.changePassword = async (req, res, next) => {
 exports.deleteAccount = async (req, res, next) => {
   try {
     const deletedUser = await userModel.deleteUser(req.userId)
-
-    if (!deletedUser) {
-      return res.status(404).json({
-        error: 'User not found'
-      })
-    }
+    if (!deletedUser) return res.status(404).json({ error: 'User not found' })
 
     await savedModel.deleteAllForUser(req.userId)
     await intentModel.deleteAllForUser(req.userId)
 
-    res.json({
-      message: 'Account deleted successfully'
-    })
+    res.json({ message: 'Account deleted successfully' })
   } catch (e) {
     next(e)
   }

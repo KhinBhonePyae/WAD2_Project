@@ -1,11 +1,15 @@
-const express = require('express');
-const placesController = require('../controllers/places-controller');
-const router = express.Router();
+const express = require('express')
+const placesController = require('../controllers/places-controller')
+const authenticate = require('../middleware/auth-middleware')
+const requireAdmin = require('../middleware/admin-middleware')
 
-router.get('/', placesController.getPlaces);
-router.get('/:id', placesController.getPlace);
-router.post('/', placesController.addPlace);
-router.put('/:id', placesController.editPlace);
-router.delete('/:id', placesController.deletePlace);
+const router = express.Router()
 
-module.exports = router;
+router.get('/', placesController.getPlaces)
+router.get('/:id', placesController.getPlace)
+
+router.post('/', authenticate, requireAdmin, placesController.addPlace)
+router.put('/:id', authenticate, requireAdmin, placesController.editPlace)
+router.delete('/:id', authenticate, requireAdmin, placesController.deletePlace)
+
+module.exports = router
