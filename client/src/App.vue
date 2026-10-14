@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
 import CustomCursor from './components/CustomCursor.vue'
 import AssistantBubble from './components/AssistantBubble.vue'
+import WorldChat from './components/WorldChat.vue'
 import { startSmoothScroll, scrollToTop, ScrollTrigger, reducedMotion } from './utils/motion.js'
 import logoUrl from './assets/logo.svg'
 
@@ -52,6 +53,7 @@ onUnmounted(() => {
 
 <template>
   <CustomCursor />
+  <WorldChat :user="user" />
   <AssistantBubble />
   <div class="x-progress" :style="{ transform: `scaleX(${progress})` }" aria-hidden="true"></div>
 

@@ -1,5 +1,5 @@
 <script setup>
-import { nextTick, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { BASE_URL } from '../utils/api.js'
 import { reducedMotion } from '../utils/motion.js'
 
@@ -32,9 +32,18 @@ async function scrollToLatest() {
 function toggle() {
   open.value = !open.value
   if (open.value) {
+    window.dispatchEvent(new CustomEvent('floating-chat-open', { detail: 'assistant' }))
+  } else {
+    window.dispatchEvent(new CustomEvent('floating-chat-close', { detail: 'assistant' }))
+  }
+  if (open.value) {
     nextTick(() => messageInput.value?.focus())
     scrollToLatest()
   }
+}
+
+function onOtherChatOpened(event) {
+  if (event.detail !== 'assistant') open.value = false
 }
 
 async function sendMessage(event) {
@@ -96,7 +105,11 @@ function useSuggestion(suggestion) {
   messageInput.value?.focus()
 }
 
-onUnmounted(() => requestController?.abort())
+onMounted(() => window.addEventListener('floating-chat-open', onOtherChatOpened))
+onUnmounted(() => {
+  requestController?.abort()
+  window.removeEventListener('floating-chat-open', onOtherChatOpened)
+})
 </script>
 
 <template>
