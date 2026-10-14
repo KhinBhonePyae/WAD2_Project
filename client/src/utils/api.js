@@ -2,3 +2,15 @@
 // of a localhost base with axios. When the app is deployed (and installed on
 // phones), set VITE_API_BASE_URL to the live server's address at build time.
 export const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
+// Authorization header for requests that need a logged-in user
+export function authConfig() {
+  const token = localStorage.getItem('token')
+  if (!token) return {}
+
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  }
+}

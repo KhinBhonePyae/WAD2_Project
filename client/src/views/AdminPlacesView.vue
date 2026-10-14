@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
 import axios from 'axios'
-import { BASE_URL } from '../utils/api.js'
+import { BASE_URL, authConfig } from '../utils/api.js'
 
 const places = ref([])
 const search = ref('')
@@ -57,7 +57,7 @@ async function deletePlace(place) {
   if (!confirm(`Delete ${place.name}?`)) return
 
   try {
-    await axios.delete(`${BASE_URL}/places/${place.id}`)
+    await axios.delete(`${BASE_URL}/places/${place.id}`, authConfig())
     places.value = places.value.filter(p => p.id !== place.id)
   } catch (e) {
     console.error('Could not delete place', e)

@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import axios from 'axios'
-import { BASE_URL } from '../utils/api.js'
+import { BASE_URL, authConfig } from '../utils/api.js'
 
 const route = useRoute()
 const router = useRouter()
@@ -228,10 +228,10 @@ async function savePlace() {
     let data
 
     if (isEdit.value) {
-      const response = await axios.put(`${BASE_URL}/places/${route.params.id}`, payload)
+      const response = await axios.put(`${BASE_URL}/places/${route.params.id}`, payload, authConfig())
       data = response.data
     } else {
-      const response = await axios.post(`${BASE_URL}/places`, payload)
+      const response = await axios.post(`${BASE_URL}/places`, payload, authConfig())
       data = response.data
     }
 
