@@ -68,7 +68,7 @@ onUnmounted(() => {
       <!-- admins only: manage study spaces -->
       <RouterLink v-if="user?.role === 'admin'" to="/admin/places" class="x-nav__link" data-test="nav-manage">Manage</RouterLink>
       <!-- logging out now lives on the profile page -->
-      <RouterLink v-else to="/profile" class="x-nav__link x-nav__user">{{ user.name }}</RouterLink>
+      <RouterLink v-if="user" to="/profile" class="x-nav__link x-nav__user">{{ user.name }}</RouterLink>
       <!-- saved places: bookmark icon, always the last item -->
       <RouterLink to="/saved" class="x-nav__saved" aria-label="Saved places" title="Saved places"
                   data-test="nav-saved" data-cursor="saved">
