@@ -5,6 +5,7 @@ import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
 
 const router = useRouter()
+const step = ref(1)
 const name = ref('')
 const email = ref('')
 const password = ref('')
@@ -12,36 +13,48 @@ const confirmPassword = ref('')
 const errorMessage = ref('')
 const loading = ref(false)
 
-async function register() {
-  errorMessage.value = ''
+const preferences = ref({
+  wifiRequired: false,
+  socketsRequired: false,
+  quietPreferred: false,
+  indoorPreferred: false
+})
 
-  if (!name.value || !email.value ||
-      !password.value || !confirmPassword.value) {
+function goToPreferences() {
+  errorMessage.value = ''
+  if (!name.value || !email.value || !password.value || !confirmPassword.value) {
     errorMessage.value = 'Please fill in all fields.'
     return
   }
-
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match.'
     return
   }
+  step.value = 2
+}
 
+async function register() {
+  errorMessage.value = ''
   try {
     loading.value = true
-
     await axios.post(`${BASE_URL}/users/register`, {
       name: name.value,
+      email: email.value,
+      password: password.value,
+      preferences: preferences.value
+    })
+
+    const response = await axios.post(`${BASE_URL}/users/login`, {
       email: email.value,
       password: password.value
     })
 
-    router.push('/login')
+    localStorage.setItem('token', response.data.token)
+    localStorage.setItem('user', JSON.stringify(response.data.user))
+    window.dispatchEvent(new Event('user-login'))
+    router.push('/places')
   } catch (error) {
-    if (error.response?.data?.error) {
-      errorMessage.value = error.response.data.error
-    } else {
-      errorMessage.value = 'Unable to create account. Please try again.'
-    }
+    errorMessage.value = error.response?.data?.error || 'Unable to create account. Please try again.'
   } finally {
     loading.value = false
   }
@@ -63,105 +76,76 @@ async function register() {
 
         <section class="auth-form">
           <div class="form-heading">
-            <span class="small-heading">GET STARTED</span>
-            <h2>Create account</h2>
+            <span class="small-heading">{{ step === 1 ? 'GET STARTED' : 'STEP 2' }}</span>
+            <h2>{{ step === 1 ? 'Create account' : 'Study preferences' }}</h2>
           </div>
 
-          <div
-            v-if="errorMessage"
-            class="alert alert-danger auth-alert"
-            role="alert"
-          >
-            {{ errorMessage }}
-          </div>
+          <div v-if="errorMessage" class="alert alert-danger auth-alert" role="alert">{{ errorMessage }}</div>
 
-          <form @submit.prevent="register">
+          <form v-if="step === 1" @submit.prevent="goToPreferences">
             <div class="form-group">
-              <label for="name" class="form-label">
-                Name
-              </label>
-
-              <input
-                id="name"
-                v-model="name"
-                type="text"
-                class="form-control auth-input"
-                placeholder="Enter your name"
-                autocomplete="name"
-              >
+              <label for="name" class="form-label">Name</label>
+              <input id="name" v-model="name" type="text" class="form-control auth-input" placeholder="Enter your name" autocomplete="name">
             </div>
 
             <div class="form-group">
-              <label for="email" class="form-label">
-                Email
-              </label>
-
-              <input
-                id="email"
-                v-model="email"
-                type="email"
-                class="form-control auth-input"
-                placeholder="Enter your email"
-                autocomplete="email"
-              >
+              <label for="email" class="form-label">Email</label>
+              <input id="email" v-model="email" type="email" class="form-control auth-input" placeholder="Enter your email" autocomplete="email">
             </div>
 
             <div class="form-group">
-              <label for="password" class="form-label">
-                Password
-              </label>
-
-              <input
-                id="password"
-                v-model="password"
-                type="password"
-                class="form-control auth-input"
-                placeholder="Enter your password"
-                autocomplete="new-password"
-              >
+              <label for="password" class="form-label">Password</label>
+              <input id="password" v-model="password" type="password" class="form-control auth-input" placeholder="Enter your password" autocomplete="new-password">
             </div>
 
             <div class="form-group">
-              <label for="confirmPassword" class="form-label">
-                Confirm password
-              </label>
-
-              <input
-                id="confirmPassword"
-                v-model="confirmPassword"
-                type="password"
-                class="form-control auth-input"
-                placeholder="Enter your password again"
-                autocomplete="new-password"
-              >
+              <label for="confirmPassword" class="form-label">Confirm password</label>
+              <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control auth-input" placeholder="Confirm your password" autocomplete="new-password">
             </div>
 
-            <button
-              type="submit"
-              class="btn auth-button"
-              :disabled="loading"
-            >
-              <span
-                v-if="loading"
-                class="spinner-border spinner-border-sm me-2"
-              ></span>
-
-              {{ loading ? 'Creating account...' : 'Sign up' }}
-            </button>
+            <button type="submit" class="btn auth-button">Next</button>
           </form>
 
-          <div class="auth-divider">
-            <span></span>
-            <p>Already have an account?</p>
-            <span></span>
-          </div>
+          <form v-else @submit.prevent="register">
+            <div class="preference-list">
+              <label class="preference-item">
+                <span>Wi-Fi</span>
+                <input v-model="preferences.wifiRequired" class="form-check-input" type="checkbox">
+              </label>
 
-          <RouterLink
-            to="/login"
-            class="secondary-button"
-          >
-            Log in
-          </RouterLink>
+              <label class="preference-item">
+                <span>Power Sockets</span>
+                <input v-model="preferences.socketsRequired" class="form-check-input" type="checkbox">
+              </label>
+
+              <label class="preference-item">
+                <span>Quiet Environment</span>
+                <input v-model="preferences.quietPreferred" class="form-check-input" type="checkbox">
+              </label>
+
+              <label class="preference-item">
+                <span>Indoor Seating</span>
+                <input v-model="preferences.indoorPreferred" class="form-check-input" type="checkbox">
+              </label>
+            </div>
+
+            <div class="step-actions">
+              <button type="button" class="secondary-step-button" :disabled="loading" @click="step = 1">Back</button>
+              <button type="submit" class="btn auth-button create-button" :disabled="loading">
+                <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
+                {{ loading ? 'Creating account...' : 'Create account' }}
+              </button>
+            </div>
+          </form>
+
+          <template v-if="step === 1">
+            <div class="auth-divider">
+              <span></span>
+              <p>Already have an account?</p>
+              <span></span>
+            </div>
+            <RouterLink to="/login" class="secondary-button">Log in</RouterLink>
+          </template>
         </section>
       </div>
     </div>
@@ -179,10 +163,7 @@ async function register() {
   background: var(--x-card);
 }
 
-.auth-container {
-  position: relative;
-  z-index: 2;
-}
+.auth-container { position: relative; z-index: 2; }
 
 .auth-card {
   width: 100%;
@@ -209,43 +190,26 @@ async function register() {
   background: var(--x-orange);
 }
 
-.auth-side::before {
+.auth-side::before,
+.auth-side::after {
   content: '';
   position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,.06);
+}
+
+.auth-side::before {
   width: 270px;
   height: 270px;
   right: -100px;
   bottom: -90px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .06);
 }
 
 .auth-side::after {
-  content: '';
-  position: absolute;
   width: 170px;
   height: 170px;
   left: -80px;
   top: 80px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .05);
-}
-
-.mini-brand {
-  display: flex;
-  align-items: center;
-  gap: .65rem;
-  font-weight: 700;
-  position: relative;
-  z-index: 1;
-}
-
-.brand-dot {
-  width: 13px;
-  height: 13px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--x-lilac);
 }
 
 .side-content {
@@ -256,36 +220,10 @@ async function register() {
 
 .side-content h1 {
   max-width: 430px;
-  margin: 0 0 2.5rem;
+  margin: 0;
   font-size: clamp(2.4rem, 4vw, 3.4rem);
   line-height: 1.08;
   font-weight: 800;
-}
-
-.feature-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: .8rem;
-  font-size: 1rem;
-}
-
-.check {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--x-card);
-  border: var(--x-line);
-  font-weight: 700;
 }
 
 .auth-form {
@@ -295,9 +233,7 @@ async function register() {
   justify-content: center;
 }
 
-.form-heading {
-  margin-bottom: 1.7rem;
-}
+.form-heading { margin-bottom: 1.7rem; }
 
 .small-heading {
   color: var(--x-ink);
@@ -313,9 +249,7 @@ async function register() {
   font-weight: 800;
 }
 
-.form-group {
-  margin-bottom: 1.15rem;
-}
+.form-group { margin-bottom: 1.15rem; }
 
 .form-label {
   margin-bottom: .5rem;
@@ -391,14 +325,76 @@ async function register() {
 }
 
 .secondary-button:hover {
-  border-color: var(--x-ink);
   color: var(--x-ink);
   background: var(--x-paper);
 }
 
-.auth-alert {
-  border-radius: 12px;
+.preference-list {
+  display: flex;
+  flex-direction: column;
+  gap: .85rem;
 }
+
+.preference-item {
+  min-height: 58px;
+  padding: .9rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--x-ink);
+  border-radius: 14px;
+  color: var(--x-ink);
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--x-card);
+  transition: .2s ease;
+}
+
+.preference-item:has(input:checked) { background: #edf3e8; }
+
+.preference-item .form-check-input {
+  width: 1.4rem;
+  height: 1.4rem;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--x-ink);
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.preference-item .form-check-input:checked {
+  background-color: #9fbd91;
+  border-color: #78976b;
+}
+
+.preference-item .form-check-input:focus {
+  border-color: #78976b;
+  box-shadow: 0 0 0 3px rgba(159,189,145,.25);
+}
+
+.step-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: .8rem;
+}
+
+.secondary-step-button {
+  min-height: 54px;
+  flex: 0 0 110px;
+  padding: 0 1.2rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 14px;
+  color: var(--x-ink);
+  font-weight: 700;
+  background: white;
+}
+
+.create-button {
+  flex: 1;
+  margin-top: 0;
+}
+
+.auth-alert { border-radius: 12px; }
 
 .background-circle {
   position: absolute;
@@ -411,7 +407,7 @@ async function register() {
   height: 260px;
   top: -100px;
   right: 4%;
-  background: rgba(214, 209, 239, .3);
+  background: rgba(214,209,239,.3);
 }
 
 .circle-two {
@@ -419,7 +415,7 @@ async function register() {
   height: 220px;
   left: 3%;
   bottom: -90px;
-  background: rgba(211, 235, 228, .4);
+  background: rgba(211,235,228,.4);
 }
 
 @media (max-width: 991px) {
@@ -429,31 +425,23 @@ async function register() {
   }
 
   .auth-side {
-    min-height: 230px;
+    min-height: 180px;
     padding: 2rem;
   }
 
-  .side-content {
-    margin-top: 2rem;
-  }
+  .side-content { margin: auto 0; }
 
   .side-content h1 {
-    margin-bottom: 0;
+    margin: 0;
     font-size: 2.3rem;
   }
 
-  .feature-list {
-    display: none;
-  }
-
-  .auth-form {
-    padding: 2.5rem;
-  }
+  .auth-form { padding: 2.5rem; }
 }
 
 @media (max-width: 575px) {
   .auth-page {
-    padding: 1.25rem .75rem;
+    padding: 1rem .75rem;
     align-items: flex-start;
   }
 
@@ -463,32 +451,40 @@ async function register() {
   }
 
   .auth-side {
-    min-height: 175px;
-    padding: 1.5rem;
+    min-height: 135px;
+    padding: 1.4rem;
   }
 
-  .side-content {
-    margin-top: 1.3rem;
+  .side-content h1 { font-size: 1.8rem; }
+  .auth-form { padding: 1.6rem 1.2rem; }
+  .form-heading { margin-bottom: 1.3rem; }
+  .form-heading h2 { font-size: 1.7rem; }
+  .auth-divider p { font-size: .78rem; }
+  .preference-list { gap: .65rem; }
+
+  .preference-item {
+    min-height: 54px;
+    padding: .8rem .9rem;
+    border-radius: 12px;
+    font-size: .95rem;
   }
 
-  .side-content h1 {
-    font-size: 1.85rem;
+  .preference-item .form-check-input {
+    width: 1.3rem;
+    height: 1.3rem;
   }
 
-  .auth-form {
-    padding: 2rem 1.25rem;
+  .step-actions { gap: .65rem; }
+
+  .secondary-step-button {
+    min-height: 50px;
+    flex-basis: 90px;
+    padding: 0 .8rem;
   }
 
-  .form-heading {
-    margin-bottom: 1.5rem;
-  }
-
-  .form-heading h2 {
-    font-size: 1.8rem;
-  }
-
-  .auth-divider p {
-    font-size: .78rem;
+  .create-button {
+    min-height: 50px;
+    font-size: .9rem;
   }
 }
 </style>

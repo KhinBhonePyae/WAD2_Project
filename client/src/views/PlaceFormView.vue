@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL, authConfig } from '../utils/api.js'
@@ -18,6 +18,7 @@ const openTime = ref('')
 const closeTime = ref('')
 const indoor = ref(true)
 const openNow = ref(true)
+const closureStatus = ref('normal')
 const description = ref('')
 const capacity = ref('')
 const facilities = ref([])
@@ -35,10 +36,21 @@ const FACILITIES = [
   { value: 'wifi', label: 'Wi-Fi' },
   { value: 'sockets', label: 'Power sockets' },
   { value: 'toilets', label: 'Toilets' },
-  { value: 'water', label: 'Water point' },
+  { value: 'water', label: 'Water dispenser' },
   { value: 'fnb', label: 'Food & drink' },
   { value: 'quiet', label: 'Quiet zone' }
 ]
+
+function inferClosureStatus(data) {
+  const hours = (data.hours || '').toLowerCase()
+  if (data.closureStatus === 'permanent' || hours.includes('permanent')) return 'permanent'
+  if (data.closureStatus === 'temporary' || hours.includes('renovation') || hours.includes('temporar')) return 'temporary'
+  return 'normal'
+}
+
+watch(closureStatus, status => {
+  if (status !== 'normal') openNow.value = false
+})
 
 onMounted(async () => {
   if (!isEdit.value) return
@@ -58,7 +70,8 @@ onMounted(async () => {
     openTime.value = times[0] || ''
     closeTime.value = times[1] || ''
     indoor.value = data.indoor ?? true
-    openNow.value = data.openNow ?? true
+    closureStatus.value = inferClosureStatus(data)
+    openNow.value = closureStatus.value === 'normal' ? (data.openNow ?? true) : false
     description.value = data.description || ''
     capacity.value = data.capacity ?? ''
     facilities.value = data.facilities || []
@@ -145,17 +158,13 @@ function validateForm() {
   else if (!Number.isFinite(Number(lon.value))) validationErrors.value.push('Longitude must be a valid number.')
   else if (Number(lon.value) < -180 || Number(lon.value) > 180) validationErrors.value.push('Longitude must be between -180 and 180.')
 
-  const closedNoHours = !openNow.value && !openTime.value && !closeTime.value
+  if (closureStatus.value === 'normal') {
+    if (!openTime.value) validationErrors.value.push('Opening time is required.')
+    if (!closeTime.value) validationErrors.value.push('Closing time is required.')
 
-  if (!openTime.value && !closedNoHours) validationErrors.value.push('Opening time is required.')
-  if (!closeTime.value && !closedNoHours) validationErrors.value.push('Closing time is required.')
-
-  if (
-    openTime.value &&
-    closeTime.value &&
-    timeToMinutes(closeTime.value) <= timeToMinutes(openTime.value)
-  ) {
-    validationErrors.value.push('Closing time must be later than opening time.')
+    if (openTime.value && closeTime.value && timeToMinutes(closeTime.value) <= timeToMinutes(openTime.value)) {
+      validationErrors.value.push('Closing time must be later than opening time.')
+    }
   }
 
   if (allPhotos.length === 0) {
@@ -209,11 +218,10 @@ async function savePlace() {
     area: area.value.trim(),
     lat: Number(lat.value),
     lon: Number(lon.value),
-    hours: openTime.value && closeTime.value
-      ? `${openTime.value} - ${closeTime.value}`
-      : 'Closed for renovation',
+    hours: closureStatus.value === 'normal' && openTime.value && closeTime.value ? `${openTime.value} - ${closeTime.value}` : '',
     indoor: indoor.value,
-    openNow: openNow.value,
+    openNow: closureStatus.value === 'normal' ? openNow.value : false,
+    closureStatus: closureStatus.value,
     facilities: facilities.value,
     photos: isEdit.value
       ? [...editablePhotos, ...extraPhotos.value]
@@ -352,12 +360,12 @@ async function savePlace() {
 
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Opening time</label>
-            <input v-model="openTime" type="time" class="form-control">
+            <input v-model="openTime" type="time" class="form-control" :disabled="closureStatus !== 'normal'">
           </div>
 
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Closing time</label>
-            <input v-model="closeTime" type="time" :min="openTime" class="form-control">
+            <input v-model="closeTime" type="time" :min="openTime" class="form-control" :disabled="closureStatus !== 'normal'">
           </div>
 
           <div class="col-12 col-sm-6 col-lg-3">
@@ -370,12 +378,26 @@ async function savePlace() {
           </div>
 
           <div class="col-12 col-sm-6 col-lg-3">
-            <label class="form-label">Status</label>
-
-            <select v-model="openNow" class="form-select">
-              <option :value="true">Open</option>
-              <option :value="false">Closed</option>
+            <label class="form-label">Current status</label>
+            <select v-model="openNow" class="form-select" :disabled="closureStatus !== 'normal'">
+              <option :value="true">Open now</option>
+              <option :value="false">Closed now</option>
             </select>
+            <div class="form-text">Whether students can use the place right now.</div>
+          </div>
+
+          <div class="col-12 col-sm-6 col-lg-3">
+            <label class="form-label">Closure type</label>
+            <select v-model="closureStatus" class="form-select">
+              <option value="normal">Normal operation</option>
+              <option value="temporary">Temporarily closed</option>
+              <option value="permanent">Permanently closed</option>
+            </select>
+            <div class="form-text">Use temporary/permanent only for special closures.</div>
+          </div>
+
+          <div v-if="closureStatus !== 'normal'" class="col-12">
+            <div class="closure-note"><strong>{{ closureStatus === 'temporary' ? 'Temporarily closed' : 'Permanently closed' }}</strong> — current status is automatically set to closed and opening hours are not required.</div>
           </div>
         </div>
       </section>
@@ -657,6 +679,8 @@ async function savePlace() {
   color: var(--x-muted);
   font-size: .75rem;
 }
+
+.closure-note { padding: .9rem 1rem; border: 2px solid var(--x-ink); border-radius: 14px; background: var(--x-butter); font-size: .82rem; box-shadow: 3px 3px 0 var(--x-ink); }
 
 /* FACILITY CHIPS */
 .facility-grid {

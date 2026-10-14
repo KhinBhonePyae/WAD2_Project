@@ -45,6 +45,7 @@ function mapPlace(branch) {
         indoor: true,
         capacity: 200, // rough default; adjust per branch in the admin form
         openNow: schedules.length > 0,
+        closureStatus: schedules.length > 0 ? 'normal' : 'temporary',
         hours: schedules.length
             ? `${schedules[0].openingTime.slice(0, 5)} - ${schedules[0].closingTime.slice(0, 5)}`
             : 'Closed for renovation',
