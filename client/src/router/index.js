@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import axios from 'axios'
-import { BASE_URL, authConfig } from '../utils/api.js'
 
 import HomeView from '../views/HomeView.vue'
 import CatalogueView from '../views/CatalogueView.vue'
@@ -38,11 +36,21 @@ const router = createRouter({
   }
 })
 
-router.beforeEach(async (to) => {
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user'))
+  } catch {
+    return null
+  }
+}
+
+router.beforeEach((to) => {
   if (!to.meta.requiresAdmin) return true
 
   const token = localStorage.getItem('token')
+  const user = getStoredUser()
 
+  // Not logged in
   if (!token) {
     return {
       path: '/login',
@@ -50,23 +58,12 @@ router.beforeEach(async (to) => {
     }
   }
 
-  try {
-    const { data: user } = await axios.get(`${BASE_URL}/users/profile`, authConfig())
-
-    localStorage.setItem('user', JSON.stringify(user))
-
-    if (user.role !== 'admin') return { path: '/places' }
-
-    return true
-  } catch (e) {
-    localStorage.removeItem('user')
-    localStorage.removeItem('token')
-
-    return {
-      path: '/login',
-      query: { redirect: to.fullPath }
-    }
+  // Logged in but not admin
+  if (user?.role !== 'admin') {
+    return { path: '/places' }
   }
+
+  return true
 })
 
 export default router
