@@ -69,6 +69,7 @@ onUnmounted(() => {
 
       <template v-else>
         <RouterLink v-if="user.role === 'admin'" to="/admin/places" class="x-nav__link" data-test="nav-manage">Manage</RouterLink>
+        <RouterLink v-if="user.role === 'admin'" to="/admin/users" class="x-nav__link">Users</RouterLink>
         <RouterLink to="/profile" class="x-nav__link x-nav__user">{{ user.name }}</RouterLink>
       </template>
 

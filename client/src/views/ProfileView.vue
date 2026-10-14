@@ -31,37 +31,23 @@ const confirmPassword = ref('')
 
 const initials = computed(() => {
   if (!user.value?.name) return ''
-  return user.value.name
-    .split(' ')
-    .map(word => word.charAt(0))
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  return user.value.name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2)
 })
 
 const memberSince = computed(() => {
   if (!user.value?.createdAt) return ''
-  return new Date(user.value.createdAt).toLocaleDateString('en-SG', {
-    month: 'short',
-    year: 'numeric'
-  })
+  return new Date(user.value.createdAt).toLocaleDateString('en-SG', { month: 'short', year: 'numeric' })
 })
 
 async function getProfile() {
   const token = localStorage.getItem('token')
-  if (!token) {
-    router.push('/login')
-    return
-  }
+  if (!token) return router.push('/login')
 
   try {
     const [profileResponse, ids] = await Promise.all([
-      axios.get(`${BASE_URL}/users/profile`, {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
+      axios.get(`${BASE_URL}/users/profile`, { headers: { Authorization: `Bearer ${token}` } }),
       fetchSavedIds()
     ])
-
     user.value = profileResponse.data
     savedIds.value = ids
     setFormValues()
@@ -98,37 +84,23 @@ async function saveProfile() {
   errorMessage.value = ''
   successMessage.value = ''
 
-  if (!name.value.trim()) {
-    errorMessage.value = 'Name is required.'
-    return
-  }
-
-  if (!email.value.trim()) {
-    errorMessage.value = 'Email is required.'
-    return
-  }
+  if (!name.value.trim()) return errorMessage.value = 'Name is required.'
+  if (!email.value.trim()) return errorMessage.value = 'Email is required.'
 
   const token = localStorage.getItem('token')
 
   try {
     saving.value = true
-
-    const response = await axios.put(
-      `${BASE_URL}/users/profile`,
-      {
-        name: name.value.trim(),
-        email: email.value.trim(),
-        preferences: {
-          wifiRequired: wifiRequired.value,
-          socketsRequired: socketsRequired.value,
-          quietPreferred: quietPreferred.value,
-          indoorPreferred: indoorPreferred.value
-        }
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` }
+    const response = await axios.put(`${BASE_URL}/users/profile`, {
+      name: name.value.trim(),
+      email: email.value.trim(),
+      preferences: {
+        wifiRequired: wifiRequired.value,
+        socketsRequired: socketsRequired.value,
+        quietPreferred: quietPreferred.value,
+        indoorPreferred: indoorPreferred.value
       }
-    )
+    }, { headers: { Authorization: `Bearer ${token}` } })
 
     user.value = response.data.user
     localStorage.setItem('user', JSON.stringify(response.data.user))
@@ -186,18 +158,11 @@ async function changePassword() {
 
   try {
     changingPassword.value = true
-
-    const response = await axios.put(
-      `${BASE_URL}/users/profile/password`,
-      {
-        currentPassword: currentPassword.value,
-        newPassword: newPassword.value,
-        confirmPassword: confirmPassword.value
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` }
-      }
-    )
+    const response = await axios.put(`${BASE_URL}/users/profile/password`, {
+      currentPassword: currentPassword.value,
+      newPassword: newPassword.value,
+      confirmPassword: confirmPassword.value
+    }, { headers: { Authorization: `Bearer ${token}` } })
 
     passwordSuccess.value = response.data.message
     currentPassword.value = ''
@@ -211,9 +176,7 @@ async function changePassword() {
       router.push('/login')
       return
     }
-
-    passwordError.value =
-      error.response?.data?.error || 'Unable to change password.'
+    passwordError.value = error.response?.data?.error || 'Unable to change password.'
   } finally {
     changingPassword.value = false
   }
@@ -234,7 +197,6 @@ async function deleteAccount() {
 
   try {
     deleting.value = true
-
     await axios.delete(`${BASE_URL}/users/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -259,24 +221,18 @@ function handleAuthError(error, defaultMessage) {
     router.push('/login')
     return
   }
-
-  errorMessage.value =
-    error.response?.data?.error || defaultMessage
+  errorMessage.value = error.response?.data?.error || defaultMessage
 }
 
-onMounted(() => {
-  getProfile()
-})
+onMounted(getProfile)
 </script>
 
 <template>
   <main class="profile-page">
     <div class="container profile-container">
       <div class="page-heading">
-        <div>
-          <p class="page-label">ACCOUNT</p>
-          <h1>My Profile</h1>
-        </div>
+        <p class="page-label">ACCOUNT</p>
+        <h1>My Profile</h1>
       </div>
 
       <div v-if="loading" class="profile-loading">
@@ -285,40 +241,24 @@ onMounted(() => {
       </div>
 
       <template v-else>
-        <div v-if="errorMessage" class="alert alert-danger">
-          {{ errorMessage }}
-        </div>
-
-        <div v-if="successMessage" class="alert alert-success">
-          {{ successMessage }}
-        </div>
+        <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+        <div v-if="successMessage" class="alert alert-success">{{ successMessage }}</div>
 
         <div v-if="user && !editing" class="profile-card">
           <section class="profile-header">
             <div class="profile-main">
               <div class="profile-avatar">{{ initials }}</div>
-
               <div class="profile-info">
                 <h2>{{ user.name }}</h2>
                 <p>{{ user.email }}</p>
-
                 <div class="profile-stats">
                   <span>{{ savedIds.length }} Saved Places</span>
                   <span class="profile-stat-divider"></span>
-                  <span v-if="memberSince">
-                    Member since {{ memberSince }}
-                  </span>
+                  <span v-if="memberSince">Member since {{ memberSince }}</span>
                 </div>
               </div>
             </div>
-
-            <button
-              type="button"
-              class="btn edit-button"
-              @click="editProfile"
-            >
-              Edit Profile
-            </button>
+            <button type="button" class="btn edit-button" @click="editProfile">Edit Profile</button>
           </section>
 
           <section class="profile-section">
@@ -329,74 +269,30 @@ onMounted(() => {
 
             <div class="preferences-grid">
               <div class="preference-row">
-                <div>
-                  <strong>Wi-Fi</strong>
-                  <span>Reliable internet access</span>
-                </div>
-
-                <span
-                  class="status"
-                  :class="{ active: user.preferences?.wifiRequired }"
-                >
-                  {{
-                    user.preferences?.wifiRequired
-                      ? 'Required'
-                      : 'Not required'
-                  }}
+                <div><strong>Wi-Fi</strong><span>Reliable internet access</span></div>
+                <span class="status" :class="{ active: user.preferences?.wifiRequired }">
+                  {{ user.preferences?.wifiRequired ? 'Required' : 'Not required' }}
                 </span>
               </div>
 
               <div class="preference-row">
-                <div>
-                  <strong>Power Sockets</strong>
-                  <span>Access to charging points</span>
-                </div>
-
-                <span
-                  class="status"
-                  :class="{ active: user.preferences?.socketsRequired }"
-                >
-                  {{
-                    user.preferences?.socketsRequired
-                      ? 'Required'
-                      : 'Not required'
-                  }}
+                <div><strong>Power Sockets</strong><span>Access to charging points</span></div>
+                <span class="status" :class="{ active: user.preferences?.socketsRequired }">
+                  {{ user.preferences?.socketsRequired ? 'Required' : 'Not required' }}
                 </span>
               </div>
 
               <div class="preference-row">
-                <div>
-                  <strong>Quiet Environment</strong>
-                  <span>Preference for quieter spaces</span>
-                </div>
-
-                <span
-                  class="status"
-                  :class="{ active: user.preferences?.quietPreferred }"
-                >
-                  {{
-                    user.preferences?.quietPreferred
-                      ? 'Preferred'
-                      : 'No preference'
-                  }}
+                <div><strong>Quiet Environment</strong><span>Preference for quieter spaces</span></div>
+                <span class="status" :class="{ active: user.preferences?.quietPreferred }">
+                  {{ user.preferences?.quietPreferred ? 'Preferred' : 'No preference' }}
                 </span>
               </div>
 
               <div class="preference-row">
-                <div>
-                  <strong>Indoor Location</strong>
-                  <span>Preference for indoor spaces</span>
-                </div>
-
-                <span
-                  class="status"
-                  :class="{ active: user.preferences?.indoorPreferred }"
-                >
-                  {{
-                    user.preferences?.indoorPreferred
-                      ? 'Preferred'
-                      : 'No preference'
-                  }}
+                <div><strong>Indoor Location</strong><span>Preference for indoor spaces</span></div>
+                <span class="status" :class="{ active: user.preferences?.indoorPreferred }">
+                  {{ user.preferences?.indoorPreferred ? 'Preferred' : 'No preference' }}
                 </span>
               </div>
             </div>
@@ -407,28 +303,18 @@ onMounted(() => {
               <h3>Account & Security</h3>
               <p>Update your account password.</p>
             </div>
-
-            <button
-              type="button"
-              class="btn btn-outline-primary"
-              @click="openPasswordModal"
-            >
-              Change Password
-            </button>
+            <button type="button" class="btn settings-button password-button" @click="openPasswordModal">Change Password</button>
           </section>
 
           <section class="settings-row">
             <div>
               <h3>Log Out</h3>
-              <p>Sign out of LockedIN on this device.</p>
+              <p>Sign out of LockedIN.</p>
             </div>
-
-            <button
-              type="button"
-              class="btn btn-outline-primary"
-              data-test="logout"
-              @click="logout"
-            >
+            <button type="button" class="btn settings-button logout-button" data-test="logout" @click="logout">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M10 5H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M14 8l4 4-4 4M18 12H9" />
+              </svg>
               Log Out
             </button>
           </section>
@@ -438,14 +324,7 @@ onMounted(() => {
               <h3>Delete Account</h3>
               <p>Permanently delete your LockedIN account.</p>
             </div>
-
-            <button
-              type="button"
-              class="btn btn-outline-danger"
-              @click="openDeleteModal"
-            >
-              Delete Account
-            </button>
+            <button type="button" class="btn settings-button delete-button" @click="openDeleteModal">Delete Account</button>
           </section>
         </div>
 
@@ -458,31 +337,13 @@ onMounted(() => {
           <form @submit.prevent="saveProfile">
             <div class="row g-3">
               <div class="col-md-6">
-                <label for="name" class="form-label fw-semibold">
-                  Name
-                </label>
-
-                <input
-                  id="name"
-                  v-model="name"
-                  type="text"
-                  class="form-control profile-input"
-                  required
-                >
+                <label for="name" class="form-label fw-semibold">Name</label>
+                <input id="name" v-model="name" type="text" class="form-control profile-input" required>
               </div>
 
               <div class="col-md-6">
-                <label for="email" class="form-label fw-semibold">
-                  Email
-                </label>
-
-                <input
-                  id="email"
-                  v-model="email"
-                  type="email"
-                  class="form-control profile-input"
-                  required
-                >
+                <label for="email" class="form-label fw-semibold">Email</label>
+                <input id="email" v-model="email" type="email" class="form-control profile-input" required>
               </div>
             </div>
 
@@ -495,226 +356,85 @@ onMounted(() => {
 
             <div class="edit-preferences">
               <label class="edit-preference">
-                <div>
-                  <strong>Wi-Fi</strong>
-                  <span>Require reliable internet access</span>
-                </div>
-
+                <div><strong>Wi-Fi</strong><span>Require reliable internet access</span></div>
                 <div class="form-check form-switch">
-                  <input
-                    v-model="wifiRequired"
-                    class="form-check-input"
-                    type="checkbox"
-                  >
+                  <input v-model="wifiRequired" class="form-check-input" type="checkbox">
                 </div>
               </label>
 
               <label class="edit-preference">
-                <div>
-                  <strong>Power Sockets</strong>
-                  <span>Require access to charging points</span>
-                </div>
-
+                <div><strong>Power Sockets</strong><span>Require access to charging points</span></div>
                 <div class="form-check form-switch">
-                  <input
-                    v-model="socketsRequired"
-                    class="form-check-input"
-                    type="checkbox"
-                  >
+                  <input v-model="socketsRequired" class="form-check-input" type="checkbox">
                 </div>
               </label>
 
               <label class="edit-preference">
-                <div>
-                  <strong>Quiet Environment</strong>
-                  <span>Prefer quieter study spaces</span>
-                </div>
-
+                <div><strong>Quiet Environment</strong><span>Prefer quieter study spaces</span></div>
                 <div class="form-check form-switch">
-                  <input
-                    v-model="quietPreferred"
-                    class="form-check-input"
-                    type="checkbox"
-                  >
+                  <input v-model="quietPreferred" class="form-check-input" type="checkbox">
                 </div>
               </label>
 
               <label class="edit-preference">
-                <div>
-                  <strong>Indoor Location</strong>
-                  <span>Prefer indoor study spaces</span>
-                </div>
-
+                <div><strong>Indoor Location</strong><span>Prefer indoor study spaces</span></div>
                 <div class="form-check form-switch">
-                  <input
-                    v-model="indoorPreferred"
-                    class="form-check-input"
-                    type="checkbox"
-                  >
+                  <input v-model="indoorPreferred" class="form-check-input" type="checkbox">
                 </div>
               </label>
             </div>
 
             <div class="edit-actions">
-              <button
-                type="button"
-                class="btn btn-outline-secondary"
-                :disabled="saving"
-                @click="cancelEdit"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="submit"
-                class="btn save-button"
-                :disabled="saving"
-              >
-                {{ saving ? 'Saving...' : 'Save Changes' }}
-              </button>
+              <button type="button" class="btn btn-outline-secondary" :disabled="saving" @click="cancelEdit">Cancel</button>
+              <button type="submit" class="btn save-button" :disabled="saving">{{ saving ? 'Saving...' : 'Save Changes' }}</button>
             </div>
           </form>
         </div>
 
-        <div
-          v-if="showPasswordModal"
-          class="profile-modal-backdrop"
-          @click.self="closePasswordModal"
-        >
+        <div v-if="showPasswordModal" class="profile-modal-backdrop" @click.self="closePasswordModal">
           <div class="profile-modal-card">
             <p class="page-label">ACCOUNT SECURITY</p>
             <h2>Change Password</h2>
+            <p class="modal-description">Enter your current password and choose a new password.</p>
 
-            <p class="modal-description">
-              Enter your current password and choose a new password.
-            </p>
-
-            <div
-              v-if="passwordError"
-              class="alert alert-danger"
-            >
-              {{ passwordError }}
-            </div>
-
-            <div
-              v-if="passwordSuccess"
-              class="alert alert-success"
-            >
-              {{ passwordSuccess }}
-            </div>
+            <div v-if="passwordError" class="alert alert-danger">{{ passwordError }}</div>
+            <div v-if="passwordSuccess" class="alert alert-success">{{ passwordSuccess }}</div>
 
             <form @submit.prevent="changePassword">
               <div class="mb-3">
-                <label
-                  for="currentPassword"
-                  class="form-label fw-semibold"
-                >
-                  Current Password
-                </label>
-
-                <input
-                  id="currentPassword"
-                  v-model="currentPassword"
-                  type="password"
-                  class="form-control profile-input"
-                  autocomplete="current-password"
-                  required
-                >
+                <label for="currentPassword" class="form-label fw-semibold">Current Password</label>
+                <input id="currentPassword" v-model="currentPassword" type="password" class="form-control profile-input" autocomplete="current-password" required>
               </div>
 
               <div class="mb-3">
-                <label
-                  for="newPassword"
-                  class="form-label fw-semibold"
-                >
-                  New Password
-                </label>
-
-                <input
-                  id="newPassword"
-                  v-model="newPassword"
-                  type="password"
-                  class="form-control profile-input"
-                  autocomplete="new-password"
-                  required
-                >
+                <label for="newPassword" class="form-label fw-semibold">New Password</label>
+                <input id="newPassword" v-model="newPassword" type="password" class="form-control profile-input" autocomplete="new-password" required>
               </div>
 
               <div class="mb-3">
-                <label
-                  for="confirmPassword"
-                  class="form-label fw-semibold"
-                >
-                  Confirm New Password
-                </label>
-
-                <input
-                  id="confirmPassword"
-                  v-model="confirmPassword"
-                  type="password"
-                  class="form-control profile-input"
-                  autocomplete="new-password"
-                  required
-                >
+                <label for="confirmPassword" class="form-label fw-semibold">Confirm New Password</label>
+                <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control profile-input" autocomplete="new-password" required>
               </div>
 
               <div class="modal-actions">
-                <button
-                  type="button"
-                  class="btn btn-outline-secondary"
-                  :disabled="changingPassword"
-                  @click="closePasswordModal"
-                >
-                  Cancel
-                </button>
-
-                <button
-                  type="submit"
-                  class="btn save-button"
-                  :disabled="changingPassword"
-                >
-                  {{
-                    changingPassword
-                      ? 'Changing...'
-                      : 'Change Password'
-                  }}
+                <button type="button" class="btn btn-outline-secondary" :disabled="changingPassword" @click="closePasswordModal">Cancel</button>
+                <button type="submit" class="btn save-button" :disabled="changingPassword">
+                  {{ changingPassword ? 'Changing...' : 'Change Password' }}
                 </button>
               </div>
             </form>
           </div>
         </div>
 
-        <div
-          v-if="showDeleteModal"
-          class="profile-modal-backdrop"
-          @click.self="closeDeleteModal"
-        >
+        <div v-if="showDeleteModal" class="profile-modal-backdrop" @click.self="closeDeleteModal">
           <div class="profile-modal-card">
             <div class="danger-icon">!</div>
-
             <h2>Delete Account?</h2>
-
-            <p class="modal-description">
-              Your LockedIN account will be permanently deleted.
-              This action cannot be undone.
-            </p>
+            <p class="modal-description">Your LockedIN account will be permanently deleted. This action cannot be undone.</p>
 
             <div class="modal-actions">
-              <button
-                type="button"
-                class="btn btn-outline-secondary"
-                :disabled="deleting"
-                @click="closeDeleteModal"
-              >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                class="btn btn-danger"
-                :disabled="deleting"
-                @click="deleteAccount"
-              >
+              <button type="button" class="btn btn-outline-secondary" :disabled="deleting" @click="closeDeleteModal">Cancel</button>
+              <button type="button" class="btn btn-danger" :disabled="deleting" @click="deleteAccount">
                 {{ deleting ? 'Deleting...' : 'Delete Account' }}
               </button>
             </div>
@@ -732,13 +452,8 @@ onMounted(() => {
   background: var(--x-card);
 }
 
-.profile-container {
-  max-width: 1000px;
-}
-
-.page-heading {
-  margin-bottom: 1.25rem;
-}
+.profile-container { max-width: 1000px; }
+.page-heading { margin-bottom: 1.25rem; }
 
 .page-label {
   margin: 0 0 .25rem;
@@ -832,22 +547,96 @@ onMounted(() => {
 }
 
 .edit-button,
-.save-button {
-  border: 0;
-  color: white;
-  background: var(--x-orange);
+.settings-button {
+  width: 180px;
+  min-height: 44px;
+  border: 1px solid var(--x-ink);
+  border-radius: 10px;
+  font-weight: 700;
+  box-shadow: 6px 6px 0 var(--x-ink);
+  transition: .2s ease;
 }
 
 .edit-button {
-  padding: .65rem 1.2rem;
-  border-radius: 10px;
-  font-weight: 700;
+  background: var(--x-orange);
+  color: white;
+}
+
+.password-button {
+  background: #d8d1ee;
+  color: var(--x-ink);
+}
+
+.logout-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  background: #e8dfd2;
+  color: var(--x-ink);
+}
+
+.logout-button svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.delete-button {
+  background: var(--ss-danger);
+  color: white;
 }
 
 .edit-button:hover,
-.save-button:hover {
-  color: white;
+.password-button:hover,
+.logout-button:hover,
+.delete-button:hover {
+  border-color: var(--x-ink);
+  transform: translateY(-2px);
+}
+
+.edit-button:hover {
   background: var(--x-orange);
+  color: white;
+}
+
+.password-button:hover {
+  background: #ccc3e8;
+  color: var(--x-ink);
+}
+
+.logout-button:hover {
+  background: #ddd2c3;
+  color: var(--x-ink);
+}
+
+.delete-button:hover {
+  background: var(--ss-danger);
+  color: white;
+}
+
+.save-button {
+  padding: .6rem 1.2rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 10px;
+  background: var(--x-orange);
+  color: white;
+  font-weight: 700;
+  box-shadow: 5px 5px 0 var(--x-ink);
+}
+
+.save-button:hover {
+  background: var(--x-orange);
+  color: white;
+}
+
+.form-switch .form-check-input:checked {
+  background-color: var(--x-orange);
+  border-color: var(--x-orange);
 }
 
 .profile-section {
@@ -855,9 +644,7 @@ onMounted(() => {
   border-bottom: 1px solid var(--x-ink);
 }
 
-.section-heading {
-  margin-bottom: 1rem;
-}
+.section-heading { margin-bottom: 1rem; }
 
 .section-heading h3,
 .settings-row h3 {
@@ -892,9 +679,7 @@ onMounted(() => {
   background: var(--x-card);
 }
 
-.preference-row > div {
-  min-width: 0;
-}
+.preference-row > div { min-width: 0; }
 
 .preference-row strong,
 .edit-preference strong {
@@ -940,9 +725,7 @@ onMounted(() => {
   background: var(--ss-danger-soft);
 }
 
-.danger-row h3 {
-  color: var(--ss-danger);
-}
+.danger-row h3 { color: var(--ss-danger); }
 
 .edit-card {
   max-width: 900px;
@@ -950,9 +733,7 @@ onMounted(() => {
   padding: 1.75rem;
 }
 
-.edit-heading {
-  margin-bottom: 1.5rem;
-}
+.edit-heading { margin-bottom: 1.5rem; }
 
 .edit-heading h2 {
   margin: 0;
@@ -1016,11 +797,6 @@ onMounted(() => {
   gap: .75rem;
 }
 
-.save-button {
-  padding-left: 1.2rem;
-  padding-right: 1.2rem;
-}
-
 .profile-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1069,22 +845,11 @@ onMounted(() => {
 }
 
 @media (max-width: 767px) {
-  .profile-page {
-    padding: 1.5rem .75rem 2.5rem;
-  }
-
-  .page-heading h1 {
-    font-size: 1.75rem;
-  }
-
-  .profile-header {
-    align-items: flex-start;
-  }
-
+  .profile-page { padding: 1.5rem .75rem 2.5rem; }
+  .page-heading h1 { font-size: 1.75rem; }
+  .profile-header { align-items: flex-start; }
   .preferences-grid,
-  .edit-preferences {
-    grid-template-columns: 1fr;
-  }
+  .edit-preferences { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 575px) {
@@ -1093,23 +858,16 @@ onMounted(() => {
     padding: 1.2rem;
   }
 
-  .edit-button {
-    width: 100%;
-  }
+  .edit-button,
+  .settings-button { width: 100%; }
 
   .profile-section,
   .settings-row,
-  .edit-card {
-    padding: 1.2rem;
-  }
+  .edit-card { padding: 1.2rem; }
 
   .settings-row {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .settings-row button {
-    width: 100%;
   }
 
   .profile-stats {
@@ -1118,22 +876,14 @@ onMounted(() => {
     font-size: .7rem;
   }
 
-  .preference-row {
-    align-items: flex-start;
-  }
+  .preference-row { align-items: flex-start; }
 
   .edit-actions,
-  .modal-actions {
-    flex-direction: column-reverse;
-  }
+  .modal-actions { flex-direction: column-reverse; }
 
   .edit-actions button,
-  .modal-actions button {
-    width: 100%;
-  }
+  .modal-actions button { width: 100%; }
 
-  .profile-modal-card {
-    padding: 1.4rem;
-  }
+  .profile-modal-card { padding: 1.4rem; }
 }
 </style>

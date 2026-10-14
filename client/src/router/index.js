@@ -8,6 +8,7 @@ import SignUpView from '../views/SignUpView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import PlaceFormView from '../views/PlaceFormView.vue'
 import AdminPlacesView from '../views/AdminPlacesView.vue'
+import AdminUsersView from '../views/AdminUsersView.vue'
 import SavedView from '../views/SavedView.vue'
 import SearchView from '../views/SearchView.vue'
 
@@ -27,6 +28,7 @@ const router = createRouter({
     { path: '/admin/places', component: AdminPlacesView, meta: { requiresAdmin: true } },
     { path: '/admin/places/new', component: PlaceFormView, meta: { requiresAdmin: true } },
     { path: '/admin/places/:id/edit', component: PlaceFormView, meta: { requiresAdmin: true } },
+    { path: '/admin/users', component: AdminUsersView, meta: { requiresAdmin: true } },
 
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],

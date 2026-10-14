@@ -7,22 +7,27 @@ const jwt = require('jsonwebtoken')
 /* POST /users/register */
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body
-
+    const { name, email, password, preferences } = req.body
     if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' })
 
     const cleanEmail = email.trim().toLowerCase()
     const existingUser = await userModel.findByEmail(cleanEmail)
-
     if (existingUser) return res.status(409).json({ error: 'Email is already registered' })
 
     const hashedPassword = await bcrypt.hash(password, 10)
+    const cleanPreferences = {
+      wifiRequired: preferences?.wifiRequired === true,
+      socketsRequired: preferences?.socketsRequired === true,
+      quietPreferred: preferences?.quietPreferred === true,
+      indoorPreferred: preferences?.indoorPreferred === true
+    }
 
     const newUser = await userModel.createUser({
       name: name.trim(),
       email: cleanEmail,
       password: hashedPassword,
-      role: 'user'
+      role: 'user',
+      preferences: cleanPreferences
     })
 
     res.status(201).json({
@@ -166,6 +171,57 @@ exports.deleteAccount = async (req, res, next) => {
     await intentModel.deleteAllForUser(req.userId)
 
     res.json({ message: 'Account deleted successfully' })
+  } catch (e) {
+    next(e)
+  }
+}
+
+/* GET /users/admin */
+exports.getAllUsers = async (req, res, next) => {
+  try {
+    const users = await userModel.getAllUsers()
+
+    res.json({
+      users: users.map(user => ({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role || 'user',
+        createdAt: user.createdAt,
+        preferences: user.preferences
+      }))
+    })
+  } catch (e) {
+    next(e)
+  }
+}
+
+/* PUT /users/admin/:id/role */
+exports.updateUserRole = async (req, res, next) => {
+  try {
+    const { role } = req.body
+
+    if (!['user', 'admin'].includes(role)) {
+      return res.status(400).json({ error: 'Invalid role' })
+    }
+
+    const updatedUser = await userModel.updateUser(req.params.id, { role })
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' })
+    }
+
+    res.json({
+      message: 'User role updated successfully',
+      user: {
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        createdAt: updatedUser.createdAt,
+        preferences: updatedUser.preferences
+      }
+    })
   } catch (e) {
     next(e)
   }

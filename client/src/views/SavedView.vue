@@ -6,6 +6,7 @@ import { BASE_URL } from '../utils/api.js'
 import PlaceCard from '../components/PlaceCard.vue'
 
 const router = useRouter()
+const allPlaces = ref([])
 const savedPlaces = ref([])
 const savedIds = ref([])
 const loading = ref(true)
@@ -13,42 +14,20 @@ const errorMessage = ref('')
 
 async function getSavedPlaces() {
   const token = localStorage.getItem('token')
-
-  if (!token) {
-    router.push('/login')
-    return
-  }
+  if (!token) return router.push('/login')
 
   try {
-    const savedResponse = await axios.get(
-      `${BASE_URL}/saved`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    )
+    const headers = { Authorization: `Bearer ${token}` }
+    const [savedResponse, placesResponse] = await Promise.all([
+      axios.get(`${BASE_URL}/saved`, { headers }),
+      axios.get(`${BASE_URL}/places`)
+    ])
 
     savedIds.value = savedResponse.data.savedPlaceIds
-
-    const requests = savedIds.value.map(id =>
-      axios.get(`${BASE_URL}/places/${id}`)
-    )
-
-    const responses = await Promise.all(requests)
-
-    savedPlaces.value = responses.map(
-      response => response.data
-    )
+    allPlaces.value = Array.isArray(placesResponse.data) ? placesResponse.data : []
+    savedPlaces.value = allPlaces.value.filter(place => savedIds.value.includes(place.id))
   } catch (error) {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.dispatchEvent(new Event('user-login'))
-      router.push('/login')
-      return
-    }
-
+    if (error.response?.status === 401) return logoutToLogin()
     errorMessage.value = 'Unable to load saved places.'
   } finally {
     loading.value = false
@@ -57,40 +36,26 @@ async function getSavedPlaces() {
 
 async function toggleSave(placeId) {
   const token = localStorage.getItem('token')
+  const headers = { Authorization: `Bearer ${token}` }
 
   try {
-    await axios.delete(
-      `${BASE_URL}/saved/${placeId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    )
-
-    savedIds.value = savedIds.value.filter(
-      id => id !== placeId
-    )
-
-    savedPlaces.value = savedPlaces.value.filter(
-      place => place.id !== placeId
-    )
+    await axios.delete(`${BASE_URL}/saved/${placeId}`, { headers })
+    savedIds.value = savedIds.value.filter(id => id !== placeId)
+    savedPlaces.value = savedPlaces.value.filter(place => place.id !== placeId)
   } catch (error) {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.dispatchEvent(new Event('user-login'))
-      router.push('/login')
-      return
-    }
-
+    if (error.response?.status === 401) return logoutToLogin()
     errorMessage.value = 'Unable to remove saved place.'
   }
 }
 
-onMounted(() => {
-  getSavedPlaces()
-})
+function logoutToLogin() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  window.dispatchEvent(new Event('user-login'))
+  router.push('/login')
+}
+
+onMounted(getSavedPlaces)
 </script>
 
 <template>
@@ -101,54 +66,23 @@ onMounted(() => {
           <p class="saved-label">MY PLACES</p>
           <h1>Saved Places</h1>
         </div>
-
-        <span
-          v-if="!loading"
-          class="saved-count"
-        >
-          {{ savedPlaces.length }}
-          saved
-        </span>
+        <span v-if="!loading" class="saved-count">{{ savedPlaces.length }} saved</span>
       </div>
 
-      <div
-        v-if="loading"
-        class="saved-state"
-      >
+      <div v-if="loading" class="saved-state">
         <div class="spinner-border text-primary"></div>
         <span>Loading saved places...</span>
       </div>
 
-      <div
-        v-else-if="errorMessage"
-        class="alert alert-danger"
-      >
-        {{ errorMessage }}
-      </div>
+      <div v-else-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
 
-      <div
-        v-else-if="savedPlaces.length === 0"
-        class="empty-card"
-      >
+      <div v-else-if="savedPlaces.length === 0" class="empty-card">
         <h2>No saved places yet</h2>
-
-        <p>
-          Save a study spot by clicking the heart
-          on a place card.
-        </p>
-
-        <RouterLink
-          to="/places"
-          class="btn browse-button"
-        >
-          Browse Places
-        </RouterLink>
+        <p>Save a study spot by clicking the heart on a place card.</p>
+        <RouterLink to="/places" class="btn browse-button">Browse Places</RouterLink>
       </div>
 
-      <div
-        v-else
-        class="saved-grid"
-      >
+      <div v-else class="saved-grid">
         <PlaceCard
           v-for="place in savedPlaces"
           :key="place.id"
@@ -168,9 +102,7 @@ onMounted(() => {
   background: var(--x-card);
 }
 
-.saved-container {
-  max-width: 1200px;
-}
+.saved-container { max-width: 1200px; }
 
 .saved-heading {
   margin-bottom: 2rem;
@@ -255,27 +187,13 @@ onMounted(() => {
 }
 
 @media (max-width: 991px) {
-  .saved-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .saved-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 575px) {
-  .saved-page {
-    padding: 2rem .75rem;
-  }
-
-  .saved-heading {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .saved-heading h1 {
-    font-size: 1.8rem;
-  }
-
-  .saved-grid {
-    grid-template-columns: 1fr;
-  }
+  .saved-page { padding: 2rem .75rem; }
+  .saved-heading { align-items: flex-start; flex-direction: column; }
+  .saved-heading h1 { font-size: 1.8rem; }
+  .saved-grid { grid-template-columns: 1fr; }
 }
 </style>

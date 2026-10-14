@@ -88,4 +88,10 @@ exports.deleteUser = async (id) => {
   return User.findByIdAndDelete(id)
 }
 
+// Get all users
+exports.getAllUsers = async () => {
+  if (global.MOCK_MODE) return mem
+  return User.find().select('-password').sort({ createdAt: -1 })
+}
+
 exports.User = User
