@@ -58,6 +58,13 @@ function getPlacePhoto(place) {
   return place.photos?.[0] || place.photo || ''
 }
 
+function closureStatusOf(place) {
+  const hours = (place.hours || '').toLowerCase()
+  if (place.closureStatus === 'permanent' || hours.includes('permanent')) return 'permanent'
+  if (place.closureStatus === 'temporary' || hours.includes('renovation') || hours.includes('temporar')) return 'temporary'
+  return 'normal'
+}
+
 async function loadPlaces() {
   loading.value = true
 
@@ -155,7 +162,9 @@ onMounted(loadPlaces)
             <div class="admin-place-badges">
               <span class="admin-mini-badge">{{ place.indoor ? 'Indoor' : 'Outdoor' }}</span>
               <span v-if="place.capacity" class="admin-mini-badge">{{ place.capacity }} seats</span>
-              <span v-if="place.hours" class="admin-mini-badge">{{ place.hours }}</span>
+              <span v-if="closureStatusOf(place) === 'normal' && place.hours" class="admin-mini-badge">{{ place.hours }}</span>
+              <span v-if="closureStatusOf(place) === 'temporary'" class="admin-mini-badge admin-mini-badge-warning">Temporarily closed</span>
+              <span v-if="closureStatusOf(place) === 'permanent'" class="admin-mini-badge admin-mini-badge-danger">Permanently closed</span>
             </div>
           </div>
 
@@ -433,6 +442,10 @@ onMounted(loadPlaces)
   font-size: .68rem;
   font-weight: 700;
 }
+
+.admin-mini-badge-warning { background: var(--x-butter); }
+
+.admin-mini-badge-danger { background: #FFC9B8; }
 
 .admin-actions {
   display: flex;

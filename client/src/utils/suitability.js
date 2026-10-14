@@ -1,37 +1,57 @@
 /* Suitability score - PROTOTYPE FORMULA.
  *
  * Owner: Gerena Lim (search, advanced filters and suitability scoring).
- * This is a transparent weighted sum, deliberately simple so it can be
- * explained in one slide at the pitch. Tune the weights, do not replace
- * it with something opaque.
+ * Personalized preference integration keeps the same transparent weighted formula.
  *
- *   facilities match   0-50   fraction of the user's required facilities present
+ *   preference match   0-50
  *   open now           0-15
- *   crowd level        0-20   quiet 20 / moderate 10 / packed 0
- *   star rating        0-15   rating / 5 * 15
- *   weather modifier  -25-+10 outdoor places only
- *   planned visits    -10-0   next slot likely packed -10 / filling up -5
+ *   crowd level        0-20
+ *   star rating        0-15
+ *   weather modifier  -25-+10
+ *   planned visits    -10-0
  */
 
 export const FACILITY_LABELS = {
-  wifi: 'Wi-Fi', sockets: 'Sockets', fnb: 'F&B', water: 'Water', toilets: 'Toilets', quiet: 'Quiet',
+  wifi: 'Wi-Fi', sockets: 'Power sockets', fnb: 'Food & drink', water: 'Water dispenser', toilets: 'Toilets', quiet: 'Quiet environment', indoor: 'Indoor location'
 }
 
-// Same formula as before, but also returns human-readable reasons for the search page.
+export function preferencesToWanted(preferences = {}) {
+  const wanted = []
+  if (preferences.wifiRequired) wanted.push('wifi')
+  if (preferences.socketsRequired) wanted.push('sockets')
+  if (preferences.quietPreferred) wanted.push('quiet')
+  if (preferences.indoorPreferred) wanted.push('indoor')
+  return wanted
+}
+
+export function closureStatusOf(place = {}) {
+  const hours = (place.hours || '').toLowerCase()
+  if (place.closureStatus === 'permanent' || hours.includes('permanent')) return 'permanent'
+  if (place.closureStatus === 'temporary' || hours.includes('renovation') || hours.includes('temporar')) return 'temporary'
+  return 'normal'
+}
+
+function matchesPreference(place, preference) {
+  if (preference === 'indoor') return !!place.indoor
+  return (place.facilities || []).includes(preference)
+}
+
 export function suitabilityBreakdown(place, wanted = [], weather = null) {
+  const closureStatus = closureStatusOf(place)
+  if (closureStatus === 'permanent') return { score: 0, reasons: ['Permanently closed'] }
+  if (closureStatus === 'temporary') return { score: 0, reasons: ['Temporarily closed'] }
+
   let score = 0
   const reasons = []
-  const have = place.facilities || []
 
   if (wanted.length === 0) {
-    score += 35                                    // no stated needs: neutral baseline
+    score += 35
   } else {
-    const hits = wanted.filter(f => have.includes(f)).length
-    score += (hits / wanted.length) * 50
-    const missing = wanted.filter(f => !have.includes(f))
-    reasons.push(missing.length
-      ? `Missing: ${missing.map(f => FACILITY_LABELS[f] || f).join(', ')}`
-      : 'Has all your facilities')
+    const matched = wanted.filter(preference => matchesPreference(place, preference))
+    const missing = wanted.filter(preference => !matchesPreference(place, preference))
+    score += (matched.length / wanted.length) * 50
+    if (matched.length) reasons.push(`Matches: ${matched.map(preference => FACILITY_LABELS[preference] || preference).join(', ')}`)
+    if (missing.length) reasons.push(`Missing: ${missing.map(preference => FACILITY_LABELS[preference] || preference).join(', ')}`)
   }
 
   if (place.openNow) { score += 15; reasons.push('Open now') }
@@ -51,7 +71,10 @@ export function suitabilityBreakdown(place, wanted = [], weather = null) {
     else if (weather.fair) { score += 10; reasons.push('Outdoor - fine weather helps') }
   }
 
-  return { score: Math.max(0, Math.min(100, Math.round(score))), reasons }
+  score = Math.max(0, Math.min(100, Math.round(score)))
+  if (!place.openNow) score = Math.min(score, 45)
+
+  return { score, reasons }
 }
 
 export function suitabilityScore(place, wanted = [], weather = null) {

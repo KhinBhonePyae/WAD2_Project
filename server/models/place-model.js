@@ -13,6 +13,7 @@ const placeSchema = new mongoose.Schema({
   lat:         { type: Number }, lon: { type: Number },
   indoor:      { type: Boolean, default: true },
   openNow:     { type: Boolean, default: true },
+  closureStatus: { type: String, enum: ['normal', 'temporary', 'permanent'], default: 'normal' },
   hours:       { type: String, default: '' },
   facilities:  { type: [String], default: [] },
   tags:        { type: [String], default: [] },
@@ -44,9 +45,9 @@ exports.createPlace = async (data) => {
   if (global.MOCK_MODE) {
     const nextId = seed.length ? Math.max(...seed.map(p => p.id)) + 1 : 1;
     const newPlace = {
-      address: '', area: '', indoor: true, openNow: true, hours: '',
+      address: '', area: '', indoor: true, openNow: true, closureStatus: 'normal', hours: '',
       facilities: [], tags: [], photo: '', photos: [],
-      rating: 0, reviewCount: 0, description: '',
+      rating: 0, reviewCount: 0, capacity: null, description: '',
       ...data,
       id: nextId
     };

@@ -4,6 +4,14 @@ const intentModel = require('../models/intent-model');
 const intentsController = require('./intents-controller');
 
 const ALLOWED_FACILITIES = ['wifi', 'sockets', 'toilets', 'water', 'fnb', 'quiet'];
+const ALLOWED_CLOSURE_STATUSES = ['normal', 'temporary', 'permanent'];
+
+function inferClosureStatus(place) {
+  const hours = (place.hours || '').toLowerCase();
+  if (place.closureStatus === 'permanent' || hours.includes('permanent')) return 'permanent';
+  if (place.closureStatus === 'temporary' || hours.includes('renovation') || hours.includes('temporar')) return 'temporary';
+  return 'normal';
+}
 
 function timeToMinutes(time) {
   const [hour, minute] = time.split(':').map(Number);
@@ -50,14 +58,16 @@ function validatePlace(data) {
   if (!Number.isFinite(lon)) return 'Longitude must be a valid number.';
   if (lon < -180 || lon > 180) return 'Longitude must be between -180 and 180.';
 
-  if (!data.hours) return 'Opening hours are required.';
-  // A closed place (e.g. NLB branches under renovation) has no opening times
-  const closedNoHours = data.openNow === false && data.hours === 'Closed for renovation';
-  if (!closedNoHours) {
-    if (!/^([01]\d|2[0-3]):[0-5]\d - ([01]\d|2[0-3]):[0-5]\d$/.test(data.hours)) return 'Opening hours must use HH:MM - HH:MM format.';
+  const closureStatus = data.closureStatus || 'normal';
+  if (!ALLOWED_CLOSURE_STATUSES.includes(closureStatus)) return 'Closure type is invalid.';
 
+  if (closureStatus === 'normal') {
+    if (!data.hours) return 'Opening hours are required.';
+    if (!/^([01]\d|2[0-3]):[0-5]\d - ([01]\d|2[0-3]):[0-5]\d$/.test(data.hours)) return 'Opening hours must use HH:MM - HH:MM format.';
     const [openTime, closeTime] = data.hours.split(' - ');
     if (timeToMinutes(closeTime) <= timeToMinutes(openTime)) return 'Closing time must be later than opening time.';
+  } else if (data.openNow !== false) {
+    return 'Temporarily or permanently closed places must be marked closed.';
   }
 
   if (typeof data.indoor !== 'boolean') return 'Location must be indoor or outdoor.';
@@ -84,7 +94,12 @@ function validatePlace(data) {
 exports.getPlaces = async (req, res, next) => {
   try {
     let list = await placeModel.retrieveAll();
-    list = list.map(p => (p.toObject ? p.toObject() : { ...p }));
+    list = list.map(p => {
+      const place = p.toObject ? p.toObject() : { ...p };
+      place.closureStatus = inferClosureStatus(place);
+      if (place.closureStatus !== 'normal') place.openNow = false;
+      return place;
+    });
 
     const q = (req.query.q || '').trim().toLowerCase();
     if (q) {
@@ -132,6 +147,8 @@ exports.getPlace = async (req, res, next) => {
     if (!found) return res.status(404).json({ error: 'Place not found' });
 
     const place = found.toObject ? found.toObject() : { ...found };
+    place.closureStatus = inferClosureStatus(place);
+    if (place.closureStatus !== 'normal') place.openNow = false;
     const agg = await reviewModel.aggregateForPlace(place.id);
 
     place.crowdLevel = agg.crowdLevel;
@@ -158,8 +175,12 @@ exports.addPlace = async (req, res, next) => {
 
     if (error) return res.status(400).json({ error });
 
+    const closureStatus = data.closureStatus || 'normal';
     const newPlace = await placeModel.createPlace({
       ...data,
+      closureStatus,
+      openNow: closureStatus === 'normal' ? data.openNow : false,
+      hours: closureStatus === 'normal' ? data.hours : '',
       name: data.name.trim(),
       area: data.area.trim(),
       address: data.address.trim(),
@@ -184,8 +205,12 @@ exports.editPlace = async (req, res, next) => {
 
     if (error) return res.status(400).json({ error });
 
+    const closureStatus = data.closureStatus || 'normal';
     const updated = await placeModel.updatePlace(req.params.id, {
       ...data,
+      closureStatus,
+      openNow: closureStatus === 'normal' ? data.openNow : false,
+      hours: closureStatus === 'normal' ? data.hours : '',
       name: data.name.trim(),
       area: data.area.trim(),
       address: data.address.trim(),
