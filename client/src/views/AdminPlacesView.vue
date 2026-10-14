@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL, authConfig } from '../utils/api.js'
@@ -8,6 +8,8 @@ const places = ref([])
 const search = ref('')
 const sortOrder = ref('az')
 const loading = ref(true)
+const currentPage = ref(1)
+const perPage = 10
 
 const totalPlaces = computed(() => places.value.length)
 const openPlaces = computed(() => places.value.filter(place => place.openNow).length)
@@ -16,25 +18,41 @@ const closedPlaces = computed(() => places.value.filter(place => !place.openNow)
 const filteredPlaces = computed(() => {
   const q = search.value.trim().toLowerCase()
 
-  let result = places.value.filter(place => {
+  const result = places.value.filter(place => {
     if (!q) return true
-
-    return (
-      (place.name || '').toLowerCase().includes(q) ||
-      (place.area || '').toLowerCase().includes(q) ||
-      (place.address || '').toLowerCase().includes(q)
-    )
+    return (place.name || '').toLowerCase().includes(q) || (place.area || '').toLowerCase().includes(q) || (place.address || '').toLowerCase().includes(q)
   })
 
   return [...result].sort((a, b) => {
     const first = (a.name || '').toLowerCase()
     const second = (b.name || '').toLowerCase()
-
-    return sortOrder.value === 'za'
-      ? second.localeCompare(first)
-      : first.localeCompare(second)
+    return sortOrder.value === 'za' ? second.localeCompare(first) : first.localeCompare(second)
   })
 })
+
+const totalPages = computed(() => Math.ceil(filteredPlaces.value.length / perPage))
+
+const paginatedPlaces = computed(() => {
+  const start = (currentPage.value - 1) * perPage
+  return filteredPlaces.value.slice(start, start + perPage)
+})
+
+const pageStart = computed(() => filteredPlaces.value.length ? (currentPage.value - 1) * perPage + 1 : 0)
+const pageEnd = computed(() => Math.min(currentPage.value * perPage, filteredPlaces.value.length))
+
+watch([search, sortOrder], () => {
+  currentPage.value = 1
+})
+
+watch(totalPages, pages => {
+  if (currentPage.value > pages) currentPage.value = Math.max(pages, 1)
+})
+
+function goToPage(page) {
+  if (page < 1 || page > totalPages.value || page === currentPage.value) return
+  currentPage.value = page
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 function getPlacePhoto(place) {
   return place.photos?.[0] || place.photo || ''
@@ -74,14 +92,10 @@ onMounted(loadPlaces)
       <div>
         <div class="admin-eyebrow">ADMIN · STUDY SPACES</div>
         <h1 class="mb-2">Manage Study Spaces</h1>
-        <p class="ss-muted mb-0">
-          Keep listings accurate, useful and ready for students.
-        </p>
+        <p class="ss-muted mb-0">Keep listings accurate, useful and ready for students.</p>
       </div>
 
-      <RouterLink to="/admin/places/new" class="btn btn-primary admin-add-btn">
-        + Add Study Space
-      </RouterLink>
+      <RouterLink to="/admin/places/new" class="btn btn-primary admin-add-btn">+ Add Study Space</RouterLink>
     </div>
 
     <!-- STATS -->
@@ -116,69 +130,57 @@ onMounted(loadPlaces)
     </div>
 
     <!-- LOADING -->
-    <div v-if="loading" class="admin-empty">
-      Loading study spaces...
-    </div>
+    <div v-if="loading" class="admin-empty">Loading study spaces...</div>
 
-    <!-- LIST -->
-    <div v-else-if="filteredPlaces.length" class="admin-place-list">
-      <article v-for="place in filteredPlaces" :key="place.id" class="admin-place-row">
-        <!-- IMAGE -->
-        <div class="admin-place-image">
-          <img v-if="getPlacePhoto(place)" :src="getPlacePhoto(place)" :alt="`${place.name} preview`">
-
-          <div v-else class="admin-place-image-fallback">
-            📍
+    <!-- LIST + PAGINATION -->
+    <template v-else-if="filteredPlaces.length">
+      <div class="admin-place-list">
+        <article v-for="place in paginatedPlaces" :key="place.id" class="admin-place-row">
+          <!-- IMAGE -->
+          <div class="admin-place-image">
+            <img v-if="getPlacePhoto(place)" :src="getPlacePhoto(place)" :alt="`${place.name} preview`">
+            <div v-else class="admin-place-image-fallback">📍</div>
           </div>
+
+          <!-- INFO -->
+          <div class="admin-place-info">
+            <div class="admin-place-title-row">
+              <h2 class="admin-place-name">{{ place.name }}</h2>
+              <span class="admin-status" :class="place.openNow ? 'admin-status-open' : 'admin-status-closed'">{{ place.openNow ? '● Open' : '● Closed' }}</span>
+            </div>
+
+            <div class="admin-place-area">{{ place.area }}</div>
+            <div class="admin-place-address">{{ place.address }}</div>
+
+            <div class="admin-place-badges">
+              <span class="admin-mini-badge">{{ place.indoor ? 'Indoor' : 'Outdoor' }}</span>
+              <span v-if="place.capacity" class="admin-mini-badge">{{ place.capacity }} seats</span>
+              <span v-if="place.hours" class="admin-mini-badge">{{ place.hours }}</span>
+            </div>
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="admin-actions">
+            <RouterLink :to="`/places/${place.id}`" class="btn btn-outline-primary btn-sm">View</RouterLink>
+            <RouterLink :to="`/admin/places/${place.id}/edit`" class="btn btn-outline-primary btn-sm">Edit</RouterLink>
+            <button class="btn btn-outline-danger btn-sm" @click="deletePlace(place)">Delete</button>
+          </div>
+        </article>
+      </div>
+
+      <!-- PAGINATION -->
+      <div class="admin-pagination-wrap">
+        <div class="admin-page-info">Showing {{ pageStart }}–{{ pageEnd }} of {{ filteredPlaces.length }} study spaces</div>
+
+        <div v-if="totalPages > 1" class="admin-pagination">
+          <button class="pagination-btn pagination-arrow" :disabled="currentPage === 1" aria-label="Previous page" @click="goToPage(currentPage - 1)">‹</button>
+
+          <button v-for="page in totalPages" :key="page" class="pagination-btn" :class="{ active: currentPage === page }" @click="goToPage(page)">{{ page }}</button>
+
+          <button class="pagination-btn pagination-arrow" :disabled="currentPage === totalPages" aria-label="Next page" @click="goToPage(currentPage + 1)">›</button>
         </div>
-
-        <!-- INFO -->
-        <div class="admin-place-info">
-          <div class="admin-place-title-row">
-            <h2 class="admin-place-name">{{ place.name }}</h2>
-
-            <span class="admin-status" :class="place.openNow ? 'admin-status-open' : 'admin-status-closed'">
-              {{ place.openNow ? '● Open' : '● Closed' }}
-            </span>
-          </div>
-
-          <div class="admin-place-area">{{ place.area }}</div>
-
-          <div class="admin-place-address">
-            {{ place.address }}
-          </div>
-
-          <div class="admin-place-badges">
-            <span class="admin-mini-badge">
-              {{ place.indoor ? 'Indoor' : 'Outdoor' }}
-            </span>
-
-            <span v-if="place.capacity" class="admin-mini-badge">
-              {{ place.capacity }} seats
-            </span>
-
-            <span v-if="place.hours" class="admin-mini-badge">
-              {{ place.hours }}
-            </span>
-          </div>
-        </div>
-
-        <!-- ACTIONS -->
-        <div class="admin-actions">
-          <RouterLink :to="`/places/${place.id}`" class="btn btn-outline-primary btn-sm">
-            View
-          </RouterLink>
-
-          <RouterLink :to="`/admin/places/${place.id}/edit`" class="btn btn-outline-primary btn-sm">
-            Edit
-          </RouterLink>
-
-          <button class="btn btn-outline-danger btn-sm" @click="deletePlace(place)">
-            Delete
-          </button>
-        </div>
-      </article>
-    </div>
+      </div>
+    </template>
 
     <!-- NO RESULTS -->
     <div v-else class="admin-empty">
@@ -440,6 +442,61 @@ onMounted(loadPlaces)
   flex-wrap: wrap;
 }
 
+/* PAGINATION */
+.admin-pagination-wrap { 
+  margin-top: 1.5rem; 
+  text-align: center; 
+}
+
+.admin-page-info { 
+  margin-bottom: 1rem; 
+  color: var(--x-muted); 
+  font-size: .82rem; 
+  font-weight: 600; 
+}
+
+.admin-pagination { 
+  display: flex; 
+  justify-content: center; 
+  align-items: center; 
+  gap: .6rem; 
+  flex-wrap: wrap; 
+}
+
+.pagination-btn { 
+  min-width: 42px; 
+  height: 42px; 
+  padding: 0 .8rem; 
+  border: 2px solid var(--x-ink); 
+  border-radius: 999px; 
+  background: var(--x-card); 
+  color: var(--x-ink); 
+  font-weight: 800; 
+  box-shadow: 3px 3px 0 var(--x-ink); 
+  transition: transform .18s var(--x-ease), box-shadow .18s var(--x-ease), background .2s; 
+}
+
+.pagination-btn:hover:not(:disabled) { 
+  transform: translate(-1px, -1px); 
+  box-shadow: 5px 5px 0 var(--x-ink); 
+  background: var(--x-lime); 
+}
+
+.pagination-btn.active { 
+  background: var(--x-orange); 
+}
+
+.pagination-btn:disabled { 
+  opacity: .35; 
+  cursor: not-allowed; 
+  box-shadow: 2px 2px 0 var(--x-ink); 
+}
+
+.pagination-arrow { 
+  font-size: 1.35rem; 
+  line-height: 1; 
+}
+
 /* EMPTY */
 .admin-empty {
   padding: 3rem 1rem;
@@ -507,6 +564,12 @@ onMounted(loadPlaces)
 
   .admin-actions {
     justify-content: flex-start;
+  }
+
+  .pagination-btn { 
+    min-width: 38px; 
+    height: 38px; 
+    padding: 0 .65rem; 
   }
 }
 </style>
