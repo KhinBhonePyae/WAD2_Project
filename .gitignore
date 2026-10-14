@@ -1,6 +1,9 @@
 node_modules/
 config.env
 .env
-# Local AI tooling notes (kept out of the public repo)
+# Local editor notes (kept out of the repo)
 CLAUDE.md
 .claude/
+
+# Build output
+dist/
