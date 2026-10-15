@@ -264,11 +264,7 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <ul class="ss-meta mb-0" style="padding-left:1.1rem;line-height:1.9">
-                <li v-for="reason in otherScoreReasons" :key="reason">{{ reason }}</li>
-              </ul>
-
-              <RouterLink v-if="isPersonalized" to="/profile" class="btn btn-outline-primary btn-sm mt-3">Edit preferences</RouterLink>
+              <RouterLink v-if="isPersonalized" to="/profile?edit=1" class="btn btn-outline-primary btn-sm mt-3">Edit preferences</RouterLink>
             </template>
           </div>
         </div>

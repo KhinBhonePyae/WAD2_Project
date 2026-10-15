@@ -1,11 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
 import { fetchSavedIds } from '../utils/saved.js'
 
 const router = useRouter()
+const route = useRoute()
 const user = ref(null)
 const savedIds = ref([])
 const loading = ref(true)
@@ -247,7 +248,13 @@ function handleAuthError(error, defaultMessage) {
   errorMessage.value = error.response?.data?.error || defaultMessage
 }
 
-onMounted(getProfile)
+onMounted(async () => {
+  await getProfile()
+
+  if (route.query.edit === '1' && user.value) {
+    editProfile()
+  }
+})
 </script>
 
 <template>

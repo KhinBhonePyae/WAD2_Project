@@ -19,7 +19,10 @@ function saveEdit(r) {
   editingId.value = null
 }
 function fmt(d) {
-  return new Date(d).toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })
+  const date = new Date(d)
+  const day = date.toLocaleDateString('en-SG', { day: 'numeric', month: 'short', year: 'numeric' })
+  const time = date.toLocaleTimeString('en-SG', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return `${day} · ${time}`
 }
 </script>
 
