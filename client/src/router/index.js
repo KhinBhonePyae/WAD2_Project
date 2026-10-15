@@ -10,14 +10,13 @@ import ProfileView from '../views/ProfileView.vue'
 import PlaceFormView from '../views/PlaceFormView.vue'
 import AdminPlacesView from '../views/AdminPlacesView.vue'
 import AdminUsersView from '../views/AdminUsersView.vue'
+import AdminReportsView from '../views/AdminReportsView.vue'
 import SavedView from '../views/SavedView.vue'
 import SearchView from '../views/SearchView.vue'
-
 import { BASE_URL, authConfig } from '../utils/api.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-
   routes: [
     { path: '/', component: HomeView },
     { path: '/places', component: CatalogueView },
@@ -32,10 +31,10 @@ const router = createRouter({
     { path: '/admin/places/new', component: PlaceFormView, meta: { requiresAdmin: true } },
     { path: '/admin/places/:id/edit', component: PlaceFormView, meta: { requiresAdmin: true } },
     { path: '/admin/users', component: AdminUsersView, meta: { requiresAdmin: true } },
+    { path: '/admin/reports', component: AdminReportsView, meta: { requiresAdmin: true } },
 
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ],
-
   scrollBehavior() {
     return { top: 0 }
   }
@@ -43,33 +42,24 @@ const router = createRouter({
 
 async function getFreshUser() {
   const token = localStorage.getItem('token')
-
   if (!token) return null
 
   try {
     const { data } = await axios.get(`${BASE_URL}/users/profile`, authConfig())
-
     localStorage.setItem('user', JSON.stringify(data))
-
-    // Tell App.vue that the locally stored user has changed
     window.dispatchEvent(new Event('user-login'))
-
     return data
-  } catch (e) {
-    if (e.response?.status === 401) {
+  } catch (error) {
+    if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       window.dispatchEvent(new Event('user-login'))
       return null
     }
 
-    console.error('Could not verify current user role', e)
-
-    try {
-      return JSON.parse(localStorage.getItem('user'))
-    } catch {
-      return null
-    }
+    console.error('Could not verify current user role', error)
+    try { return JSON.parse(localStorage.getItem('user')) }
+    catch { return null }
   }
 }
 
@@ -77,30 +67,11 @@ router.beforeEach(async (to) => {
   if (!to.meta.requiresAdmin) return true
 
   const token = localStorage.getItem('token')
+  if (!token) return { path: '/login', query: { redirect: to.fullPath } }
 
-  if (!token) {
-    return {
-      path: '/login',
-      query: { redirect: to.fullPath }
-    }
-  }
-
-  /*
-   * Do NOT trust the role saved in localStorage here.
-   * Ask the backend for the current MongoDB user instead.
-   */
   const currentUser = await getFreshUser()
-
-  if (!currentUser) {
-    return {
-      path: '/login',
-      query: { redirect: to.fullPath }
-    }
-  }
-
-  if (currentUser.role !== 'admin') {
-    return { path: '/places' }
-  }
+  if (!currentUser) return { path: '/login', query: { redirect: to.fullPath } }
+  if (currentUser.role !== 'admin') return { path: '/places' }
 
   return true
 })

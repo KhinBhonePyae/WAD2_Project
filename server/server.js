@@ -30,6 +30,7 @@ const savedRoutes = require('./routes/saved-routes');
 const intentsRoutes = require('./routes/intents-routes');
 const aiRoutes = require('./routes/ai-routes');
 const worldChatRoutes = require('./routes/world-chat-routes');
+const reportsRoutes = require('./routes/reports-routes');
 
 const server = express();
 
@@ -50,6 +51,7 @@ server.use('/saved', savedRoutes); // saved places
 server.use('/intents', intentsRoutes); // "planning to go" intents
 server.use('/ai', aiRoutes);
 server.use('/world-chat', worldChatRoutes);
+server.use('/reports', reportsRoutes);
 
 // 404 + error handler (borrowed from the better-engineered wk5 blog example)
 server.use((req, res) => res.status(404).json({ error: 'Not found' }));
