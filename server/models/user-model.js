@@ -60,14 +60,14 @@ exports.findByEmail = async (email) => {
 
 // Find user by ID
 exports.findByID = async (id) => {
-  if (global.MOCK_MODE) return mem.find(user => user._id === id) || null
+  if (global.MOCK_MODE) return mem.find(user => String(user._id) === String(id)) || null
   return User.findById(id)
 }
 
 // Update user
 exports.updateUser = async (id, data) => {
   if (global.MOCK_MODE) {
-    const user = mem.find(user => user._id === id)
+    const user = mem.find(user => String(user._id) === String(id))
     if (!user) return null
 
     Object.assign(user, data, { updatedAt: new Date() })
@@ -80,7 +80,7 @@ exports.updateUser = async (id, data) => {
 // Delete user
 exports.deleteUser = async (id) => {
   if (global.MOCK_MODE) {
-    const index = mem.findIndex(user => user._id === id)
+    const index = mem.findIndex(user => String(user._id) === String(id))
     if (index === -1) return null
     return mem.splice(index, 1)[0]
   }
@@ -90,8 +90,14 @@ exports.deleteUser = async (id) => {
 
 // Get all users
 exports.getAllUsers = async () => {
-  if (global.MOCK_MODE) return mem
+  if (global.MOCK_MODE) return [...mem].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
   return User.find().select('-password').sort({ createdAt: -1 })
+}
+
+// Count admins so the app can never remove the final admin account
+exports.countAdmins = async () => {
+  if (global.MOCK_MODE) return mem.filter(user => user.role === 'admin').length
+  return User.countDocuments({ role: 'admin' })
 }
 
 exports.User = User

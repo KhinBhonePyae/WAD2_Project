@@ -4,6 +4,17 @@ const intentModel = require('../models/intent-model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
+function userResponse(user) {
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role || 'user',
+    createdAt: user.createdAt,
+    preferences: user.preferences
+  }
+}
+
 /* POST /users/register */
 exports.register = async (req, res, next) => {
   try {
@@ -30,16 +41,7 @@ exports.register = async (req, res, next) => {
       preferences: cleanPreferences
     })
 
-    res.status(201).json({
-      message: 'Account created successfully',
-      user: {
-        _id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role || 'user',
-        preferences: newUser.preferences
-      }
-    })
+    res.status(201).json({ message: 'Account created successfully', user: userResponse(newUser) })
   } catch (e) {
     next(e)
   }
@@ -49,7 +51,6 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body
-
     if (!email || !password) return res.status(400).json({ error: 'Email and password are required' })
 
     const user = await userModel.findByEmail(email.trim().toLowerCase())
@@ -59,18 +60,7 @@ exports.login = async (req, res, next) => {
     if (!passwordMatch) return res.status(401).json({ error: 'Invalid email or password' })
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' })
-
-    res.json({
-      message: 'Login successful',
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role || 'user',
-        preferences: user.preferences
-      }
-    })
+    res.json({ message: 'Login successful', token, user: userResponse(user) })
   } catch (e) {
     next(e)
   }
@@ -81,15 +71,7 @@ exports.getProfile = async (req, res, next) => {
   try {
     const user = await userModel.findByID(req.userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role || 'user',
-      createdAt: user.createdAt,
-      preferences: user.preferences
-    })
+    res.json(userResponse(user))
   } catch (e) {
     next(e)
   }
@@ -99,14 +81,12 @@ exports.getProfile = async (req, res, next) => {
 exports.updateProfile = async (req, res, next) => {
   try {
     const { name, email, preferences } = req.body
-
     if (!name || !email) return res.status(400).json({ error: 'Name and email are required' })
 
     const currentUser = await userModel.findByID(req.userId)
     if (!currentUser) return res.status(404).json({ error: 'User not found' })
 
     const cleanEmail = email.trim().toLowerCase()
-
     if (cleanEmail !== currentUser.email) {
       const existingUser = await userModel.findByEmail(cleanEmail)
       if (existingUser) return res.status(409).json({ error: 'Email is already registered' })
@@ -118,17 +98,7 @@ exports.updateProfile = async (req, res, next) => {
     const updatedUser = await userModel.updateUser(req.userId, updateData)
     if (!updatedUser) return res.status(404).json({ error: 'User not found' })
 
-    res.json({
-      message: 'Profile updated successfully',
-      user: {
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role || 'user',
-        createdAt: updatedUser.createdAt,
-        preferences: updatedUser.preferences
-      }
-    })
+    res.json({ message: 'Profile updated successfully', user: userResponse(updatedUser) })
   } catch (e) {
     if (e.code === 11000) return res.status(409).json({ error: 'Email is already registered' })
     next(e)
@@ -164,12 +134,18 @@ exports.changePassword = async (req, res, next) => {
 /* DELETE /users/profile */
 exports.deleteAccount = async (req, res, next) => {
   try {
+    const user = await userModel.findByID(req.userId)
+    if (!user) return res.status(404).json({ error: 'User not found' })
+
+    if (user.role === 'admin') {
+      const adminCount = await userModel.countAdmins()
+      if (adminCount <= 1) return res.status(400).json({ error: 'The last admin account cannot be deleted' })
+    }
+
     const deletedUser = await userModel.deleteUser(req.userId)
     if (!deletedUser) return res.status(404).json({ error: 'User not found' })
 
-    await savedModel.deleteAllForUser(req.userId)
-    await intentModel.deleteAllForUser(req.userId)
-
+    await Promise.all([savedModel.deleteAllForUser(req.userId), intentModel.deleteAllForUser(req.userId)])
     res.json({ message: 'Account deleted successfully' })
   } catch (e) {
     next(e)
@@ -180,18 +156,35 @@ exports.deleteAccount = async (req, res, next) => {
 exports.getAllUsers = async (req, res, next) => {
   try {
     const users = await userModel.getAllUsers()
-
-    res.json({
-      users: users.map(user => ({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role || 'user',
-        createdAt: user.createdAt,
-        preferences: user.preferences
-      }))
-    })
+    res.json({ users: users.map(userResponse) })
   } catch (e) {
+    next(e)
+  }
+}
+
+/* PUT /users/admin/:id */
+exports.updateUserByAdmin = async (req, res, next) => {
+  try {
+    if (String(req.userId) === String(req.params.id)) {
+      return res.status(400).json({ error: 'Edit your own name and email from My Profile instead' })
+    }
+
+    const { name, email } = req.body
+    if (!name?.trim() || !email?.trim()) return res.status(400).json({ error: 'Name and email are required' })
+
+    const targetUser = await userModel.findByID(req.params.id)
+    if (!targetUser) return res.status(404).json({ error: 'User not found' })
+
+    const cleanEmail = email.trim().toLowerCase()
+    const existingUser = await userModel.findByEmail(cleanEmail)
+    if (existingUser && String(existingUser._id) !== String(targetUser._id)) {
+      return res.status(409).json({ error: 'Email is already registered' })
+    }
+
+    const updatedUser = await userModel.updateUser(req.params.id, { name: name.trim(), email: cleanEmail })
+    res.json({ message: 'User updated successfully', user: userResponse(updatedUser) })
+  } catch (e) {
+    if (e.code === 11000) return res.status(409).json({ error: 'Email is already registered' })
     next(e)
   }
 }
@@ -200,28 +193,47 @@ exports.getAllUsers = async (req, res, next) => {
 exports.updateUserRole = async (req, res, next) => {
   try {
     const { role } = req.body
+    if (!['user', 'admin'].includes(role)) return res.status(400).json({ error: 'Invalid role' })
 
-    if (!['user', 'admin'].includes(role)) {
-      return res.status(400).json({ error: 'Invalid role' })
+    if (String(req.userId) === String(req.params.id)) {
+      return res.status(400).json({ error: 'You cannot change your own admin role here' })
+    }
+
+    const targetUser = await userModel.findByID(req.params.id)
+    if (!targetUser) return res.status(404).json({ error: 'User not found' })
+
+    if (targetUser.role === 'admin' && role === 'user') {
+      const adminCount = await userModel.countAdmins()
+      if (adminCount <= 1) return res.status(400).json({ error: 'The last admin cannot be changed to a normal user' })
     }
 
     const updatedUser = await userModel.updateUser(req.params.id, { role })
+    res.json({ message: 'User role updated successfully', user: userResponse(updatedUser) })
+  } catch (e) {
+    next(e)
+  }
+}
 
-    if (!updatedUser) {
-      return res.status(404).json({ error: 'User not found' })
+/* DELETE /users/admin/:id */
+exports.deleteUserByAdmin = async (req, res, next) => {
+  try {
+    if (String(req.userId) === String(req.params.id)) {
+      return res.status(400).json({ error: 'You cannot delete your own account from Admin Users' })
     }
 
-    res.json({
-      message: 'User role updated successfully',
-      user: {
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        createdAt: updatedUser.createdAt,
-        preferences: updatedUser.preferences
-      }
-    })
+    const targetUser = await userModel.findByID(req.params.id)
+    if (!targetUser) return res.status(404).json({ error: 'User not found' })
+
+    if (targetUser.role === 'admin') {
+      const adminCount = await userModel.countAdmins()
+      if (adminCount <= 1) return res.status(400).json({ error: 'The last admin account cannot be deleted' })
+    }
+
+    const deletedUser = await userModel.deleteUser(req.params.id)
+    if (!deletedUser) return res.status(404).json({ error: 'User not found' })
+
+    await Promise.all([savedModel.deleteAllForUser(req.params.id), intentModel.deleteAllForUser(req.params.id)])
+    res.json({ message: `${deletedUser.name}'s account was deleted successfully` })
   } catch (e) {
     next(e)
   }
