@@ -15,6 +15,8 @@ const editing = ref(false)
 const showDeleteModal = ref(false)
 const showPasswordModal = ref(false)
 const changingPassword = ref(false)
+const deletePassword = ref('')
+const deleteError = ref('')
 const errorMessage = ref('')
 const successMessage = ref('')
 const passwordError = ref('')
@@ -107,6 +109,8 @@ async function saveProfile() {
     window.dispatchEvent(new Event('user-login'))
     successMessage.value = 'Profile updated successfully.'
     editing.value = false
+
+    setTimeout(() => {successMessage.value = ''}, 3000)
   } catch (error) {
     handleAuthError(error, 'Unable to update profile.')
   } finally {
@@ -168,6 +172,11 @@ async function changePassword() {
     currentPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
+
+    setTimeout(() => {
+      showPasswordModal.value = false
+      passwordSuccess.value = ''
+    }, 3000)
   } catch (error) {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
@@ -183,22 +192,29 @@ async function changePassword() {
 }
 
 function openDeleteModal() {
-  errorMessage.value = ''
+  deletePassword.value = ''
+  deleteError.value = ''
   showDeleteModal.value = true
 }
 
 function closeDeleteModal() {
   if (deleting.value) return
   showDeleteModal.value = false
+  deletePassword.value = ''
+  deleteError.value = ''
 }
 
 async function deleteAccount() {
+  deleteError.value = ''
+  if (!deletePassword.value) return deleteError.value = 'Please enter your password.'
+
   const token = localStorage.getItem('token')
 
   try {
     deleting.value = true
     await axios.delete(`${BASE_URL}/users/profile`, {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
+      data: { password: deletePassword.value }
     })
 
     localStorage.removeItem('token')
@@ -206,8 +222,15 @@ async function deleteAccount() {
     window.dispatchEvent(new Event('user-login'))
     router.push('/')
   } catch (error) {
-    showDeleteModal.value = false
-    handleAuthError(error, 'Unable to delete account.')
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.dispatchEvent(new Event('user-login'))
+      router.push('/login')
+      return
+    }
+
+    deleteError.value = error.response?.data?.error || 'Unable to delete account.'
   } finally {
     deleting.value = false
   }
@@ -263,8 +286,7 @@ onMounted(getProfile)
 
           <section class="profile-section">
             <div class="section-heading">
-              <h3>Study Preferences</h3>
-              <p>Used to personalise your study space results.</p>
+              <h3>Your Study Preferences</h3>
             </div>
 
             <div class="preferences-grid">
@@ -429,8 +451,15 @@ onMounted(getProfile)
         <div v-if="showDeleteModal" class="profile-modal-backdrop" @click.self="closeDeleteModal">
           <div class="profile-modal-card">
             <div class="danger-icon">!</div>
-            <h2>Delete Account?</h2>
-            <p class="modal-description">Your LockedIN account will be permanently deleted. This action cannot be undone.</p>
+            <h2>Are you sure?</h2>
+            <p class="modal-description">Enter your password to permanently delete your LockedIN account. This action cannot be undone.</p>
+
+            <div v-if="deleteError" class="alert alert-danger">{{ deleteError }}</div>
+
+            <div class="mb-3">
+              <label for="deletePassword" class="form-label fw-semibold">Password</label>
+              <input id="deletePassword" v-model="deletePassword" type="password" class="form-control profile-input" placeholder="Enter your password" autocomplete="current-password" @keyup.enter="deleteAccount">
+            </div>
 
             <div class="modal-actions">
               <button type="button" class="btn btn-outline-secondary" :disabled="deleting" @click="closeDeleteModal">Cancel</button>

@@ -97,8 +97,8 @@ onMounted(getSavedPlaces)
 
 <style scoped>
 .saved-page {
-  min-height: calc(100vh - 140px);
-  padding: 3rem 1rem;
+  padding: 3rem 1rem 1.5rem;
+  margin-bottom: -4rem;
   background: var(--x-card);
 }
 

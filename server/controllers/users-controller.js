@@ -134,8 +134,14 @@ exports.changePassword = async (req, res, next) => {
 /* DELETE /users/profile */
 exports.deleteAccount = async (req, res, next) => {
   try {
+    const { password } = req.body
+    if (!password) return res.status(400).json({ error: 'Password is required' })
+
     const user = await userModel.findByID(req.userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
+
+    const passwordMatch = await bcrypt.compare(password, user.password)
+    if (!passwordMatch) return res.status(400).json({ error: 'Incorrect password' })
 
     if (user.role === 'admin') {
       const adminCount = await userModel.countAdmins()
@@ -145,7 +151,11 @@ exports.deleteAccount = async (req, res, next) => {
     const deletedUser = await userModel.deleteUser(req.userId)
     if (!deletedUser) return res.status(404).json({ error: 'User not found' })
 
-    await Promise.all([savedModel.deleteAllForUser(req.userId), intentModel.deleteAllForUser(req.userId)])
+    await Promise.all([
+      savedModel.deleteAllForUser(req.userId),
+      intentModel.deleteAllForUser(req.userId)
+    ])
+
     res.json({ message: 'Account deleted successfully' })
   } catch (e) {
     next(e)
