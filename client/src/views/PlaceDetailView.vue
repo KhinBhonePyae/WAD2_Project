@@ -14,6 +14,7 @@ import ReviewForm from '../components/ReviewForm.vue'
 import ReviewList from '../components/ReviewList.vue'
 import IntentPanel from '../components/IntentPanel.vue'
 import PlaceMap from '../components/PlaceMap.vue'
+import ReportIssue from '../components/ReportIssue.vue'
 
 const route = useRoute()
 const carouselRef = ref(null)
@@ -286,6 +287,8 @@ onUnmounted(() => {
           </div>
         </div>
       </div>
+
+      <ReportIssue :place="place" />
 
       <IntentPanel :place="place" class="mt-4" @changed="refreshPlaceScoreData" />
 

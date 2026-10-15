@@ -12,77 +12,41 @@ import logoUrl from './assets/logo.svg'
 const router = useRouter()
 
 function getStoredUser() {
-  try {
-    return JSON.parse(localStorage.getItem('user'))
-  } catch {
-    return null
-  }
+  try { return JSON.parse(localStorage.getItem('user')) }
+  catch { return null }
 }
 
 const user = ref(getStoredUser())
 const navHidden = ref(false)
 const progress = ref(0)
-
 let lastY = 0
-let roleSyncTimer = null
 let syncingUser = false
 
-function removeNow(el, done) {
-  done()
-}
+function removeNow(el, done) { done() }
+function updateUser() { user.value = getStoredUser() }
 
-function updateUser() {
-  user.value = getStoredUser()
-}
-
-/*
- * Get the latest logged-in user directly from the backend.
- *
- * This is important because localStorage can contain an old role.
- * For example:
- *
- * MongoDB: admin -> user
- * localStorage: still admin
- *
- * GET /users/profile returns the latest MongoDB role and refreshes
- * both localStorage and the navbar.
- */
 async function syncCurrentUser() {
   const token = localStorage.getItem('token')
-
-  if (!token) {
-    user.value = null
-    return
-  }
-
+  if (!token) { user.value = null; return }
   if (syncingUser) return
-  syncingUser = true
 
+  syncingUser = true
   try {
     const { data } = await axios.get(`${BASE_URL}/users/profile`, authConfig())
-
     localStorage.setItem('user', JSON.stringify(data))
     user.value = data
 
-    // If an admin is demoted while currently inside an admin page,
-    // immediately move them back to the public catalogue.
     if (router.currentRoute.value.meta.requiresAdmin && data.role !== 'admin') {
       router.replace('/places')
     }
-  } catch (e) {
-    // Invalid/expired token or deleted account
-    if (e.response?.status === 401) {
+  } catch (error) {
+    if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       user.value = null
-
-      if (router.currentRoute.value.meta.requiresAdmin) {
-        router.replace('/login')
-      }
+      if (router.currentRoute.value.meta.requiresAdmin) router.replace('/login')
     } else {
-      // Do not log the user out just because the server/network
-      // temporarily cannot be reached.
-      console.error('Could not refresh current user', e)
+      console.error('Could not refresh current user', error)
     }
   } finally {
     syncingUser = false
@@ -90,16 +54,13 @@ async function syncCurrentUser() {
 }
 
 function onVisibilityChange() {
-  if (document.visibilityState === 'visible') {
-    syncCurrentUser()
-  }
+  if (document.visibilityState === 'visible') syncCurrentUser()
 }
 
 function onScroll() {
   const y = window.scrollY
   navHidden.value = y > 140 && y > lastY
   lastY = y
-
   const max = document.documentElement.scrollHeight - window.innerHeight
   progress.value = max > 0 ? y / max : 0
 }
@@ -112,17 +73,11 @@ const removeAfterEach = router.afterEach(() => {
 
 onMounted(() => {
   startSmoothScroll()
-
   window.addEventListener('user-login', updateUser)
   window.addEventListener('scroll', onScroll, { passive: true })
   window.addEventListener('focus', syncCurrentUser)
   document.addEventListener('visibilitychange', onVisibilityChange)
-
-  // Check MongoDB-backed profile immediately when the app loads
   syncCurrentUser()
-
-  // Keep role/name/preferences synchronized while the app stays open
-  roleSyncTimer = setInterval(syncCurrentUser, 3000)
 })
 
 onUnmounted(() => {
@@ -130,9 +85,6 @@ onUnmounted(() => {
   window.removeEventListener('scroll', onScroll)
   window.removeEventListener('focus', syncCurrentUser)
   document.removeEventListener('visibilitychange', onVisibilityChange)
-
-  if (roleSyncTimer) clearInterval(roleSyncTimer)
-
   removeAfterEach()
 })
 </script>
@@ -141,7 +93,6 @@ onUnmounted(() => {
   <CustomCursor />
   <WorldChat :user="user" />
   <AssistantBubble />
-
   <div class="x-progress" :style="{ transform: `scaleX(${progress})` }" aria-hidden="true"></div>
 
   <nav class="x-nav" :class="{ 'x-nav--hidden': navHidden }">
@@ -162,6 +113,7 @@ onUnmounted(() => {
         <RouterLink v-if="user.role === 'admin'" to="/admin/places" class="x-nav__link" data-test="nav-manage">Manage
         </RouterLink>
         <RouterLink v-if="user.role === 'admin'" to="/admin/users" class="x-nav__link">Users</RouterLink>
+        <RouterLink v-if="user.role === 'admin'" to="/admin/reports" class="x-nav__link">Reports</RouterLink>
         <RouterLink to="/profile" class="x-nav__link x-nav__user">{{ user.name }}</RouterLink>
       </template>
 
@@ -187,7 +139,6 @@ onUnmounted(() => {
         <span v-for="n in 6" :key="n">LOCK IN <i class="x-serif">and actually study</i> ✶ </span>
       </div>
     </div>
-
     <div class="container d-flex flex-wrap justify-content-between gap-2 x-footer__meta">
       <span>LockedIN — IS216 G10 Team T3 · prototype</span>
       <span>Weather by Open-Meteo · Libraries by NLB</span>
