@@ -118,6 +118,13 @@ let cardTimer = null
 onMounted(async () => {
   window.addEventListener('user-login', syncUser)
 
+  // Auto-select filters from the user's profile preferences.
+  // `preferencesToWanted` returns ['wifi','sockets','quiet','indoor'] — split
+  // the facility slugs from the indoor flag, since indoor is its own toggle.
+  const wantedFromPrefs = profileWanted.value
+  wanted.value = wantedFromPrefs.filter((f) => f !== 'indoor')
+  if (wantedFromPrefs.includes('indoor')) indoorOnly.value = true
+
   ctx = gsap.context(() => {
     if (!reducedMotion) gsap.from('.x-page-title .x-word', {
       yPercent: 110, rotation: 5, duration: 1, ease: 'expo.out', stagger: .08
