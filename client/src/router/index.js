@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import axios from 'axios'
 
 import HomeView from '../views/HomeView.vue'
 import CatalogueView from '../views/CatalogueView.vue'
@@ -11,6 +12,8 @@ import AdminPlacesView from '../views/AdminPlacesView.vue'
 import AdminUsersView from '../views/AdminUsersView.vue'
 import SavedView from '../views/SavedView.vue'
 import SearchView from '../views/SearchView.vue'
+
+import { BASE_URL, authConfig } from '../utils/api.js'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,21 +41,43 @@ const router = createRouter({
   }
 })
 
-function getStoredUser() {
+async function getFreshUser() {
+  const token = localStorage.getItem('token')
+
+  if (!token) return null
+
   try {
-    return JSON.parse(localStorage.getItem('user'))
-  } catch {
-    return null
+    const { data } = await axios.get(`${BASE_URL}/users/profile`, authConfig())
+
+    localStorage.setItem('user', JSON.stringify(data))
+
+    // Tell App.vue that the locally stored user has changed
+    window.dispatchEvent(new Event('user-login'))
+
+    return data
+  } catch (e) {
+    if (e.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.dispatchEvent(new Event('user-login'))
+      return null
+    }
+
+    console.error('Could not verify current user role', e)
+
+    try {
+      return JSON.parse(localStorage.getItem('user'))
+    } catch {
+      return null
+    }
   }
 }
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (!to.meta.requiresAdmin) return true
 
   const token = localStorage.getItem('token')
-  const user = getStoredUser()
 
-  // Not logged in
   if (!token) {
     return {
       path: '/login',
@@ -60,8 +85,20 @@ router.beforeEach((to) => {
     }
   }
 
-  // Logged in but not admin
-  if (user?.role !== 'admin') {
+  /*
+   * Do NOT trust the role saved in localStorage here.
+   * Ask the backend for the current MongoDB user instead.
+   */
+  const currentUser = await getFreshUser()
+
+  if (!currentUser) {
+    return {
+      path: '/login',
+      query: { redirect: to.fullPath }
+    }
+  }
+
+  if (currentUser.role !== 'admin') {
     return { path: '/places' }
   }
 
