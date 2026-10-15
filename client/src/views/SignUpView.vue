@@ -361,10 +361,6 @@ async function register() {
   transition: .2s ease;
 }
 
-.preference-item:has(input:checked) {
-  background: #edf3e8;
-}
-
 .preference-item .form-check-input {
   width: 1.4rem;
   height: 1.4rem;
@@ -376,13 +372,13 @@ async function register() {
 }
 
 .preference-item .form-check-input:checked {
-  background-color: #9fbd91;
-  border-color: #78976b;
+  background-color: var(--x-lime);
+  border-color: var(--x-ink);
 }
 
 .preference-item .form-check-input:focus {
-  border-color: #78976b;
-  box-shadow: 0 0 0 3px rgba(159, 189, 145, .25);
+  border-color: var(--x-ink);
+  box-shadow: 0 0 0 3px var(--x-lime);
 }
 
 .step-actions {

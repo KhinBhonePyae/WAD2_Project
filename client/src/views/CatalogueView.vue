@@ -26,7 +26,6 @@ function readStoredUser() {
 
 const currentUser = ref(readStoredUser())
 const profileWanted = computed(() => preferencesToWanted(currentUser.value?.preferences))
-const scoreWanted = computed(() => currentUser.value ? profileWanted.value : ['wifi', 'sockets'])
 
 function syncUser() {
   currentUser.value = readStoredUser()
@@ -66,10 +65,7 @@ function clearAll() {
 }
 
 async function toggleSave(id) {
-  if (!isLoggedIn()) {
-    router.push('/login')
-    return
-  }
+  if (!isLoggedIn()) return router.push('/login')
 
   try {
     saved.value = await toggleSavedId(saved.value, id)
@@ -88,7 +84,11 @@ const results = computed(() => {
   if (outdoorOnly.value) list = list.filter(p => !p.indoor)
   if (openOnly.value) list = list.filter(p => p.openNow)
 
-  return list.map(p => ({ place: p, score: suitabilityScore(p, scoreWanted.value, weather.value) })).sort((a, b) => b.score - a.score)
+  if (!currentUser.value) return list.map(place => ({ place, score: null }))
+
+  return list
+    .map(place => ({ place, score: suitabilityScore(place, profileWanted.value, weather.value) }))
+    .sort((a, b) => b.score - a.score)
 })
 
 async function load() {
@@ -119,7 +119,9 @@ onMounted(async () => {
   window.addEventListener('user-login', syncUser)
 
   ctx = gsap.context(() => {
-    if (!reducedMotion) gsap.from('.x-page-title .x-word', { yPercent: 110, rotation: 5, duration: 1, ease: 'expo.out', stagger: 0.08 })
+    if (!reducedMotion) gsap.from('.x-page-title .x-word', {
+      yPercent: 110, rotation: 5, duration: 1, ease: 'expo.out', stagger: .08
+    })
   })
 
   await load()
@@ -144,10 +146,16 @@ function animateCards() {
       const cards = gsap.utils.toArray('.x-cat-card')
       gsap.killTweensOf(cards)
       gsap.set(cards, { autoAlpha: 1, y: 0, rotation: 0 })
+
       cardTriggers = ScrollTrigger.batch(cards, {
         start: 'top 92%', once: true,
-        onEnter: els => gsap.fromTo(els, { y: 60, rotation: () => gsap.utils.random(-5, 5), autoAlpha: 0 }, { y: 0, rotation: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.5)', stagger: 0.07, overwrite: true })
+        onEnter: els => gsap.fromTo(
+          els,
+          { y: 60, rotation: () => gsap.utils.random(-5, 5), autoAlpha: 0 },
+          { y: 0, rotation: 0, autoAlpha: 1, duration: .7, ease: 'back.out(1.5)', stagger: .07, overwrite: true }
+        )
       })
+
       ScrollTrigger.refresh()
     })
   }, 120)
@@ -161,17 +169,17 @@ watch(() => route.query.q, v => { q.value = v || '' })
   <main class="container ss-section">
     <div class="ss-section__head">
       <div>
-        <h1 class="mb-1 x-page-title" aria-label="Study spaces"><span class="x-mask"><span
-              class="x-word">Study</span></span> <span class="x-mask"><span class="x-word">spaces</span></span></h1>
-        <p class="ss-muted mb-0" data-test="result-count">{{ loading ? 'Loading…' : results.length + ' spot' +
-          (results.length === 1 ? '' : 's') + ' match your filters' }}</p>
+        <h1 class="mb-1 x-page-title" aria-label="Study spaces">
+          <span class="x-mask"><span class="x-word">Study</span></span>
+          <span class="x-mask"><span class="x-word">spaces</span></span>
+        </h1>
+        <p class="ss-muted mb-0" data-test="result-count">{{ loading ? 'Loading…' : results.length + ' spot' + (results.length === 1 ? '' : 's') + ' match your filters' }}</p>
       </div>
     </div>
 
     <div class="ss-search mb-3">
       <span class="ss-muted" aria-hidden="true">⌕</span>
-      <input v-model="q" type="text" placeholder="Search by name or area" aria-label="Search study spaces"
-        data-test="cat-search">
+      <input v-model="q" type="text" placeholder="Search by name or area" aria-label="Search study spaces" data-test="cat-search">
     </div>
 
     <WeatherStage :weather="weather" area="Singapore" compact class="mb-4" />
@@ -182,11 +190,9 @@ watch(() => route.query.q, v => { q.value = v || '' })
     </div>
 
     <div class="d-flex flex-wrap gap-2 mb-4">
-      <button class="ss-chip" :aria-pressed="openOnly" @click="openOnly = !openOnly" data-test="chip-open">Open
-        now</button>
+      <button class="ss-chip" :aria-pressed="openOnly" @click="openOnly = !openOnly" data-test="chip-open">Open now</button>
       <button class="ss-chip" :aria-pressed="indoorOnly" @click="toggleIndoor" data-test="chip-indoor">Indoor</button>
-      <button class="ss-chip" :aria-pressed="outdoorOnly" @click="toggleOutdoor"
-        data-test="chip-outdoor">Outdoor</button>
+      <button class="ss-chip" :aria-pressed="outdoorOnly" @click="toggleOutdoor" data-test="chip-outdoor">Outdoor</button>
       <button class="btn btn-ghost btn-sm ms-auto" @click="clearAll" data-test="clear-filters">Clear filters</button>
     </div>
 
@@ -211,32 +217,13 @@ watch(() => route.query.q, v => { q.value = v || '' })
 
     <div v-else class="row g-4">
       <div v-for="item in results" :key="item.place.id" class="col-12 col-md-6 col-lg-4 x-cat-card">
-        <PlaceCard :place="item.place" :score="item.score" :saved="saved.includes(item.place.id)"
-          @toggle-save="toggleSave" />
+        <PlaceCard :place="item.place" :score="item.score" :saved="saved.includes(item.place.id)" @toggle-save="toggleSave" />
       </div>
     </div>
   </main>
 </template>
 
 <style scoped>
-.x-mask {
-  display: inline-block;
-  overflow: hidden;
-  vertical-align: top;
-  padding-bottom: .08em;
-}
-
-.x-empty-icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 12px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--x-butter);
-  border: var(--x-line);
-  box-shadow: var(--x-pop);
-  font-weight: 800;
-  font-size: 2rem;
-}
+.x-mask { display:inline-block; overflow:hidden; vertical-align:top; padding-bottom:.08em; }
+.x-empty-icon { width:64px; height:64px; margin:0 auto 12px; display:grid; place-items:center; border-radius:50%; background:var(--x-butter); border:var(--x-line); box-shadow:var(--x-pop); font-weight:800; font-size:2rem; }
 </style>

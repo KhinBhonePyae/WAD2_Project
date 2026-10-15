@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL, authConfig } from '../utils/api.js'
@@ -12,16 +12,25 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const updatingId = ref(null)
 const deletingId = ref(null)
-const savingEdit = ref(false)
 
 const search = ref('')
 const roleFilter = ref('all')
 const currentPage = ref(1)
 const perPage = 10
 
-const editingUser = ref(null)
-const editName = ref('')
-const editEmail = ref('')
+const deleteTarget = ref(null)
+
+let successTimer = null
+
+function showSuccess(message) {
+  successMessage.value = message
+
+  if (successTimer) clearTimeout(successTimer)
+
+  successTimer = setTimeout(() => {
+    successMessage.value = ''
+  }, 3000)
+}
 
 function getStoredUser() {
   try {
@@ -83,6 +92,11 @@ watch(totalPages, pages => {
 function clearMessages() {
   errorMessage.value = ''
   successMessage.value = ''
+
+  if (successTimer) {
+    clearTimeout(successTimer)
+    successTimer = null
+  }
 }
 
 async function getUsers() {
@@ -116,8 +130,9 @@ async function updateRole(user, newRole) {
 
     user.role = response.data.user.role
 
-    successMessage.value =
+    showSuccess(
       `${user.name}'s role was updated to ${user.role}.`
+    )
   } catch (error) {
     handleError(error, 'Unable to update user role.')
   } finally {
@@ -125,80 +140,25 @@ async function updateRole(user, newRole) {
   }
 }
 
-function openEdit(user) {
+/* OPEN DELETE MODAL */
+function askDeleteUser(user) {
   if (isSelf(user)) return
 
   clearMessages()
-
-  editingUser.value = user
-  editName.value = user.name
-  editEmail.value = user.email
+  deleteTarget.value = user
 }
 
-function closeEdit() {
-  if (savingEdit.value) return
-
-  editingUser.value = null
-  editName.value = ''
-  editEmail.value = ''
+/* CLOSE DELETE MODAL */
+function closeDeleteModal() {
+  if (deletingId.value) return
+  deleteTarget.value = null
 }
 
-async function saveEdit() {
-  if (!editingUser.value) return
+/* ACTUAL DELETE */
+async function confirmDeleteUser() {
+  if (!deleteTarget.value) return
 
-  clearMessages()
-
-  const name = editName.value.trim()
-  const email = editEmail.value.trim().toLowerCase()
-
-  if (!name || !email) {
-    errorMessage.value = 'Name and email are required.'
-    return
-  }
-
-  try {
-    savingEdit.value = true
-
-    const response = await axios.put(
-      `${BASE_URL}/users/admin/${editingUser.value._id}`,
-      { name, email },
-      authConfig()
-    )
-
-    const index = users.value.findIndex(
-      user => user._id === editingUser.value._id
-    )
-
-    if (index !== -1) {
-      users.value[index] = {
-        ...users.value[index],
-        ...response.data.user
-      }
-    }
-
-    successMessage.value =
-      `${response.data.user.name}'s account was updated successfully.`
-
-    editingUser.value = null
-    editName.value = ''
-    editEmail.value = ''
-  } catch (error) {
-    handleError(error, 'Unable to update user.')
-  } finally {
-    savingEdit.value = false
-  }
-}
-
-async function deleteUser(user) {
-  if (isSelf(user)) return
-
-  const confirmed = window.confirm(
-    `Delete ${user.name}'s account?\n\n` +
-    `They will no longer be able to log in. ` +
-    `This cannot be undone.`
-  )
-
-  if (!confirmed) return
+  const user = deleteTarget.value
 
   clearMessages()
 
@@ -214,9 +174,12 @@ async function deleteUser(user) {
       item => item._id !== user._id
     )
 
-    successMessage.value =
+    deleteTarget.value = null
+
+    showSuccess(
       response.data.message ||
       `${user.name}'s account was deleted successfully.`
+    )
   } catch (error) {
     handleError(error, 'Unable to delete user.')
   } finally {
@@ -258,6 +221,10 @@ function handleError(error, message) {
 }
 
 onMounted(getUsers)
+
+onUnmounted(() => {
+  if (successTimer) clearTimeout(successTimer)
+})
 </script>
 
 <template>
@@ -293,25 +260,28 @@ onMounted(getUsers)
 
       <template v-else>
 
-        <!-- ADMIN NOTE -->
-        <div class="admin-note">
-          <strong>Account management</strong>
-          <span>
-            Edit or remove other accounts.
-            Your own admin account is protected here;
-            use My Profile for your own details.
-          </span>
-        </div>
+        <!-- NOTE -->
+        <p class="admin-note-text">
+          Manage user roles or remove accounts. Your own admin account is protected.
+        </p>
 
         <!-- SEARCH + FILTER -->
         <div class="controls">
+
           <div class="search-box">
             <span class="search-icon">⌕</span>
 
-            <input v-model="search" type="text" placeholder="Search by name or email...">
+            <input
+              v-model="search"
+              type="text"
+              placeholder="Search by name or email..."
+            >
           </div>
 
-          <select v-model="roleFilter" class="filter-select">
+          <select
+            v-model="roleFilter"
+            class="filter-select"
+          >
             <option value="all">All roles</option>
             <option value="user">Users</option>
             <option value="admin">Admins</option>
@@ -334,11 +304,19 @@ onMounted(getUsers)
 
             <tbody>
 
-              <tr v-for="user in paginatedUsers" :key="user._id" class="user-row">
+              <tr
+                v-for="user in paginatedUsers"
+                :key="user._id"
+                class="user-row"
+              >
 
                 <!-- NAME -->
-                <td class="user-name-cell" data-label="Name">
+                <td
+                  class="user-name-cell"
+                  data-label="Name"
+                >
                   <div class="user-name-wrap">
+
                     <span class="avatar">
                       {{ user.name.charAt(0).toUpperCase() }}
                     </span>
@@ -346,7 +324,10 @@ onMounted(getUsers)
                     <div class="name-line">
                       <span>{{ user.name }}</span>
 
-                      <span v-if="isSelf(user)" class="you-badge">
+                      <span
+                        v-if="isSelf(user)"
+                        class="you-badge"
+                      >
                         You
                       </span>
                     </div>
@@ -354,7 +335,10 @@ onMounted(getUsers)
                 </td>
 
                 <!-- EMAIL -->
-                <td class="email-cell" data-label="Email">
+                <td
+                  class="email-cell"
+                  data-label="Email"
+                >
                   {{ user.email }}
                 </td>
 
@@ -365,8 +349,13 @@ onMounted(getUsers)
 
                 <!-- ROLE -->
                 <td data-label="Role">
-                  <select class="role-select" :class="user.role" :value="user.role"
-                    :disabled="updatingId === user._id || isSelf(user)" @change="updateRole(user, $event.target.value)">
+                  <select
+                    class="role-select"
+                    :class="user.role"
+                    :value="user.role"
+                    :disabled="updatingId === user._id || isSelf(user)"
+                    @change="updateRole(user, $event.target.value)"
+                  >
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                   </select>
@@ -374,31 +363,34 @@ onMounted(getUsers)
 
                 <!-- ACTIONS -->
                 <td data-label="Actions">
-                  <div v-if="!isSelf(user)" class="action-buttons">
-                    <button class="action-btn edit-btn" type="button" :disabled="deletingId === user._id"
-                      @click="openEdit(user)">
-                      Edit
-                    </button>
-
-                    <button class="action-btn delete-btn" type="button" :disabled="deletingId === user._id"
-                      @click="deleteUser(user)">
-                      {{
-                        deletingId === user._id
-                          ? 'Deleting...'
-                          : 'Delete'
-                      }}
+                  <div
+                    v-if="!isSelf(user)"
+                    class="action-buttons"
+                  >
+                    <button
+                      class="action-btn delete-btn"
+                      type="button"
+                      :disabled="deletingId === user._id"
+                      @click="askDeleteUser(user)"
+                    >
+                      Delete
                     </button>
                   </div>
 
-                  <span v-else class="protected-text">
+                  <span
+                    v-else
+                    class="protected-text"
+                  >
                     Protected
                   </span>
                 </td>
-
               </tr>
 
               <tr v-if="filteredUsers.length === 0">
-                <td colspan="5" class="empty-row">
+                <td
+                  colspan="5"
+                  class="empty-row"
+                >
                   No users found.
                 </td>
               </tr>
@@ -408,24 +400,42 @@ onMounted(getUsers)
         </div>
 
         <!-- PAGINATION -->
-        <div v-if="filteredUsers.length > 0" class="pagination-section">
+        <div
+          v-if="filteredUsers.length > 0"
+          class="pagination-section"
+        >
           <p>
             Showing {{ startIndex + 1 }}–{{ endIndex }}
             of {{ filteredUsers.length }} users
           </p>
 
-          <div v-if="totalPages > 1" class="pagination-buttons">
-            <button class="page-button arrow" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+          <div
+            v-if="totalPages > 1"
+            class="pagination-buttons"
+          >
+            <button
+              class="page-button arrow"
+              :disabled="currentPage === 1"
+              @click="changePage(currentPage - 1)"
+            >
               ‹
             </button>
 
-            <button v-for="page in totalPages" :key="page" class="page-button" :class="{ active: currentPage === page }"
-              @click="changePage(page)">
+            <button
+              v-for="page in totalPages"
+              :key="page"
+              class="page-button"
+              :class="{ active: currentPage === page }"
+              @click="changePage(page)"
+            >
               {{ page }}
             </button>
 
-            <button class="page-button arrow" :disabled="currentPage === totalPages"
-              @click="changePage(currentPage + 1)">
+            <button
+              class="page-button arrow"
+              :disabled="currentPage === totalPages"
+              @click="changePage(currentPage + 1)"
+            >
               ›
             </button>
           </div>
@@ -434,50 +444,79 @@ onMounted(getUsers)
       </template>
     </div>
 
-    <!-- EDIT MODAL -->
-    <div v-if="editingUser" class="edit-overlay" @click.self="closeEdit">
-      <div class="edit-card">
+    <!-- CUSTOM DELETE MODAL -->
+    <div
+      v-if="deleteTarget"
+      class="confirm-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-user-title"
+      @click.self="closeDeleteModal"
+    >
+      <div class="confirm-card">
 
-        <div class="edit-heading">
+        <div class="confirm-heading">
           <div>
-            <p class="page-label mb-1">
-              EDIT USER
+            <p class="confirm-eyebrow">
+              ACCOUNT MANAGEMENT
             </p>
 
-            <h2>
-              {{ editingUser.name }}
+            <h2 id="delete-user-title">
+              Delete account
             </h2>
+
+            <p class="confirm-subtitle">
+              {{ deleteTarget.name }}
+            </p>
           </div>
 
-          <button class="close-btn" type="button" :disabled="savingEdit" aria-label="Close" @click="closeEdit">
+          <button
+            class="confirm-close"
+            type="button"
+            :disabled="deletingId === deleteTarget._id"
+            aria-label="Close"
+            @click="closeDeleteModal"
+          >
             ×
           </button>
         </div>
 
-        <label class="edit-label" for="adminEditName">
-          Name
-        </label>
+        <div class="confirm-warning">
 
-        <input id="adminEditName" v-model="editName" class="edit-input" type="text" maxlength="60">
+          <strong>
+            Delete this account?
+          </strong>
 
-        <label class="edit-label" for="adminEditEmail">
-          Email
-        </label>
+          <p>
+            {{ deleteTarget.name }} will no longer be able to log in.
+            This action cannot be undone.
+          </p>
 
-        <input id="adminEditEmail" v-model="editEmail" class="edit-input" type="email">
+          <div class="confirm-actions">
 
-        <p class="edit-help">
-          Role is managed separately from the Users page.
-        </p>
+            <button
+              type="button"
+              class="confirm-cancel"
+              :disabled="deletingId === deleteTarget._id"
+              @click="closeDeleteModal"
+            >
+              Cancel
+            </button>
 
-        <div class="edit-actions">
-          <button class="btn btn-outline-primary" type="button" :disabled="savingEdit" @click="closeEdit">
-            Cancel
-          </button>
+            <button
+              type="button"
+              class="confirm-delete"
+              :disabled="deletingId === deleteTarget._id"
+              @click="confirmDeleteUser"
+            >
+              {{
+                deletingId === deleteTarget._id
+                  ? 'Deleting...'
+                  : 'Delete account'
+              }}
+            </button>
 
-          <button class="btn btn-primary" type="button" :disabled="savingEdit" @click="saveEdit">
-            {{ savingEdit ? 'Saving...' : 'Save changes' }}
-          </button>
+          </div>
         </div>
 
       </div>
@@ -520,15 +559,11 @@ onMounted(getUsers)
   letter-spacing: .13em;
 }
 
-.page-heading h1,
-.edit-heading h2 {
+.page-heading h1 {
   margin: 0;
   color: var(--x-ink);
-  font-weight: 800;
-}
-
-.page-heading h1 {
   font-size: 2.2rem;
+  font-weight: 800;
 }
 
 .user-count {
@@ -543,22 +578,10 @@ onMounted(getUsers)
 
 /* NOTE */
 
-.admin-note {
+.admin-note-text {
   margin-bottom: 1.5rem;
-  padding: .9rem 1.1rem;
-  display: flex;
-  align-items: center;
-  gap: .7rem;
-  flex-wrap: wrap;
-  border: 1px solid var(--x-ink);
-  border-radius: 14px;
-  background: var(--x-paper-2);
-  color: var(--x-ink);
-}
-
-.admin-note span {
   color: var(--x-muted);
-  font-size: .88rem;
+  font-size: .9rem;
 }
 
 /* CONTROLS */
@@ -566,7 +589,7 @@ onMounted(getUsers)
 .controls {
   margin-bottom: 1.8rem;
   display: grid;
-  grid-template-columns: 1fr 260px;
+  grid-template-columns: minmax(0, 1fr) 260px;
   gap: 1rem;
 }
 
@@ -624,7 +647,7 @@ onMounted(getUsers)
   gap: 1rem;
 }
 
-/* DESKTOP TABLE */
+/* TABLE */
 
 .table-wrapper {
   border: 2px solid var(--x-ink);
@@ -772,10 +795,6 @@ onMounted(getUsers)
   cursor: not-allowed;
 }
 
-.edit-btn {
-  background: var(--x-lilac);
-}
-
 .delete-btn {
   background: #ffc9b8;
 }
@@ -845,90 +864,124 @@ onMounted(getUsers)
   box-shadow: none;
 }
 
-/* EDIT MODAL */
+/* CUSTOM CONFIRM MODAL */
 
-.edit-overlay {
+.confirm-overlay {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 3000;
   padding: 1rem;
   display: grid;
   place-items: center;
-  background: rgba(24, 22, 18, .45);
-  backdrop-filter: blur(4px);
+  background: rgba(20, 18, 15, .48);
+  backdrop-filter: blur(5px);
 }
 
-.edit-card {
-  width: min(520px, 100%);
-  padding: 1.5rem;
+.confirm-card {
+  width: min(700px, 100%);
+  padding: 1.7rem;
   border: 2px solid var(--x-ink);
-  border-radius: 22px;
+  border-radius: 26px;
   background: var(--x-card);
-  box-shadow: 9px 9px 0 var(--x-ink);
+  box-shadow: 12px 12px 0 var(--x-ink);
 }
 
-.edit-heading {
-  margin-bottom: 1.25rem;
+.confirm-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
+  margin-bottom: 1.25rem;
 }
 
-.close-btn {
-  width: 38px;
-  height: 38px;
-  border: 1px solid var(--x-ink);
+.confirm-eyebrow {
+  margin: 0 0 .3rem;
+  color: var(--x-ink);
+  font-family: var(--x-mono);
+  font-size: .75rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+}
+
+.confirm-heading h2 {
+  margin: 0;
+  color: var(--x-ink);
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  font-weight: 800;
+}
+
+.confirm-subtitle {
+  margin: .25rem 0 0;
+  color: var(--x-muted);
+}
+
+.confirm-close {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border: 1.5px solid var(--x-ink);
   border-radius: 50%;
   background: white;
   color: var(--x-ink);
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 800;
-  line-height: 1;
 }
 
-.edit-label {
-  margin: .75rem 0 .35rem;
+.confirm-warning {
+  padding: 1.35rem;
+  border: 1.5px solid var(--x-ink);
+  border-radius: 18px;
+  background: #ffc9b8;
+}
+
+.confirm-warning strong {
   display: block;
+  margin-bottom: .45rem;
   color: var(--x-ink);
-  font-size: .83rem;
-  font-weight: 800;
+  font-size: 1.15rem;
 }
 
-.edit-input {
-  width: 100%;
-  padding: .75rem .9rem;
-  border: 2px solid var(--x-ink);
-  border-radius: 12px;
-  background: white;
+.confirm-warning p {
+  margin: 0;
   color: var(--x-ink);
-  outline: none;
+  line-height: 1.55;
 }
 
-.edit-input:focus {
-  box-shadow: 0 0 0 3px var(--x-lilac);
-}
-
-.edit-help {
-  margin: .75rem 0 0;
-  color: var(--x-muted);
-  font-size: .78rem;
-}
-
-.edit-actions {
-  margin-top: 1.4rem;
+.confirm-actions {
+  margin-top: 1.2rem;
   display: flex;
-  justify-content: flex-end;
   gap: .75rem;
+  flex-wrap: wrap;
 }
 
-/* =========================================================
-   TABLET / SMALL LAPTOP
-   Turn table rows into cards so Actions are always visible
-   ========================================================= */
+.confirm-cancel,
+.confirm-delete {
+  padding: .65rem 1.1rem;
+  border: 2px solid var(--x-ink);
+  border-radius: 999px;
+  color: var(--x-ink);
+  font-weight: 800;
+  box-shadow: 4px 4px 0 var(--x-ink);
+}
+
+.confirm-cancel {
+  background: white;
+}
+
+.confirm-delete {
+  background: var(--x-orange);
+}
+
+.confirm-cancel:disabled,
+.confirm-delete:disabled,
+.confirm-close:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+/* TABLET */
 
 @media (max-width: 991.98px) {
-
   .users-container {
     max-width: 760px;
   }
@@ -1012,12 +1065,9 @@ onMounted(getUsers)
   }
 }
 
-/* =========================================================
-   MOBILE
-   ========================================================= */
+/* MOBILE */
 
 @media (max-width: 575.98px) {
-
   .users-page {
     padding: 6rem .65rem 2rem;
   }
@@ -1031,18 +1081,23 @@ onMounted(getUsers)
     font-size: 1.8rem;
   }
 
-  .admin-note {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
   .controls {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) 140px;
+    gap: .6rem;
   }
 
   .search-box,
   .filter-select {
     min-height: 50px;
+  }
+
+  .search-box {
+    padding: 0 .8rem;
+  }
+
+  .filter-select {
+    padding: 0 .75rem;
+    font-size: .9rem;
   }
 
   .users-table .user-row td {
@@ -1066,8 +1121,6 @@ onMounted(getUsers)
   }
 
   .action-buttons {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
     width: 100%;
   }
 
@@ -1081,19 +1134,30 @@ onMounted(getUsers)
     height: 46px;
   }
 
-  .edit-actions {
-    flex-direction: column-reverse;
+  .confirm-card {
+    padding: 1.25rem;
   }
 
-  .edit-actions .btn {
+  .confirm-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .confirm-cancel,
+  .confirm-delete {
     width: 100%;
   }
 }
 
-/* EXTRA SMALL PHONE */
+/* VERY SMALL */
+
+@media (max-width: 420px) {
+  .controls {
+    grid-template-columns: 1fr;
+  }
+}
 
 @media (max-width: 390px) {
-
   .page-heading {
     flex-direction: column;
   }
@@ -1105,10 +1169,6 @@ onMounted(getUsers)
   .users-table .user-row td::before {
     display: block;
     margin-bottom: .45rem;
-  }
-
-  .action-buttons {
-    grid-template-columns: 1fr;
   }
 
   .role-select {
