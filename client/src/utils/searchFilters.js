@@ -1,6 +1,8 @@
 // Filter preferences + client-side filtering for the search page.
 // Scoring itself lives in utils/suitability.js (single source of truth).
 
+import { preferencesToWanted } from './suitability'
+
 export const DEFAULT_PREFS = {
   facilities: [],          // wanted facility slugs, passed to suitabilityScore as `wanted`
   strictFacilities: false, // true = hide places that lack any selected facility (server-side)
@@ -25,4 +27,23 @@ export function filterPlaces(list, prefs) {
     }
     return true
   })
+}
+
+//For autoselect from preferences to search page
+
+export function prefsFromUserPreferences(preferences = {}) {
+  const wanted = preferencesToWanted(preferences)
+  const facilities = wanted.filter((f) => f !== 'indoor')
+  const out = {}
+
+  if (facilities.length) {
+    out.facilities = facilities
+    // "Required" flags → server-side strict filtering.
+    // "Preferred" flags alone stay soft, so scoring can still reward partial matches.
+    out.strictFacilities = !!(preferences.wifiRequired || preferences.socketsRequired)
+  }
+
+  if (wanted.includes('indoor')) out.setting = 'indoor'
+
+  return out
 }

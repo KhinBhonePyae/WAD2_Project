@@ -6,10 +6,11 @@ import SearchFilters from '../components/SearchFilters.vue'
 import PlaceCard from '../components/PlaceCard.vue'
 import WeatherStrip from '../components/WeatherStrip.vue'
 import { suitabilityBreakdown } from '../utils/suitability'
-import { DEFAULT_PREFS, filterPlaces } from '../utils/searchFilters'
+import { DEFAULT_PREFS, filterPlaces, prefsFromUserPreferences } from '../utils/searchFilters'
 import { BASE_URL } from '../utils/api'
 import { fetchWeather } from '../utils/weather'
 
+const MANUAL_KEY = 'studyspot_search_prefs_manual'
 const STORAGE_KEY = 'studyspot_search_prefs'
 
 const query = ref('')
@@ -21,6 +22,35 @@ const areaOptions = ref([])
 const loading = ref(false)
 const error = ref('')
 const weather = ref(null)
+
+const USER_KEY = 'user' // matches the key CatalogueView reads
+
+function readStoredUser() {
+  try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null') }
+  catch { return null }
+}
+
+function initialPrefs() {
+  // A manual filter choice always wins — the user set it deliberately.
+  if (localStorage.getItem(MANUAL_KEY) === '1') {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      try { return { ...DEFAULT_PREFS, facilities: [], ...JSON.parse(saved) } }
+      catch { /* corrupt entry — fall through to preferences */ }
+    }
+  }
+
+  // No manual state yet → seed from profile preferences.
+  const user = readStoredUser()
+  return { ...DEFAULT_PREFS, facilities: [], ...prefsFromUserPreferences(user?.preferences) }
+}
+
+// True when the current user has anything we can auto-select from.
+// Drives the visibility of "Reset to my preferences".
+const hasUserPreferences = computed(() => {
+  const p = readStoredUser()?.preferences
+  return !!p && !!(p.wifiRequired || p.socketsRequired || p.quietPreferred || p.indoorPreferred)
+})
 
 async function search() {
   loading.value = true
@@ -61,20 +91,40 @@ const results = computed(() => {
   return list
 })
 
-function onApply(newPrefs) { prefs.value = newPrefs; search() }
-function onReset() { prefs.value = { ...DEFAULT_PREFS, facilities: [] }; search() }
+function onApply(newPrefs) {
+  prefs.value = newPrefs
+  localStorage.setItem(MANUAL_KEY, '1')
+  search()
+}
+
+function onReset() {
+  prefs.value = { ...DEFAULT_PREFS, facilities: [] }
+  localStorage.setItem(MANUAL_KEY, '1')
+  search()
+}
+
+function onResetToPreferences() {
+  const user = readStoredUser()
+  prefs.value = {
+    ...DEFAULT_PREFS,
+    facilities: [],
+    ...prefsFromUserPreferences(user?.preferences),
+  }
+  localStorage.removeItem(MANUAL_KEY)
+  search()
+}
 
 // Persist preferences (Week 6: localStorage + JSON)
 watch(prefs, (v) => localStorage.setItem(STORAGE_KEY, JSON.stringify(v)), { deep: true })
 
 onMounted(() => {
-  const saved = localStorage.getItem(STORAGE_KEY)
-  if (saved) prefs.value = { ...DEFAULT_PREFS, ...JSON.parse(saved) }
+  prefs.value = initialPrefs()
   fetchWeather()
     .then((w) => (weather.value = w))
-    .catch((e) => console.log('Weather unavailable: ' + e.message)) // score just skips the weather modifier
+    .catch((e) => console.log('Weather unavailable: ' + e.message))
   search()
 })
+
 </script>
 
 <template>
@@ -87,7 +137,8 @@ onMounted(() => {
     <div class="row">
       <div class="col-lg-3">
         <SearchFilters :modelValue="prefs" :facilityOptions="facilityOptions" :areaOptions="areaOptions"
-          @apply="onApply" @reset="onReset" />
+          :hasPreferences="hasUserPreferences" @apply="onApply" @reset="onReset"
+          @reset-to-preferences="onResetToPreferences" />
       </div>
 
       <div class="col-lg-9">

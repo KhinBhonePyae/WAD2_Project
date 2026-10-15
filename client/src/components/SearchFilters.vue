@@ -8,8 +8,22 @@ const props = defineProps({
   modelValue: Object,
   facilityOptions: { type: Array, default: () => [] },
   areaOptions: { type: Array, default: () => [] },
+  hasPreferences: { type: Boolean, default: false },
 })
-const emit = defineEmits(['apply', 'reset'])
+const emit = defineEmits(['apply', 'reset', 'reset-to-preferences'])
+
+function initialPrefs() {
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (saved) {
+    try { return { ...DEFAULT_PREFS, facilities: [], ...JSON.parse(saved) } }
+    catch { /* corrupt entry — fall through */ }
+  }
+
+  const user = readStoredUser()
+  const fromPrefs = prefsFromUserPreferences(user?.preferences)
+  return { ...DEFAULT_PREFS, facilities: [], ...fromPrefs }
+}
+
 
 // Work on a copy; only emit when the user clicks Apply
 const local = ref(JSON.parse(JSON.stringify(props.modelValue)))
@@ -23,6 +37,7 @@ function toggleFacility(value) {
   const i = local.value.facilities.indexOf(value)
   if (i >= 0) local.value.facilities.splice(i, 1)
   else local.value.facilities.push(value)
+
 }
 
 function apply() { emit('apply', JSON.parse(JSON.stringify(local.value))) }
@@ -31,7 +46,8 @@ function reset() { local.value = { ...DEFAULT_PREFS, facilities: [] }; emit('res
 
 <template>
   <!-- Collapsible on mobile (Bootstrap collapse), always open from lg upwards -->
-  <button class="btn btn-outline-primary d-lg-none w-100 mb-2" data-bs-toggle="collapse" data-bs-target="#filterBody"data-test="filter-toggle">Filters</button>
+  <button class="btn btn-outline-primary d-lg-none w-100 mb-2" data-bs-toggle="collapse" data-bs-target="#filterBody"
+    data-test="filter-toggle">Filters</button>
 
   <div class="collapse d-lg-block" id="filterBody">
     <div class="card card-body mb-3" data-test="filter-panel">
@@ -78,6 +94,11 @@ function reset() { local.value = { ...DEFAULT_PREFS, facilities: [] }; emit('res
         <button class="btn btn-primary flex-fill" @click="apply" data-test="apply-filters">Apply</button>
         <button class="btn btn-outline-secondary flex-fill" @click="reset" data-test="reset-filters">Reset</button>
       </div>
+
+      <button v-if="hasPreferences" class="btn btn-link btn-sm w-100 mt-2 p-0" @click="emit('reset-to-preferences')"
+        data-test="reset-to-preferences">
+        Use my profile preferences
+      </button>
     </div>
   </div>
 </template>
