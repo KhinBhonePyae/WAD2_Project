@@ -153,7 +153,8 @@ onMounted(loadPlaces)
           <div class="admin-place-info">
             <div class="admin-place-title-row">
               <h2 class="admin-place-name">{{ place.name }}</h2>
-              <span class="admin-status" :class="place.openNow ? 'admin-status-open' : 'admin-status-closed'">{{ place.openNow ? '● Open' : '● Closed' }}</span>
+              <span class="admin-status" :class="place.openNow ? 'admin-status-open' : 'admin-status-closed'">{{
+                place.openNow ? '● Open' : '● Closed' }}</span>
             </div>
 
             <div class="admin-place-area">{{ place.area }}</div>
@@ -162,9 +163,12 @@ onMounted(loadPlaces)
             <div class="admin-place-badges">
               <span class="admin-mini-badge">{{ place.indoor ? 'Indoor' : 'Outdoor' }}</span>
               <span v-if="place.capacity" class="admin-mini-badge">{{ place.capacity }} seats</span>
-              <span v-if="closureStatusOf(place) === 'normal' && place.hours" class="admin-mini-badge">{{ place.hours }}</span>
-              <span v-if="closureStatusOf(place) === 'temporary'" class="admin-mini-badge admin-mini-badge-warning">Temporarily closed</span>
-              <span v-if="closureStatusOf(place) === 'permanent'" class="admin-mini-badge admin-mini-badge-danger">Permanently closed</span>
+              <span v-if="closureStatusOf(place) === 'normal' && place.hours" class="admin-mini-badge">{{ place.hours
+                }}</span>
+              <span v-if="closureStatusOf(place) === 'temporary'"
+                class="admin-mini-badge admin-mini-badge-warning">Temporarily closed</span>
+              <span v-if="closureStatusOf(place) === 'permanent'"
+                class="admin-mini-badge admin-mini-badge-danger">Permanently closed</span>
             </div>
           </div>
 
@@ -179,14 +183,18 @@ onMounted(loadPlaces)
 
       <!-- PAGINATION -->
       <div class="admin-pagination-wrap">
-        <div class="admin-page-info">Showing {{ pageStart }}–{{ pageEnd }} of {{ filteredPlaces.length }} study spaces</div>
+        <div class="admin-page-info">Showing {{ pageStart }}–{{ pageEnd }} of {{ filteredPlaces.length }} study spaces
+        </div>
 
         <div v-if="totalPages > 1" class="admin-pagination">
-          <button class="pagination-btn pagination-arrow" :disabled="currentPage === 1" aria-label="Previous page" @click="goToPage(currentPage - 1)">‹</button>
+          <button class="pagination-btn pagination-arrow" :disabled="currentPage === 1" aria-label="Previous page"
+            @click="goToPage(currentPage - 1)">‹</button>
 
-          <button v-for="page in totalPages" :key="page" class="pagination-btn" :class="{ active: currentPage === page }" @click="goToPage(page)">{{ page }}</button>
+          <button v-for="page in totalPages" :key="page" class="pagination-btn"
+            :class="{ active: currentPage === page }" @click="goToPage(page)">{{ page }}</button>
 
-          <button class="pagination-btn pagination-arrow" :disabled="currentPage === totalPages" aria-label="Next page" @click="goToPage(currentPage + 1)">›</button>
+          <button class="pagination-btn pagination-arrow" :disabled="currentPage === totalPages" aria-label="Next page"
+            @click="goToPage(currentPage + 1)">›</button>
         </div>
       </div>
     </template>
@@ -443,9 +451,13 @@ onMounted(loadPlaces)
   font-weight: 700;
 }
 
-.admin-mini-badge-warning { background: var(--x-butter); }
+.admin-mini-badge-warning {
+  background: var(--x-butter);
+}
 
-.admin-mini-badge-danger { background: #FFC9B8; }
+.admin-mini-badge-danger {
+  background: #FFC9B8;
+}
 
 .admin-actions {
   display: flex;
@@ -456,58 +468,58 @@ onMounted(loadPlaces)
 }
 
 /* PAGINATION */
-.admin-pagination-wrap { 
-  margin-top: 1.5rem; 
-  text-align: center; 
+.admin-pagination-wrap {
+  margin-top: 1.5rem;
+  text-align: center;
 }
 
-.admin-page-info { 
-  margin-bottom: 1rem; 
-  color: var(--x-muted); 
-  font-size: .82rem; 
-  font-weight: 600; 
+.admin-page-info {
+  margin-bottom: 1rem;
+  color: var(--x-muted);
+  font-size: .82rem;
+  font-weight: 600;
 }
 
-.admin-pagination { 
-  display: flex; 
-  justify-content: center; 
-  align-items: center; 
-  gap: .6rem; 
-  flex-wrap: wrap; 
+.admin-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
 }
 
-.pagination-btn { 
-  min-width: 42px; 
-  height: 42px; 
-  padding: 0 .8rem; 
-  border: 2px solid var(--x-ink); 
-  border-radius: 999px; 
-  background: var(--x-card); 
-  color: var(--x-ink); 
-  font-weight: 800; 
-  box-shadow: 3px 3px 0 var(--x-ink); 
-  transition: transform .18s var(--x-ease), box-shadow .18s var(--x-ease), background .2s; 
+.pagination-btn {
+  min-width: 42px;
+  height: 42px;
+  padding: 0 .8rem;
+  border: 2px solid var(--x-ink);
+  border-radius: 999px;
+  background: var(--x-card);
+  color: var(--x-ink);
+  font-weight: 800;
+  box-shadow: 3px 3px 0 var(--x-ink);
+  transition: transform .18s var(--x-ease), box-shadow .18s var(--x-ease), background .2s;
 }
 
-.pagination-btn:hover:not(:disabled) { 
-  transform: translate(-1px, -1px); 
-  box-shadow: 5px 5px 0 var(--x-ink); 
-  background: var(--x-lime); 
+.pagination-btn:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 var(--x-ink);
+  background: var(--x-lime);
 }
 
-.pagination-btn.active { 
-  background: var(--x-orange); 
+.pagination-btn.active {
+  background: var(--x-orange);
 }
 
-.pagination-btn:disabled { 
-  opacity: .35; 
-  cursor: not-allowed; 
-  box-shadow: 2px 2px 0 var(--x-ink); 
+.pagination-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  box-shadow: 2px 2px 0 var(--x-ink);
 }
 
-.pagination-arrow { 
-  font-size: 1.35rem; 
-  line-height: 1; 
+.pagination-arrow {
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
 /* EMPTY */
@@ -579,10 +591,10 @@ onMounted(loadPlaces)
     justify-content: flex-start;
   }
 
-  .pagination-btn { 
-    min-width: 38px; 
-    height: 38px; 
-    padding: 0 .65rem; 
+  .pagination-btn {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 .65rem;
   }
 }
 </style>

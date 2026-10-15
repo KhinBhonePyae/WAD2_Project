@@ -87,7 +87,7 @@ onMounted(() => {
     <div class="row">
       <div class="col-lg-3">
         <SearchFilters :modelValue="prefs" :facilityOptions="facilityOptions" :areaOptions="areaOptions"
-                       @apply="onApply" @reset="onReset" />
+          @apply="onApply" @reset="onReset" />
       </div>
 
       <div class="col-lg-9">
@@ -100,7 +100,9 @@ onMounted(() => {
           </select>
         </div>
 
-        <div v-if="loading" class="text-center py-5"><div class="spinner-border"></div></div>
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border"></div>
+        </div>
         <div v-else-if="error" class="alert alert-danger">{{ error }}</div>
         <div v-else-if="results.length === 0" class="alert alert-info" data-test="no-results">
           No study spaces match. Try removing some filters.

@@ -48,8 +48,11 @@ function fmt(d) {
         <div class="row g-2 mt-2">
           <div class="col-4 col-md-2">
             <select v-model.number="draftRating" class="form-select" data-test="edit-rating">
-              <option :value="5">5</option><option :value="4">4</option><option :value="3">3</option>
-              <option :value="2">2</option><option :value="1">1</option>
+              <option :value="5">5</option>
+              <option :value="4">4</option>
+              <option :value="3">3</option>
+              <option :value="2">2</option>
+              <option :value="1">1</option>
             </select>
           </div>
           <div class="col-8 col-md-10">
@@ -67,8 +70,8 @@ function fmt(d) {
         <!-- only the author sees these (the server checks this too) -->
         <div v-if="currentUserId && r.userId === currentUserId" class="d-flex gap-2">
           <button class="btn btn-ghost btn-sm" @click="startEdit(r)" data-test="edit-btn">Edit</button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--ss-danger)"
-                  @click="$emit('delete-review', r._id)" data-test="delete-btn">Delete</button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--ss-danger)" @click="$emit('delete-review', r._id)"
+            data-test="delete-btn">Delete</button>
         </div>
       </template>
     </article>

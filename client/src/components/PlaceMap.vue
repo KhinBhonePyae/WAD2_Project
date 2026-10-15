@@ -262,34 +262,19 @@ onBeforeUnmount(() => map?.remove())
         <h2 id="place-map-title" class="x-place-map__title">Find it on the map</h2>
         <p class="x-place-map__address">{{ location?.address || place.address }}</p>
       </div>
-      <button
-        v-if="location"
-        class="x-place-map__directions"
-        type="button"
-        :disabled="routeStatus === 'locating' || routeStatus === 'routing'"
-        data-test="map-route-button"
-        @click="showRoute"
-      >
-        {{ routeStatus === 'locating' ? 'Finding your location...' : routeStatus === 'routing' ? 'Building route...' : 'Show routes from my location' }}
+      <button v-if="location" class="x-place-map__directions" type="button"
+        :disabled="routeStatus === 'locating' || routeStatus === 'routing'" data-test="map-route-button"
+        @click="showRoute">
+        {{ routeStatus === 'locating' ? 'Finding your location...' : routeStatus === 'routing' ? 'Building route...' :
+        'Show routes from my location' }}
         <span v-if="routeStatus !== 'locating' && routeStatus !== 'routing'" aria-hidden="true">↗</span>
       </button>
     </div>
 
-    <div
-      class="x-place-map__modes"
-      role="group"
-      aria-label="Choose a transportation mode"
-    >
-      <button
-        v-for="mode in routeModes"
-        :key="mode.id"
-        type="button"
-        class="x-place-map__mode"
-        :class="{ 'x-place-map__mode--active': selectedMode === mode.id }"
-        :aria-pressed="selectedMode === mode.id"
-        :disabled="routeStatus === 'locating' || routeStatus === 'routing'"
-        @click="changeMode(mode.id)"
-      >
+    <div class="x-place-map__modes" role="group" aria-label="Choose a transportation mode">
+      <button v-for="mode in routeModes" :key="mode.id" type="button" class="x-place-map__mode"
+        :class="{ 'x-place-map__mode--active': selectedMode === mode.id }" :aria-pressed="selectedMode === mode.id"
+        :disabled="routeStatus === 'locating' || routeStatus === 'routing'" @click="changeMode(mode.id)">
         <span class="x-place-map__mode-icon" aria-hidden="true">{{ mode.icon }}</span>
         {{ mode.label }}
       </button>
@@ -306,10 +291,7 @@ onBeforeUnmount(() => map?.remove())
       </span>
       <button type="button" class="x-place-map__clear" @click="clearRoute">Clear route</button>
     </div>
-    <details
-      v-if="routeSummary?.legs?.length || routeSummary?.instructions?.length"
-      class="x-place-map__details"
-    >
+    <details v-if="routeSummary?.legs?.length || routeSummary?.instructions?.length" class="x-place-map__details">
       <summary>Route details</summary>
       <ol>
         <li v-for="(leg, index) in routeSummary.legs" :key="`${leg.mode}-${index}`">
@@ -342,47 +324,144 @@ onBeforeUnmount(() => map?.remove())
   background: var(--x-card);
   box-shadow: var(--x-pop);
 }
+
 .x-place-map__heading {
-  display: flex; align-items: flex-end; justify-content: space-between;
-  flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
-.x-place-map__title { margin: 0 0 .2rem; font-size: clamp(1.4rem, 3vw, 2rem); }
-.x-place-map__address { margin: 0; color: var(--x-muted); }
+
+.x-place-map__title {
+  margin: 0 0 .2rem;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+}
+
+.x-place-map__address {
+  margin: 0;
+  color: var(--x-muted);
+}
+
 .x-place-map__directions {
-  display: inline-flex; align-items: center; gap: .45rem; padding: .65rem 1rem;
-  border: var(--x-line); border-radius: 999px; background: var(--x-lime);
-  color: var(--x-ink); font: inherit; font-weight: 700; cursor: pointer;
-  box-shadow: 3px 3px 0 var(--x-ink); transition: transform .2s var(--x-ease);
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: .65rem 1rem;
+  border: var(--x-line);
+  border-radius: 999px;
+  background: var(--x-lime);
+  color: var(--x-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--x-ink);
+  transition: transform .2s var(--x-ease);
 }
-.x-place-map__directions:hover:not(:disabled) { transform: translate(-2px, -2px); }
-.x-place-map__directions:disabled { cursor: wait; opacity: .72; }
+
+.x-place-map__directions:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+}
+
+.x-place-map__directions:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
 .x-place-map__modes {
-  display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: 0 0 1rem;
 }
+
 .x-place-map__mode {
-  display: inline-flex; align-items: center; gap: .4rem; padding: .45rem .8rem;
-  border: 1.5px solid rgba(23, 21, 18, .3); border-radius: 999px;
-  background: transparent; color: var(--x-ink); font: inherit; cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .45rem .8rem;
+  border: 1.5px solid rgba(23, 21, 18, .3);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--x-ink);
+  font: inherit;
+  cursor: pointer;
   transition: background .2s var(--x-ease), border-color .2s var(--x-ease);
 }
-.x-place-map__mode:hover:not(:disabled) { border-color: var(--x-ink); }
-.x-place-map__mode--active { border-color: var(--x-ink); background: var(--x-lime); font-weight: 700; }
-.x-place-map__mode:disabled { cursor: wait; opacity: .65; }
-.x-place-map__mode-icon { font-size: 1.05rem; }
+
+.x-place-map__mode:hover:not(:disabled) {
+  border-color: var(--x-ink);
+}
+
+.x-place-map__mode--active {
+  border-color: var(--x-ink);
+  background: var(--x-lime);
+  font-weight: 700;
+}
+
+.x-place-map__mode:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.x-place-map__mode-icon {
+  font-size: 1.05rem;
+}
+
 .x-place-map__route-summary {
-  display: flex; align-items: center; flex-wrap: wrap; gap: .5rem;
-  margin: 0 0 1rem; color: var(--x-ink);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: 0 0 1rem;
+  color: var(--x-ink);
 }
-.x-place-map__route-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--x-orange); }
+
+.x-place-map__route-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--x-orange);
+}
+
 .x-place-map__clear {
-  margin-left: auto; padding: .3rem .65rem; border: 1.5px solid var(--x-ink);
-  border-radius: 999px; background: transparent; color: var(--x-ink); font-size: .8rem;
+  margin-left: auto;
+  padding: .3rem .65rem;
+  border: 1.5px solid var(--x-ink);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--x-ink);
+  font-size: .8rem;
 }
-.x-place-map__details { margin: -.3rem 0 1rem; color: var(--x-ink); }
-.x-place-map__details summary { width: fit-content; cursor: pointer; font-weight: 700; }
-.x-place-map__details ol { margin: .6rem 0 0; padding-left: 1.4rem; color: var(--x-muted); }
-.x-place-map__details li { padding: .2rem 0; }
-.x-place-map__route-error { margin: 0 0 1rem; color: #a42b11; font-size: .9rem; }
+
+.x-place-map__details {
+  margin: -.3rem 0 1rem;
+  color: var(--x-ink);
+}
+
+.x-place-map__details summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.x-place-map__details ol {
+  margin: .6rem 0 0;
+  padding-left: 1.4rem;
+  color: var(--x-muted);
+}
+
+.x-place-map__details li {
+  padding: .2rem 0;
+}
+
+.x-place-map__route-error {
+  margin: 0 0 1rem;
+  color: #a42b11;
+  font-size: .9rem;
+}
+
 .x-place-map__canvas {
   height: clamp(280px, 42vw, 440px);
   overflow: hidden;
@@ -390,22 +469,37 @@ onBeforeUnmount(() => map?.remove())
   border-radius: 16px;
   background: #e9e3d6;
 }
+
 .x-place-map__canvas .leaflet-control-attribution {
   font-size: 10px;
 }
+
 .x-place-map__canvas .leaflet-tooltip {
   border: 1.5px solid var(--x-ink);
   border-radius: 8px;
   color: var(--x-ink);
   font-weight: 700;
 }
+
 .x-place-map__unavailable {
-  display: grid; min-height: 180px; place-items: center;
-  border: 1.5px dashed rgba(23, 21, 18, .4); border-radius: 16px;
-  color: var(--x-muted); text-align: center;
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  border: 1.5px dashed rgba(23, 21, 18, .4);
+  border-radius: 16px;
+  color: var(--x-muted);
+  text-align: center;
 }
-.x-place-map__note { margin: .65rem 0 0; color: var(--x-muted); font-size: .82rem; }
+
+.x-place-map__note {
+  margin: .65rem 0 0;
+  color: var(--x-muted);
+  font-size: .82rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .x-place-map__directions { transition: none; }
+  .x-place-map__directions {
+    transition: none;
+  }
 }
 </style>

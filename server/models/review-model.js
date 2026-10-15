@@ -3,14 +3,14 @@
 const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema({
-  placeId:    { type: Number, required: true },
-  userId:     { type: mongoose.Schema.Types.ObjectId, default: null }, // who wrote it (null on older reviews)
-  author:     { type: String, required: true, trim: true, maxlength: 60 },
-  rating:     { type: Number, required: true, min: 1, max: 5 },
-  comment:    { type: String, default: '', maxlength: 600, trim: true },
+  placeId: { type: Number, required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, default: null }, // who wrote it (null on older reviews)
+  author: { type: String, required: true, trim: true, maxlength: 60 },
+  rating: { type: Number, required: true, min: 1, max: 5 },
+  comment: { type: String, default: '', maxlength: 600, trim: true },
   crowdLevel: { type: String, enum: ['quiet', 'moderate', 'packed'], default: 'moderate' },
-  createdAt:  { type: Date, default: Date.now, immutable: true },
-  updatedAt:  { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now, immutable: true },
+  updatedAt: { type: Date, default: Date.now },
 }, { versionKey: false });
 
 reviewSchema.pre('save', function (next) { this.updatedAt = new Date(); next(); });
@@ -22,16 +22,16 @@ const Review = mongoose.model('Review', reviewSchema, 'reviews');
 
 // --- mock-mode store --------------------------------------------------
 let mem = [
-  { _id: 'm1', placeId: 1, author: 'Wei Ling', rating: 5, comment: 'Level 5 is genuinely silent. Got a socket seat at 9am.', crowdLevel: 'quiet',    createdAt: new Date('2026-09-30') },
-  { _id: 'm2', placeId: 1, author: 'Arjun',    rating: 4, comment: 'Great until 2pm, then it fills up fast.',              crowdLevel: 'moderate', createdAt: new Date('2026-10-02') },
-  { _id: 'm3', placeId: 2, author: 'Siti',     rating: 4, comment: 'Courtyard is lovely when it is not raining.',          crowdLevel: 'moderate', createdAt: new Date('2026-10-01') },
+  { _id: 'm1', placeId: 1, author: 'Wei Ling', rating: 5, comment: 'Level 5 is genuinely silent. Got a socket seat at 9am.', crowdLevel: 'quiet', createdAt: new Date('2026-09-30') },
+  { _id: 'm2', placeId: 1, author: 'Arjun', rating: 4, comment: 'Great until 2pm, then it fills up fast.', crowdLevel: 'moderate', createdAt: new Date('2026-10-02') },
+  { _id: 'm3', placeId: 2, author: 'Siti', rating: 4, comment: 'Courtyard is lovely when it is not raining.', crowdLevel: 'moderate', createdAt: new Date('2026-10-01') },
 ];
 let nextId = 4;
 
 exports.findByPlace = async (placeId) => {
   if (global.MOCK_MODE) {
     return mem.filter(r => r.placeId === Number(placeId))
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }
   return Review.find({ placeId: Number(placeId) }).sort({ createdAt: -1 });
 };

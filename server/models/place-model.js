@@ -5,23 +5,23 @@ const fs = require('fs');
 const path = require('path');
 
 const placeSchema = new mongoose.Schema({
-  id:          { type: Number, required: true },
-  branchCode:  { type: String, unique: true, sparse: true }, // NLB branch code, set by import-libraries.js
-  name:        { type: String, required: true, trim: true },
-  address:     { type: String, default: '' },
-  area:        { type: String, default: '' },
-  lat:         { type: Number }, lon: { type: Number },
-  indoor:      { type: Boolean, default: true },
-  openNow:     { type: Boolean, default: true },
+  id: { type: Number, required: true },
+  branchCode: { type: String, unique: true, sparse: true }, // NLB branch code, set by import-libraries.js
+  name: { type: String, required: true, trim: true },
+  address: { type: String, default: '' },
+  area: { type: String, default: '' },
+  lat: { type: Number }, lon: { type: Number },
+  indoor: { type: Boolean, default: true },
+  openNow: { type: Boolean, default: true },
   closureStatus: { type: String, enum: ['normal', 'temporary', 'permanent'], default: 'normal' },
-  hours:       { type: String, default: '' },
-  facilities:  { type: [String], default: [] },
-  tags:        { type: [String], default: [] },
-  photo:       { type: String, default: '' },
-  photos:      { type: [String], default: [] },
-  rating:      { type: Number, default: 0 },
+  hours: { type: String, default: '' },
+  facilities: { type: [String], default: [] },
+  tags: { type: [String], default: [] },
+  photo: { type: String, default: '' },
+  photos: { type: [String], default: [] },
+  rating: { type: Number, default: 0 },
   reviewCount: { type: Number, default: 0 },
-  capacity:    { type: Number, default: null }, // rough seat count, for the intent "how packed" level
+  capacity: { type: Number, default: null }, // rough seat count, for the intent "how packed" level
   description: { type: String, default: '' },
 }, { versionKey: false });
 

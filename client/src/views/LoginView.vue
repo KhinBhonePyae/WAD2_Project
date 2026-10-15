@@ -61,11 +61,7 @@ async function login() {
             <h2>Log in</h2>
           </div>
 
-          <div
-            v-if="errorMessage"
-            class="alert alert-danger auth-alert"
-            role="alert"
-          >
+          <div v-if="errorMessage" class="alert alert-danger auth-alert" role="alert">
             {{ errorMessage }}
           </div>
 
@@ -75,14 +71,8 @@ async function login() {
                 Email
               </label>
 
-              <input
-                id="email"
-                v-model="email"
-                type="email"
-                class="form-control auth-input"
-                placeholder="Enter your email"
-                autocomplete="email"
-              >
+              <input id="email" v-model="email" type="email" class="form-control auth-input"
+                placeholder="Enter your email" autocomplete="email">
             </div>
 
             <div class="form-group">
@@ -90,25 +80,12 @@ async function login() {
                 Password
               </label>
 
-              <input
-                id="password"
-                v-model="password"
-                type="password"
-                class="form-control auth-input"
-                placeholder="Enter your password"
-                autocomplete="current-password"
-              >
+              <input id="password" v-model="password" type="password" class="form-control auth-input"
+                placeholder="Enter your password" autocomplete="current-password">
             </div>
 
-            <button
-              type="submit"
-              class="btn auth-button"
-              :disabled="loading"
-            >
-              <span
-                v-if="loading"
-                class="spinner-border spinner-border-sm me-2"
-              ></span>
+            <button type="submit" class="btn auth-button" :disabled="loading">
+              <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
 
               {{ loading ? 'Logging in...' : 'Log in' }}
             </button>
@@ -120,10 +97,7 @@ async function login() {
             <span></span>
           </div>
 
-          <RouterLink
-            to="/signup"
-            class="secondary-button"
-          >
+          <RouterLink to="/signup" class="secondary-button">
             Create an account
           </RouterLink>
         </section>

@@ -31,15 +31,15 @@ function reset() { local.value = { ...DEFAULT_PREFS, facilities: [] }; emit('res
 
 <template>
   <!-- Collapsible on mobile (Bootstrap collapse), always open from lg upwards -->
-  <button class="btn btn-outline-primary d-lg-none w-100 mb-2" data-bs-toggle="collapse"
-          data-bs-target="#filterBody" data-test="filter-toggle">Filters</button>
+  <button class="btn btn-outline-primary d-lg-none w-100 mb-2" data-bs-toggle="collapse" data-bs-target="#filterBody"data-test="filter-toggle">Filters</button>
 
   <div class="collapse d-lg-block" id="filterBody">
     <div class="card card-body mb-3" data-test="filter-panel">
       <h6>Facilities I need</h6>
       <FilterChips :options="chipOptions" :selected="local.facilities" @toggle="toggleFacility" />
       <div class="form-check form-switch mt-2">
-        <input class="form-check-input" type="checkbox" id="strict" v-model="local.strictFacilities" data-test="strict-facilities" />
+        <input class="form-check-input" type="checkbox" id="strict" v-model="local.strictFacilities"
+          data-test="strict-facilities" />
         <label class="form-check-label small" for="strict">Must have all selected</label>
       </div>
 

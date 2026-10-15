@@ -22,8 +22,8 @@ export async function fetchWeather(lat = SG.lat, lon = SG.lon) {
     fair: !raining && code <= 2,
     label: describe(code, raining),
     icon: icon(code, raining),
-    isDay: c.is_day === 1,            
-    kind: sceneKind(code, raining),  
+    isDay: c.is_day === 1,
+    kind: sceneKind(code, raining),
   }
 }
 

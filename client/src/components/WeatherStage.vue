@@ -11,11 +11,11 @@ import { gsap, reducedMotion } from '../utils/motion.js'
 const props = defineProps({ weather: Object, area: String, compact: Boolean })
 
 const MODES = [
-  { key: 'live',   label: 'Live' },
-  { key: 'clear',  label: 'Sunny' },
+  { key: 'live', label: 'Live' },
+  { key: 'clear', label: 'Sunny' },
   { key: 'cloudy', label: 'Cloudy' },
-  { key: 'rain',   label: 'Rain' },
-  { key: 'night',  label: 'Night' },
+  { key: 'rain', label: 'Rain' },
+  { key: 'night', label: 'Night' },
 ]
 const modeIndex = ref(0)
 const mode = computed(() => MODES[modeIndex.value].key)
@@ -60,17 +60,23 @@ function makeParticles() {
   particles = []
   if (kind === 'rain') {
     const n = Math.round(area / 2600)
-    for (let i = 0; i < n; i++) particles.push({ x: Math.random() * w, y: Math.random() * h,
-      len: 10 + Math.random() * 14, v: 9 + Math.random() * 7 })
+    for (let i = 0; i < n; i++) particles.push({
+      x: Math.random() * w, y: Math.random() * h,
+      len: 10 + Math.random() * 14, v: 9 + Math.random() * 7
+    })
   } else if (kind === 'night') {
     const n = Math.round(area / 5200)
-    for (let i = 0; i < n; i++) particles.push({ x: Math.random() * w, y: Math.random() * h * 0.8,
-      r: Math.random() * 1.4 + 0.3, t: Math.random() * Math.PI * 2, s: 0.01 + Math.random() * 0.03 })
+    for (let i = 0; i < n; i++) particles.push({
+      x: Math.random() * w, y: Math.random() * h * 0.8,
+      r: Math.random() * 1.4 + 0.3, t: Math.random() * Math.PI * 2, s: 0.01 + Math.random() * 0.03
+    })
   } else {
     const n = Math.round(area / 16000)
-    for (let i = 0; i < n; i++) particles.push({ x: Math.random() * w, y: Math.random() * h,
+    for (let i = 0; i < n; i++) particles.push({
+      x: Math.random() * w, y: Math.random() * h,
       r: Math.random() * 2.2 + 0.6, vx: (Math.random() - 0.5) * 0.25, vy: -0.1 - Math.random() * 0.25,
-      a: Math.random() * 0.5 + 0.2 })
+      a: Math.random() * 0.5 + 0.2
+    })
   }
 }
 
@@ -233,8 +239,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section ref="root" class="ws" :class="['ws--' + skyKey, { 'ws--compact': compact }]"
-           data-test="weather" @pointermove="onPointer" @pointerleave="onLeave">
+  <section ref="root" class="ws" :class="['ws--' + skyKey, { 'ws--compact': compact }]" data-test="weather"
+    @pointermove="onPointer" @pointerleave="onLeave">
     <div class="ws-sky ws-sky--clear"></div>
     <div class="ws-sky ws-sky--cloudy"></div>
     <div class="ws-sky ws-sky--rain"></div>
@@ -246,8 +252,8 @@ onUnmounted(() => {
     </div>
 
     <div class="ws-clouds" aria-hidden="true">
-      <svg v-for="n in 5" :key="n" class="ws-cloud" :class="{ 'ws-cloud--off': n > cloudCount }"
-           :style="{ '--i': n }" viewBox="-4 -30 208 116">
+      <svg v-for="n in 5" :key="n" class="ws-cloud" :class="{ 'ws-cloud--off': n > cloudCount }" :style="{ '--i': n }"
+        viewBox="-4 -30 208 116">
         <path d="M30 80a28 28 0 0 1 4-55 40 40 0 0 1 74-12 32 32 0 0 1 54 18 26 26 0 0 1 8 49z" />
       </svg>
     </div>
@@ -264,15 +270,15 @@ onUnmounted(() => {
     </div>
 
     <div class="ws-dial-wrap">
-      <div ref="dial" class="ws-dial" role="slider" tabindex="0" data-cursor="spin"
-           aria-label="Preview weather" :aria-valuetext="MODES[modeIndex].label"
-           :aria-valuenow="modeIndex" aria-valuemin="0" :aria-valuemax="MODES.length - 1"
-           @pointerdown="dialDown" @pointermove="dialMove" @pointerup="dialUp" @keydown="dialKey">
+      <div ref="dial" class="ws-dial" role="slider" tabindex="0" data-cursor="spin" aria-label="Preview weather"
+        :aria-valuetext="MODES[modeIndex].label" :aria-valuenow="modeIndex" aria-valuemin="0"
+        :aria-valuemax="MODES.length - 1" @pointerdown="dialDown" @pointermove="dialMove" @pointerup="dialUp"
+        @keydown="dialKey">
         <span class="ws-dial__knob" :style="{ transform: `rotate(${dialAngle}deg)` }"><i></i></span>
         <span v-for="(m, i) in MODES" :key="m.key" class="ws-dial__tick"
-              :class="{ 'ws-dial__tick--on': i === modeIndex }"
-              :style="{ transform: `rotate(${i * STEP}deg) translateY(-50px) rotate(${-i * STEP}deg)` }"
-              @click.stop="modeIndex = i">{{ m.label }}</span>
+          :class="{ 'ws-dial__tick--on': i === modeIndex }"
+          :style="{ transform: `rotate(${i * STEP}deg) translateY(-50px) rotate(${-i * STEP}deg)` }"
+          @click.stop="modeIndex = i">{{ m.label }}</span>
       </div>
     </div>
   </section>
@@ -280,91 +286,330 @@ onUnmounted(() => {
 
 <style scoped>
 .ws {
-  position: relative; overflow: hidden; isolation: isolate;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   height: clamp(340px, 46vw, 460px);
-  border: var(--x-line); border-radius: 28px; box-shadow: var(--x-pop-lg);
+  border: var(--x-line);
+  border-radius: 28px;
+  box-shadow: var(--x-pop-lg);
   touch-action: pan-y;
   container-type: inline-size;
 }
-.ws--compact { height: 280px; border-radius: 24px; }
 
-.ws-sky { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; z-index: -2; }
-.ws-sky--clear  { background: linear-gradient(180deg, #7FC8FF 0%, #BFE6FF 55%, #FFF0C2 100%); }
-.ws-sky--cloudy { background: linear-gradient(180deg, #A9B8C6 0%, #D7DEE4 60%, #EEF0EE 100%); }
-.ws-sky--rain   { background: linear-gradient(180deg, #4F6275 0%, #7D90A3 60%, #A3B2BF 100%); }
-.ws-sky--night  { background: linear-gradient(180deg, #0E1330 0%, #26245A 60%, #4B3F7A 100%); }
-.ws--clear .ws-sky--clear, .ws--cloudy .ws-sky--cloudy,
-.ws--rain .ws-sky--rain, .ws--night .ws-sky--night { opacity: 1; }
+.ws--compact {
+  height: 280px;
+  border-radius: 24px;
+}
+
+.ws-sky {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1s ease;
+  z-index: -2;
+}
+
+.ws-sky--clear {
+  background: linear-gradient(180deg, #7FC8FF 0%, #BFE6FF 55%, #FFF0C2 100%);
+}
+
+.ws-sky--cloudy {
+  background: linear-gradient(180deg, #A9B8C6 0%, #D7DEE4 60%, #EEF0EE 100%);
+}
+
+.ws-sky--rain {
+  background: linear-gradient(180deg, #4F6275 0%, #7D90A3 60%, #A3B2BF 100%);
+}
+
+.ws-sky--night {
+  background: linear-gradient(180deg, #0E1330 0%, #26245A 60%, #4B3F7A 100%);
+}
+
+.ws--clear .ws-sky--clear,
+.ws--cloudy .ws-sky--cloudy,
+.ws--rain .ws-sky--rain,
+.ws--night .ws-sky--night {
+  opacity: 1;
+}
 
 /* sun becomes the moon at night */
-.ws-sun { position: absolute; right: 18%; top: 14%; width: 120px; height: 120px; z-index: -1;
-          transition: opacity .8s, filter .8s; }
-.ws-sun__disc { position: absolute; inset: 18px; border-radius: 50%; background: #FFD84A;
-                border: 2px solid var(--x-ink); box-shadow: 0 0 60px 16px rgba(255, 216, 74, .55);
-                transition: background-color .8s, box-shadow .8s; }
-.ws-sun__rays { position: absolute; inset: -18px; border-radius: 50%;
-                background: repeating-conic-gradient(rgba(255, 216, 74, .55) 0 6deg, transparent 6deg 22deg);
-                -webkit-mask: radial-gradient(circle, transparent 46%, #000 47%, #000 66%, transparent 67%);
-                        mask: radial-gradient(circle, transparent 46%, #000 47%, #000 66%, transparent 67%);
-                animation: ws-spin 30s linear infinite; }
-.ws--night .ws-sun__disc { background: #F4F0DC; box-shadow: 0 0 50px 10px rgba(244, 240, 220, .25), inset -14px -6px 0 rgba(0,0,0,.12); }
-.ws--night .ws-sun__rays, .ws--rain .ws-sun__rays, .ws--cloudy .ws-sun__rays { opacity: 0; }
-.ws--rain .ws-sun, .ws--cloudy .ws-sun { opacity: .25; filter: blur(2px); }
-@keyframes ws-spin { to { transform: rotate(360deg); } }
+.ws-sun {
+  position: absolute;
+  right: 18%;
+  top: 14%;
+  width: 120px;
+  height: 120px;
+  z-index: -1;
+  transition: opacity .8s, filter .8s;
+}
 
-.ws-clouds { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
-.ws-cloud { position: absolute; overflow: visible; width: calc(150px + var(--i) * 22px); top: calc(var(--i) * 9% - 4%);
-            left: calc(var(--i) * 17% - 12%); fill: #FFFDF8; stroke: var(--x-ink); stroke-width: 3;
-            transition: opacity 1s, fill 1s; }
-.ws--rain .ws-cloud { fill: #C9D2DB; }
-.ws--night .ws-cloud { fill: #3B3870; stroke: #0E1330; opacity: .7; }
-.ws-cloud--off { opacity: 0 !important; }
+.ws-sun__disc {
+  position: absolute;
+  inset: 18px;
+  border-radius: 50%;
+  background: #FFD84A;
+  border: 2px solid var(--x-ink);
+  box-shadow: 0 0 60px 16px rgba(255, 216, 74, .55);
+  transition: background-color .8s, box-shadow .8s;
+}
 
-.ws-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
-.ws-flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.ws-sun__rays {
+  position: absolute;
+  inset: -18px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(rgba(255, 216, 74, .55) 0 6deg, transparent 6deg 22deg);
+  -webkit-mask: radial-gradient(circle, transparent 46%, #000 47%, #000 66%, transparent 67%);
+  mask: radial-gradient(circle, transparent 46%, #000 47%, #000 66%, transparent 67%);
+  animation: ws-spin 30s linear infinite;
+}
+
+.ws--night .ws-sun__disc {
+  background: #F4F0DC;
+  box-shadow: 0 0 50px 10px rgba(244, 240, 220, .25), inset -14px -6px 0 rgba(0, 0, 0, .12);
+}
+
+.ws--night .ws-sun__rays,
+.ws--rain .ws-sun__rays,
+.ws--cloudy .ws-sun__rays {
+  opacity: 0;
+}
+
+.ws--rain .ws-sun,
+.ws--cloudy .ws-sun {
+  opacity: .25;
+  filter: blur(2px);
+}
+
+@keyframes ws-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.ws-clouds {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.ws-cloud {
+  position: absolute;
+  overflow: visible;
+  width: calc(150px + var(--i) * 22px);
+  top: calc(var(--i) * 9% - 4%);
+  left: calc(var(--i) * 17% - 12%);
+  fill: #FFFDF8;
+  stroke: var(--x-ink);
+  stroke-width: 3;
+  transition: opacity 1s, fill 1s;
+}
+
+.ws--rain .ws-cloud {
+  fill: #C9D2DB;
+}
+
+.ws--night .ws-cloud {
+  fill: #3B3870;
+  stroke: #0E1330;
+  opacity: .7;
+}
+
+.ws-cloud--off {
+  opacity: 0 !important;
+}
+
+.ws-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.ws-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
 
 .ws-card {
-  position: absolute; left: 20px; bottom: 20px; display: flex; align-items: center; gap: 14px;
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
   max-width: calc(100% - 180px);
-  padding: 12px 18px 12px 14px; background: var(--x-card); border: var(--x-line); border-radius: 20px;
+  padding: 12px 18px 12px 14px;
+  background: var(--x-card);
+  border: var(--x-line);
+  border-radius: 20px;
   box-shadow: var(--x-pop);
 }
-.ws-card__temp { font-weight: 800; font-size: 3rem; line-height: .9; letter-spacing: -.05em; color: var(--x-ink); }
-.ws-card__temp sup { font-size: 1rem; top: -1.4em; margin-left: 2px; }
-.ws-card__label { font-weight: 700; color: var(--x-ink); }
-.ws-card__area { font-weight: 400; color: var(--x-muted); }
-.ws-card__advice { font-size: .88rem; color: var(--x-muted); }
 
-.ws-dial-wrap { position: absolute; right: 22px; bottom: 22px; }
-.ws-dial { position: relative; width: 132px; height: 132px; border-radius: 50%; display: grid; place-items: center;
-           background: rgba(255, 253, 248, .55); backdrop-filter: blur(6px); border: var(--x-line);
-           touch-action: none; user-select: none; }
-.ws-dial:focus-visible { outline: 3px solid var(--x-orange); outline-offset: 3px; }
-.ws-dial__knob { width: 52px; height: 52px; border-radius: 50%; background: var(--x-orange); border: var(--x-line);
-                 box-shadow: 3px 3px 0 var(--x-ink); display: block; position: relative;
-                 transition: transform .45s var(--x-ease); }
-.ws-dial__knob i { position: absolute; left: 50%; top: 5px; width: 4px; height: 14px; margin-left: -2px;
-                   border-radius: 2px; background: var(--x-ink); }
-.ws-dial__tick { position: absolute; left: 50%; top: 50%; translate: -50% -50%;
-                 font-family: var(--x-mono); font-size: .56rem; text-transform: uppercase; letter-spacing: .04em;
-                 color: var(--x-ink); padding: 1px 4px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
-.ws-dial__tick--on { background: var(--x-ink); color: var(--x-lime); }
+.ws-card__temp {
+  font-weight: 800;
+  font-size: 3rem;
+  line-height: .9;
+  letter-spacing: -.05em;
+  color: var(--x-ink);
+}
+
+.ws-card__temp sup {
+  font-size: 1rem;
+  top: -1.4em;
+  margin-left: 2px;
+}
+
+.ws-card__label {
+  font-weight: 700;
+  color: var(--x-ink);
+}
+
+.ws-card__area {
+  font-weight: 400;
+  color: var(--x-muted);
+}
+
+.ws-card__advice {
+  font-size: .88rem;
+  color: var(--x-muted);
+}
+
+.ws-dial-wrap {
+  position: absolute;
+  right: 22px;
+  bottom: 22px;
+}
+
+.ws-dial {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 253, 248, .55);
+  backdrop-filter: blur(6px);
+  border: var(--x-line);
+  touch-action: none;
+  user-select: none;
+}
+
+.ws-dial:focus-visible {
+  outline: 3px solid var(--x-orange);
+  outline-offset: 3px;
+}
+
+.ws-dial__knob {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--x-orange);
+  border: var(--x-line);
+  box-shadow: 3px 3px 0 var(--x-ink);
+  display: block;
+  position: relative;
+  transition: transform .45s var(--x-ease);
+}
+
+.ws-dial__knob i {
+  position: absolute;
+  left: 50%;
+  top: 5px;
+  width: 4px;
+  height: 14px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--x-ink);
+}
+
+.ws-dial__tick {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  font-family: var(--x-mono);
+  font-size: .56rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--x-ink);
+  padding: 1px 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ws-dial__tick--on {
+  background: var(--x-ink);
+  color: var(--x-lime);
+}
 
 /* narrow spots (e.g. the detail page sidebar): dial tucks into the corner */
 @container (max-width: 560px) {
-  .ws-card { left: 12px; right: 12px; bottom: 12px; max-width: none; }
-  .ws-card__temp { font-size: 2.4rem; }
-  .ws-dial-wrap { right: 6px; bottom: auto; top: 6px; transform: scale(.72); transform-origin: top right; }
+  .ws-card {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
+  }
+
+  .ws-card__temp {
+    font-size: 2.4rem;
+  }
+
+  .ws-dial-wrap {
+    right: 6px;
+    bottom: auto;
+    top: 6px;
+    transform: scale(.72);
+    transform-origin: top right;
+  }
 }
+
 @media (max-width: 575.98px) {
-  .ws { height: 420px; }
-  .ws-card { left: 12px; right: 12px; bottom: 12px; max-width: none; }
-  .ws-card__temp { font-size: 2.4rem; }
-  .ws-dial-wrap { right: 50%; bottom: auto; top: 16px; transform: translateX(50%) scale(.85); }
-  .ws-sun { right: 8%; top: 40%; width: 90px; height: 90px; }
+  .ws {
+    height: 420px;
+  }
+
+  .ws-card {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    max-width: none;
+  }
+
+  .ws-card__temp {
+    font-size: 2.4rem;
+  }
+
+  .ws-dial-wrap {
+    right: 50%;
+    bottom: auto;
+    top: 16px;
+    transform: translateX(50%) scale(.85);
+  }
+
+  .ws-sun {
+    right: 8%;
+    top: 40%;
+    width: 90px;
+    height: 90px;
+  }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  .ws-sun__rays { animation: none; }
-  .ws-dial__knob, .ws-sky { transition: none; }
+  .ws-sun__rays {
+    animation: none;
+  }
+
+  .ws-dial__knob,
+  .ws-sky {
+    transition: none;
+  }
 }
 </style>

@@ -115,13 +115,7 @@ onUnmounted(() => {
 <template>
   <div class="x-assist">
     <Transition :name="reducedMotion ? '' : 'x-pop'">
-      <section
-        v-if="open"
-        id="assist-card"
-        class="x-assist__card"
-        role="dialog"
-        aria-label="LockedIN study assistant"
-      >
+      <section v-if="open" id="assist-card" class="x-assist__card" role="dialog" aria-label="LockedIN study assistant">
         <header class="x-assist__header">
           <div>
             <strong class="x-assist__title">Study spot assistant</strong>
@@ -130,53 +124,26 @@ onUnmounted(() => {
           <span class="x-assist__spark" aria-hidden="true">✳</span>
         </header>
 
-        <div
-          ref="conversation"
-          class="x-assist__messages"
-          role="log"
-          aria-live="polite"
-          aria-label="Conversation"
-        >
-          <div
-            v-for="(message, index) in messages"
-            :key="index"
-            class="x-assist__message"
-            :class="`x-assist__message--${message.role}`"
-          >
+        <div ref="conversation" class="x-assist__messages" role="log" aria-live="polite" aria-label="Conversation">
+          <div v-for="(message, index) in messages" :key="index" class="x-assist__message"
+            :class="`x-assist__message--${message.role}`">
             {{ message.text }}
           </div>
-          <div
-            v-if="loading"
-            class="x-assist__message x-assist__message--model"
-            aria-label="Assistant is thinking"
-          >
+          <div v-if="loading" class="x-assist__message x-assist__message--model" aria-label="Assistant is thinking">
             Thinking…
           </div>
         </div>
 
         <div v-if="messages.length === 1" class="x-assist__suggestions" aria-label="Try asking">
-          <button
-            v-for="suggestion in suggestions"
-            :key="suggestion"
-            type="button"
-            class="x-assist__suggestion"
-            @click="useSuggestion(suggestion)"
-          >
+          <button v-for="suggestion in suggestions" :key="suggestion" type="button" class="x-assist__suggestion"
+            @click="useSuggestion(suggestion)">
             {{ suggestion }}
           </button>
         </div>
 
         <form class="x-assist__form" @submit="sendMessage">
-          <input
-            ref="messageInput"
-            v-model="input"
-            class="x-assist__input"
-            type="text"
-            maxlength="2000"
-            placeholder="Ask about study places..."
-            aria-label="Message the study assistant"
-            autocomplete="off"
-          >
+          <input ref="messageInput" v-model="input" class="x-assist__input" type="text" maxlength="2000"
+            placeholder="Ask about study places..." aria-label="Message the study assistant" autocomplete="off">
           <button class="x-assist__send" type="submit" :disabled="loading || !input.trim()">
             Send
           </button>
@@ -184,19 +151,13 @@ onUnmounted(() => {
       </section>
     </Transition>
 
-    <button
-      type="button"
-      class="x-assist__btn"
-      :aria-expanded="open"
-      aria-controls="assist-card"
-      :aria-label="open ? 'Close assistant' : 'Open study assistant'"
-      data-cursor="ask"
-      data-test="assistant-btn"
-      @click="toggle"
-    >
+    <button type="button" class="x-assist__btn" :aria-expanded="open" aria-controls="assist-card"
+      :aria-label="open ? 'Close assistant' : 'Open study assistant'" data-cursor="ask" data-test="assistant-btn"
+      @click="toggle">
       <svg v-if="!open" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
         <path d="M4 5.5h16v10H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-        <path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+        <path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6"
+          stroke-linecap="round" />
       </svg>
       <svg v-else viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
         <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
@@ -206,60 +167,198 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-.x-assist { position: fixed; left: 18px; bottom: 18px; z-index: 1040;
-            padding-bottom: env(safe-area-inset-bottom); }
+.x-assist {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 1040;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
 .x-assist__btn {
-  width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--x-lilac); color: var(--x-ink); border: var(--x-line); box-shadow: var(--x-pop);
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--x-lilac);
+  color: var(--x-ink);
+  border: var(--x-line);
+  box-shadow: var(--x-pop);
   transition: transform .2s var(--x-ease), background-color .2s;
 }
-.x-assist__btn:hover { transform: translate(-2px, -2px) rotate(-6deg); }
-.x-assist__btn[aria-expanded="true"] { background: var(--x-ink); color: var(--x-lime); }
+
+.x-assist__btn:hover {
+  transform: translate(-2px, -2px) rotate(-6deg);
+}
+
+.x-assist__btn[aria-expanded="true"] {
+  background: var(--x-ink);
+  color: var(--x-lime);
+}
+
 .x-assist__card {
-  position: absolute; left: 0; bottom: 66px; display: flex; flex-direction: column;
-  width: min(360px, calc(100vw - 36px)); max-height: min(520px, calc(100dvh - 112px));
-  padding: 14px; background: var(--x-ink); color: var(--x-paper);
-  border: var(--x-line); border-radius: 18px; box-shadow: 5px 5px 0 var(--x-orange);
+  position: absolute;
+  left: 0;
+  bottom: 66px;
+  display: flex;
+  flex-direction: column;
+  width: min(360px, calc(100vw - 36px));
+  max-height: min(520px, calc(100dvh - 112px));
+  padding: 14px;
+  background: var(--x-ink);
+  color: var(--x-paper);
+  border: var(--x-line);
+  border-radius: 18px;
+  box-shadow: 5px 5px 0 var(--x-orange);
 }
-.x-assist__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 2px 12px; }
-.x-assist__title { display: block; font-size: 1.05rem; }
-.x-assist__subtitle { display: block; margin-top: 2px; color: var(--x-lime); font-size: .63rem; }
-.x-assist__spark { color: var(--x-lime); font-size: 1.4rem; }
+
+.x-assist__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 2px 12px;
+}
+
+.x-assist__title {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.x-assist__subtitle {
+  display: block;
+  margin-top: 2px;
+  color: var(--x-lime);
+  font-size: .63rem;
+}
+
+.x-assist__spark {
+  color: var(--x-lime);
+  font-size: 1.4rem;
+}
+
 .x-assist__messages {
-  display: flex; flex: 1; flex-direction: column; gap: 9px; min-height: 100px;
-  overflow-y: auto; padding: 4px 3px 10px; overscroll-behavior: contain;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 9px;
+  min-height: 100px;
+  overflow-y: auto;
+  padding: 4px 3px 10px;
+  overscroll-behavior: contain;
 }
+
 .x-assist__message {
-  max-width: 88%; padding: 9px 11px; border: 1px solid rgba(243, 238, 227, .22);
-  border-radius: 13px; font-size: .88rem; line-height: 1.45; overflow-wrap: anywhere;
+  max-width: 88%;
+  padding: 9px 11px;
+  border: 1px solid rgba(243, 238, 227, .22);
+  border-radius: 13px;
+  font-size: .88rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
-.x-assist__message--model { align-self: flex-start; background: rgba(243, 238, 227, .08); }
-.x-assist__message--user { align-self: flex-end; background: var(--x-lime); color: var(--x-ink); border-color: var(--x-lime); }
-.x-assist__message--error { align-self: flex-start; color: var(--x-paper); border-color: var(--x-orange); }
-.x-assist__suggestions { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 0 10px; }
+
+.x-assist__message--model {
+  align-self: flex-start;
+  background: rgba(243, 238, 227, .08);
+}
+
+.x-assist__message--user {
+  align-self: flex-end;
+  background: var(--x-lime);
+  color: var(--x-ink);
+  border-color: var(--x-lime);
+}
+
+.x-assist__message--error {
+  align-self: flex-start;
+  color: var(--x-paper);
+  border-color: var(--x-orange);
+}
+
+.x-assist__suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 0 10px;
+}
+
 .x-assist__suggestion {
-  padding: 5px 9px; border: 1px solid rgba(243, 238, 227, .35); border-radius: 999px;
-  background: transparent; color: var(--x-paper); font-size: .72rem; text-align: left;
+  padding: 5px 9px;
+  border: 1px solid rgba(243, 238, 227, .35);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--x-paper);
+  font-size: .72rem;
+  text-align: left;
 }
-.x-assist__suggestion:hover { border-color: var(--x-lime); color: var(--x-lime); }
-.x-assist__form { display: flex; gap: 7px; padding-top: 10px; border-top: 1px solid rgba(243, 238, 227, .2); }
+
+.x-assist__suggestion:hover {
+  border-color: var(--x-lime);
+  color: var(--x-lime);
+}
+
+.x-assist__form {
+  display: flex;
+  gap: 7px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(243, 238, 227, .2);
+}
+
 .x-assist__input {
-  min-width: 0; flex: 1; padding: 9px 11px; border: 1.5px solid rgba(243, 238, 227, .3);
-  border-radius: 12px; outline: none; background: rgba(243, 238, 227, .08); color: var(--x-paper);
-  font: inherit; font-size: .85rem;
+  min-width: 0;
+  flex: 1;
+  padding: 9px 11px;
+  border: 1.5px solid rgba(243, 238, 227, .3);
+  border-radius: 12px;
+  outline: none;
+  background: rgba(243, 238, 227, .08);
+  color: var(--x-paper);
+  font: inherit;
+  font-size: .85rem;
 }
-.x-assist__input::placeholder { color: rgba(243, 238, 227, .58); }
-.x-assist__input:focus { border-color: var(--x-lime); }
+
+.x-assist__input::placeholder {
+  color: rgba(243, 238, 227, .58);
+}
+
+.x-assist__input:focus {
+  border-color: var(--x-lime);
+}
+
 .x-assist__send {
-  padding: 0 13px; border: var(--x-line); border-radius: 12px;
-  background: var(--x-orange); color: var(--x-ink); font-weight: 700;
+  padding: 0 13px;
+  border: var(--x-line);
+  border-radius: 12px;
+  background: var(--x-orange);
+  color: var(--x-ink);
+  font-weight: 700;
 }
-.x-assist__send:disabled { cursor: not-allowed; opacity: .55; }
-.x-pop-enter-active, .x-pop-leave-active { transition: opacity .2s, transform .25s var(--x-ease); transform-origin: bottom left; }
-.x-pop-enter-from, .x-pop-leave-to { opacity: 0; transform: scale(.85) translateY(8px); }
+
+.x-assist__send:disabled {
+  cursor: not-allowed;
+  opacity: .55;
+}
+
+.x-pop-enter-active,
+.x-pop-leave-active {
+  transition: opacity .2s, transform .25s var(--x-ease);
+  transform-origin: bottom left;
+}
+
+.x-pop-enter-from,
+.x-pop-leave-to {
+  opacity: 0;
+  transform: scale(.85) translateY(8px);
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .x-pop-enter-active, .x-pop-leave-active { transition: none; }
+
+  .x-pop-enter-active,
+  .x-pop-leave-active {
+    transition: none;
+  }
 }
 </style>

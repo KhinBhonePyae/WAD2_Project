@@ -6,10 +6,10 @@ const mongoose = require('mongoose');
 const { slotEnd } = require('../utils/slots');
 
 const intentSchema = new mongoose.Schema({
-  userId:    { type: mongoose.Schema.Types.ObjectId, required: true },
-  placeId:   { type: Number, required: true },
-  date:      { type: String, required: true },   // 'YYYY-MM-DD', Singapore date
-  slot:      { type: String, required: true, enum: ['morning', 'afternoon', 'evening'] },
+  userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+  placeId: { type: Number, required: true },
+  date: { type: String, required: true },   // 'YYYY-MM-DD', Singapore date
+  slot: { type: String, required: true, enum: ['morning', 'afternoon', 'evening'] },
   expiresAt: { type: Date, required: true },
   createdAt: { type: Date, default: Date.now },
 }, { versionKey: false });
@@ -46,7 +46,7 @@ exports.findAllLive = async () => {
 exports.findIntent = async (userId, placeId, date, slot) => {
   if (global.MOCK_MODE) {
     return mem.find(i => i.userId === String(userId) && i.placeId === Number(placeId) &&
-                         i.date === date && i.slot === slot) || null;
+      i.date === date && i.slot === slot) || null;
   }
   return Intent.findOne({ userId, placeId: Number(placeId), date, slot });
 };
@@ -64,7 +64,7 @@ exports.addIntent = async (userId, placeId, date, slot) => {
 exports.removeIntent = async (userId, placeId, date, slot) => {
   if (global.MOCK_MODE) {
     const index = mem.findIndex(i => i.userId === String(userId) && i.placeId === Number(placeId) &&
-                                     i.date === date && i.slot === slot);
+      i.date === date && i.slot === slot);
     if (index === -1) return null;
     return mem.splice(index, 1)[0];
   }

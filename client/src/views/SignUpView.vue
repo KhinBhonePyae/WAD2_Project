@@ -85,22 +85,26 @@ async function register() {
           <form v-if="step === 1" @submit.prevent="goToPreferences">
             <div class="form-group">
               <label for="name" class="form-label">Name</label>
-              <input id="name" v-model="name" type="text" class="form-control auth-input" placeholder="Enter your name" autocomplete="name">
+              <input id="name" v-model="name" type="text" class="form-control auth-input" placeholder="Enter your name"
+                autocomplete="name">
             </div>
 
             <div class="form-group">
               <label for="email" class="form-label">Email</label>
-              <input id="email" v-model="email" type="email" class="form-control auth-input" placeholder="Enter your email" autocomplete="email">
+              <input id="email" v-model="email" type="email" class="form-control auth-input"
+                placeholder="Enter your email" autocomplete="email">
             </div>
 
             <div class="form-group">
               <label for="password" class="form-label">Password</label>
-              <input id="password" v-model="password" type="password" class="form-control auth-input" placeholder="Enter your password" autocomplete="new-password">
+              <input id="password" v-model="password" type="password" class="form-control auth-input"
+                placeholder="Enter your password" autocomplete="new-password">
             </div>
 
             <div class="form-group">
               <label for="confirmPassword" class="form-label">Confirm password</label>
-              <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control auth-input" placeholder="Confirm your password" autocomplete="new-password">
+              <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control auth-input"
+                placeholder="Confirm your password" autocomplete="new-password">
             </div>
 
             <button type="submit" class="btn auth-button">Next</button>
@@ -163,7 +167,10 @@ async function register() {
   background: var(--x-card);
 }
 
-.auth-container { position: relative; z-index: 2; }
+.auth-container {
+  position: relative;
+  z-index: 2;
+}
 
 .auth-card {
   width: 100%;
@@ -195,7 +202,7 @@ async function register() {
   content: '';
   position: absolute;
   border-radius: 50%;
-  background: rgba(255,255,255,.06);
+  background: rgba(255, 255, 255, .06);
 }
 
 .auth-side::before {
@@ -233,7 +240,9 @@ async function register() {
   justify-content: center;
 }
 
-.form-heading { margin-bottom: 1.7rem; }
+.form-heading {
+  margin-bottom: 1.7rem;
+}
 
 .small-heading {
   color: var(--x-ink);
@@ -249,7 +258,9 @@ async function register() {
   font-weight: 800;
 }
 
-.form-group { margin-bottom: 1.15rem; }
+.form-group {
+  margin-bottom: 1.15rem;
+}
 
 .form-label {
   margin-bottom: .5rem;
@@ -350,7 +361,9 @@ async function register() {
   transition: .2s ease;
 }
 
-.preference-item:has(input:checked) { background: #edf3e8; }
+.preference-item:has(input:checked) {
+  background: #edf3e8;
+}
 
 .preference-item .form-check-input {
   width: 1.4rem;
@@ -369,7 +382,7 @@ async function register() {
 
 .preference-item .form-check-input:focus {
   border-color: #78976b;
-  box-shadow: 0 0 0 3px rgba(159,189,145,.25);
+  box-shadow: 0 0 0 3px rgba(159, 189, 145, .25);
 }
 
 .step-actions {
@@ -394,7 +407,9 @@ async function register() {
   margin-top: 0;
 }
 
-.auth-alert { border-radius: 12px; }
+.auth-alert {
+  border-radius: 12px;
+}
 
 .background-circle {
   position: absolute;
@@ -407,7 +422,7 @@ async function register() {
   height: 260px;
   top: -100px;
   right: 4%;
-  background: rgba(214,209,239,.3);
+  background: rgba(214, 209, 239, .3);
 }
 
 .circle-two {
@@ -415,7 +430,7 @@ async function register() {
   height: 220px;
   left: 3%;
   bottom: -90px;
-  background: rgba(211,235,228,.4);
+  background: rgba(211, 235, 228, .4);
 }
 
 @media (max-width: 991px) {
@@ -429,14 +444,18 @@ async function register() {
     padding: 2rem;
   }
 
-  .side-content { margin: auto 0; }
+  .side-content {
+    margin: auto 0;
+  }
 
   .side-content h1 {
     margin: 0;
     font-size: 2.3rem;
   }
 
-  .auth-form { padding: 2.5rem; }
+  .auth-form {
+    padding: 2.5rem;
+  }
 }
 
 @media (max-width: 575px) {
@@ -455,12 +474,29 @@ async function register() {
     padding: 1.4rem;
   }
 
-  .side-content h1 { font-size: 1.8rem; }
-  .auth-form { padding: 1.6rem 1.2rem; }
-  .form-heading { margin-bottom: 1.3rem; }
-  .form-heading h2 { font-size: 1.7rem; }
-  .auth-divider p { font-size: .78rem; }
-  .preference-list { gap: .65rem; }
+  .side-content h1 {
+    font-size: 1.8rem;
+  }
+
+  .auth-form {
+    padding: 1.6rem 1.2rem;
+  }
+
+  .form-heading {
+    margin-bottom: 1.3rem;
+  }
+
+  .form-heading h2 {
+    font-size: 1.7rem;
+  }
+
+  .auth-divider p {
+    font-size: .78rem;
+  }
+
+  .preference-list {
+    gap: .65rem;
+  }
 
   .preference-item {
     min-height: 54px;
@@ -474,7 +510,9 @@ async function register() {
     height: 1.3rem;
   }
 
-  .step-actions { gap: .65rem; }
+  .step-actions {
+    gap: .65rem;
+  }
 
   .secondary-step-button {
     min-height: 50px;

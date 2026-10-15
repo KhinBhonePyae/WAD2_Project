@@ -161,14 +161,17 @@ watch(() => route.query.q, v => { q.value = v || '' })
   <main class="container ss-section">
     <div class="ss-section__head">
       <div>
-        <h1 class="mb-1 x-page-title" aria-label="Study spaces"><span class="x-mask"><span class="x-word">Study</span></span> <span class="x-mask"><span class="x-word">spaces</span></span></h1>
-        <p class="ss-muted mb-0" data-test="result-count">{{ loading ? 'Loading…' : results.length + ' spot' + (results.length === 1 ? '' : 's') + ' match your filters' }}</p>
+        <h1 class="mb-1 x-page-title" aria-label="Study spaces"><span class="x-mask"><span
+              class="x-word">Study</span></span> <span class="x-mask"><span class="x-word">spaces</span></span></h1>
+        <p class="ss-muted mb-0" data-test="result-count">{{ loading ? 'Loading…' : results.length + ' spot' +
+          (results.length === 1 ? '' : 's') + ' match your filters' }}</p>
       </div>
     </div>
 
     <div class="ss-search mb-3">
       <span class="ss-muted" aria-hidden="true">⌕</span>
-      <input v-model="q" type="text" placeholder="Search by name or area" aria-label="Search study spaces" data-test="cat-search">
+      <input v-model="q" type="text" placeholder="Search by name or area" aria-label="Search study spaces"
+        data-test="cat-search">
     </div>
 
     <WeatherStage :weather="weather" area="Singapore" compact class="mb-4" />
@@ -179,9 +182,11 @@ watch(() => route.query.q, v => { q.value = v || '' })
     </div>
 
     <div class="d-flex flex-wrap gap-2 mb-4">
-      <button class="ss-chip" :aria-pressed="openOnly" @click="openOnly = !openOnly" data-test="chip-open">Open now</button>
+      <button class="ss-chip" :aria-pressed="openOnly" @click="openOnly = !openOnly" data-test="chip-open">Open
+        now</button>
       <button class="ss-chip" :aria-pressed="indoorOnly" @click="toggleIndoor" data-test="chip-indoor">Indoor</button>
-      <button class="ss-chip" :aria-pressed="outdoorOnly" @click="toggleOutdoor" data-test="chip-outdoor">Outdoor</button>
+      <button class="ss-chip" :aria-pressed="outdoorOnly" @click="toggleOutdoor"
+        data-test="chip-outdoor">Outdoor</button>
       <button class="btn btn-ghost btn-sm ms-auto" @click="clearAll" data-test="clear-filters">Clear filters</button>
     </div>
 
@@ -206,13 +211,32 @@ watch(() => route.query.q, v => { q.value = v || '' })
 
     <div v-else class="row g-4">
       <div v-for="item in results" :key="item.place.id" class="col-12 col-md-6 col-lg-4 x-cat-card">
-        <PlaceCard :place="item.place" :score="item.score" :saved="saved.includes(item.place.id)" @toggle-save="toggleSave" />
+        <PlaceCard :place="item.place" :score="item.score" :saved="saved.includes(item.place.id)"
+          @toggle-save="toggleSave" />
       </div>
     </div>
   </main>
 </template>
 
 <style scoped>
-.x-mask { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; }
-.x-empty-icon { width: 64px; height: 64px; margin: 0 auto 12px; display: grid; place-items: center; border-radius: 50%; background: var(--x-butter); border: var(--x-line); box-shadow: var(--x-pop); font-weight: 800; font-size: 2rem; }
+.x-mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-bottom: .08em;
+}
+
+.x-empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--x-butter);
+  border: var(--x-line);
+  box-shadow: var(--x-pop);
+  font-weight: 800;
+  font-size: 2rem;
+}
 </style>

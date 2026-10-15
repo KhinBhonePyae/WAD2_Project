@@ -3,9 +3,9 @@
  * A slot is identified by a date ('YYYY-MM-DD', SG date) and a slot key. */
 
 const SLOTS = [
-  { key: 'morning',   label: 'Morning',   start: 8,  end: 12 },
+  { key: 'morning', label: 'Morning', start: 8, end: 12 },
   { key: 'afternoon', label: 'Afternoon', start: 12, end: 17 },
-  { key: 'evening',   label: 'Evening',   start: 17, end: 22 },
+  { key: 'evening', label: 'Evening', start: 17, end: 22 },
 ];
 
 const SG_OFFSET_MS = 8 * 60 * 60 * 1000;

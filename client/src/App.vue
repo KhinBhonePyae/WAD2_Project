@@ -159,14 +159,17 @@ onUnmounted(() => {
       </template>
 
       <template v-else>
-        <RouterLink v-if="user.role === 'admin'" to="/admin/places" class="x-nav__link" data-test="nav-manage">Manage</RouterLink>
+        <RouterLink v-if="user.role === 'admin'" to="/admin/places" class="x-nav__link" data-test="nav-manage">Manage
+        </RouterLink>
         <RouterLink v-if="user.role === 'admin'" to="/admin/users" class="x-nav__link">Users</RouterLink>
         <RouterLink to="/profile" class="x-nav__link x-nav__user">{{ user.name }}</RouterLink>
       </template>
 
-      <RouterLink to="/saved" class="x-nav__saved" aria-label="Saved places" title="Saved places" data-test="nav-saved" data-cursor="saved">
+      <RouterLink to="/saved" class="x-nav__saved" aria-label="Saved places" title="Saved places" data-test="nav-saved"
+        data-cursor="saved">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path d="M6.5 3.5h11v17l-5.5-4.6-5.5 4.6z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+          <path d="M6.5 3.5h11v17l-5.5-4.6-5.5 4.6z" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linejoin="round" />
         </svg>
       </RouterLink>
     </div>
@@ -194,31 +197,53 @@ onUnmounted(() => {
 
 <style scoped>
 .x-progress {
-  position: fixed; left: 0; top: 0; right: 0; height: 4px; z-index: 1100;
-  background: var(--x-orange); transform-origin: 0 50%;
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 4px;
+  z-index: 1100;
+  background: var(--x-orange);
+  transform-origin: 0 50%;
 }
 
 .x-nav {
-  position: fixed; top: 14px; left: 50%; z-index: 1050;
-  display: flex; align-items: center; gap: 18px;
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  gap: 18px;
   width: min(1120px, calc(100% - 24px));
   padding: 8px 8px 8px 16px;
-  background: rgba(255, 253, 248, .86); backdrop-filter: blur(12px);
-  border: var(--x-line); border-radius: 999px; box-shadow: var(--x-pop);
+  background: rgba(255, 253, 248, .86);
+  backdrop-filter: blur(12px);
+  border: var(--x-line);
+  border-radius: 999px;
+  box-shadow: var(--x-pop);
   transform: translateX(-50%);
   transition: transform .5s var(--x-ease-out);
 }
 
-.x-nav--hidden { transform: translate(-50%, -140%); }
+.x-nav--hidden {
+  transform: translate(-50%, -140%);
+}
 
 .x-nav__brand {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-weight: 800; font-size: 1.2rem; letter-spacing: -.03em;
-  color: var(--x-ink); text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 1.2rem;
+  letter-spacing: -.03em;
+  color: var(--x-ink);
+  text-decoration: none;
 }
 
 .x-nav__logo {
-  width: 30px; height: 30px;
+  width: 30px;
+  height: 30px;
   transition: transform .6s var(--x-ease);
 }
 
@@ -227,7 +252,9 @@ onUnmounted(() => {
 }
 
 .x-nav__links {
-  display: flex; align-items: center; gap: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   margin-left: auto;
 }
 
@@ -256,8 +283,10 @@ onUnmounted(() => {
 }
 
 .x-nav__saved {
-  display: grid; place-items: center;
-  width: 38px; height: 38px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
   margin-left: 4px;
   flex-shrink: 0;
   border-radius: 50%;
@@ -321,23 +350,49 @@ onUnmounted(() => {
 }
 
 @keyframes x-marquee {
-  to { transform: translateX(-50%); }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @media (max-width: 575.98px) {
-  .x-nav { gap: 6px; padding: 6px 6px 6px 12px; }
-  .x-nav__brand { font-size: 1rem; }
-  .x-nav__logo { width: 24px; height: 24px; }
-  .x-nav__link { padding: 5px 7px; font-size: .85rem; }
-  .x-nav__user { max-width: 4.5rem; }
+  .x-nav {
+    gap: 6px;
+    padding: 6px 6px 6px 12px;
+  }
+
+  .x-nav__brand {
+    font-size: 1rem;
+  }
+
+  .x-nav__logo {
+    width: 24px;
+    height: 24px;
+  }
+
+  .x-nav__link {
+    padding: 5px 7px;
+    font-size: .85rem;
+  }
+
+  .x-nav__user {
+    max-width: 4.5rem;
+  }
 }
 
 @media (max-width: 420px) {
-  .x-nav__name { display: none; }
-  .x-nav .btn-sm { --bs-btn-padding-x: .7rem; }
+  .x-nav__name {
+    display: none;
+  }
+
+  .x-nav .btn-sm {
+    --bs-btn-padding-x: .7rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .x-footer__track { animation: none; }
+  .x-footer__track {
+    animation: none;
+  }
 }
 </style>

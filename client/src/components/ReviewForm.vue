@@ -50,12 +50,12 @@ function submit() {
       <div class="col-12">
         <label class="form-label ss-meta" for="rv-comment">Comment</label>
         <textarea id="rv-comment" v-model="comment" class="form-control" rows="2"
-                  placeholder="Sockets? Noise? Seat availability?" data-test="rv-comment"></textarea>
+          placeholder="Sockets? Noise? Seat availability?" data-test="rv-comment"></textarea>
       </div>
     </div>
 
-    <p v-if="error" class="mt-3 mb-0" style="color:var(--ss-danger);font-size:var(--ss-text-sm)"
-       data-test="rv-error">{{ error }}</p>
+    <p v-if="error" class="mt-3 mb-0" style="color:var(--ss-danger);font-size:var(--ss-text-sm)" data-test="rv-error">{{
+      error }}</p>
 
     <div class="mt-3">
       <button class="btn btn-primary" type="submit" :disabled="busy" data-test="rv-submit">

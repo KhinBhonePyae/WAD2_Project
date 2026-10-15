@@ -9,8 +9,8 @@ defineProps({ weather: Object, area: String })
       <strong>{{ weather.label }} in {{ area || 'Singapore' }} — {{ weather.temp }}°C</strong>
       <div class="ss-meta">
         {{ weather.raining
-            ? 'Outdoor spots are ranked lower right now.'
-            : 'Good conditions for outdoor spots.' }}
+          ? 'Outdoor spots are ranked lower right now.'
+          : 'Good conditions for outdoor spots.' }}
       </div>
     </div>
   </div>

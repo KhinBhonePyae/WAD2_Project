@@ -83,13 +83,8 @@ onMounted(getSavedPlaces)
       </div>
 
       <div v-else class="saved-grid">
-        <PlaceCard
-          v-for="place in savedPlaces"
-          :key="place.id"
-          :place="place"
-          :saved="true"
-          @toggle-save="toggleSave"
-        />
+        <PlaceCard v-for="place in savedPlaces" :key="place.id" :place="place" :saved="true"
+          @toggle-save="toggleSave" />
       </div>
     </div>
   </main>
@@ -102,7 +97,9 @@ onMounted(getSavedPlaces)
   background: var(--x-card);
 }
 
-.saved-container { max-width: 1200px; }
+.saved-container {
+  max-width: 1200px;
+}
 
 .saved-heading {
   margin-bottom: 2rem;
@@ -187,13 +184,27 @@ onMounted(getSavedPlaces)
 }
 
 @media (max-width: 991px) {
-  .saved-grid { grid-template-columns: repeat(2, 1fr); }
+  .saved-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 575px) {
-  .saved-page { padding: 2rem .75rem; }
-  .saved-heading { align-items: flex-start; flex-direction: column; }
-  .saved-heading h1 { font-size: 1.8rem; }
-  .saved-grid { grid-template-columns: 1fr; }
+  .saved-page {
+    padding: 2rem .75rem;
+  }
+
+  .saved-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .saved-heading h1 {
+    font-size: 1.8rem;
+  }
+
+  .saved-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

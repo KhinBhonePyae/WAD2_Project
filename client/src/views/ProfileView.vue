@@ -111,7 +111,7 @@ async function saveProfile() {
     successMessage.value = 'Profile updated successfully.'
     editing.value = false
 
-    setTimeout(() => {successMessage.value = ''}, 3000)
+    setTimeout(() => { successMessage.value = '' }, 3000)
   } catch (error) {
     handleAuthError(error, 'Unable to update profile.')
   } finally {
@@ -332,7 +332,8 @@ onMounted(async () => {
               <h3>Account & Security</h3>
               <p>Update your account password.</p>
             </div>
-            <button type="button" class="btn settings-button password-button" @click="openPasswordModal">Change Password</button>
+            <button type="button" class="btn settings-button password-button" @click="openPasswordModal">Change
+              Password</button>
           </section>
 
           <section class="settings-row">
@@ -353,7 +354,8 @@ onMounted(async () => {
               <h3>Delete Account</h3>
               <p>Permanently delete your LockedIN account.</p>
             </div>
-            <button type="button" class="btn settings-button delete-button" @click="openDeleteModal">Delete Account</button>
+            <button type="button" class="btn settings-button delete-button" @click="openDeleteModal">Delete
+              Account</button>
           </section>
         </div>
 
@@ -414,8 +416,10 @@ onMounted(async () => {
             </div>
 
             <div class="edit-actions">
-              <button type="button" class="btn btn-outline-secondary" :disabled="saving" @click="cancelEdit">Cancel</button>
-              <button type="submit" class="btn save-button" :disabled="saving">{{ saving ? 'Saving...' : 'Save Changes' }}</button>
+              <button type="button" class="btn btn-outline-secondary" :disabled="saving"
+                @click="cancelEdit">Cancel</button>
+              <button type="submit" class="btn save-button" :disabled="saving">{{ saving ? 'Saving...' : 'Save Changes'
+                }}</button>
             </div>
           </form>
         </div>
@@ -432,21 +436,25 @@ onMounted(async () => {
             <form @submit.prevent="changePassword">
               <div class="mb-3">
                 <label for="currentPassword" class="form-label fw-semibold">Current Password</label>
-                <input id="currentPassword" v-model="currentPassword" type="password" class="form-control profile-input" autocomplete="current-password" required>
+                <input id="currentPassword" v-model="currentPassword" type="password" class="form-control profile-input"
+                  autocomplete="current-password" required>
               </div>
 
               <div class="mb-3">
                 <label for="newPassword" class="form-label fw-semibold">New Password</label>
-                <input id="newPassword" v-model="newPassword" type="password" class="form-control profile-input" autocomplete="new-password" required>
+                <input id="newPassword" v-model="newPassword" type="password" class="form-control profile-input"
+                  autocomplete="new-password" required>
               </div>
 
               <div class="mb-3">
                 <label for="confirmPassword" class="form-label fw-semibold">Confirm New Password</label>
-                <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control profile-input" autocomplete="new-password" required>
+                <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control profile-input"
+                  autocomplete="new-password" required>
               </div>
 
               <div class="modal-actions">
-                <button type="button" class="btn btn-outline-secondary" :disabled="changingPassword" @click="closePasswordModal">Cancel</button>
+                <button type="button" class="btn btn-outline-secondary" :disabled="changingPassword"
+                  @click="closePasswordModal">Cancel</button>
                 <button type="submit" class="btn save-button" :disabled="changingPassword">
                   {{ changingPassword ? 'Changing...' : 'Change Password' }}
                 </button>
@@ -459,17 +467,20 @@ onMounted(async () => {
           <div class="profile-modal-card">
             <div class="danger-icon">!</div>
             <h2>Are you sure?</h2>
-            <p class="modal-description">Enter your password to permanently delete your LockedIN account. This action cannot be undone.</p>
+            <p class="modal-description">Enter your password to permanently delete your LockedIN account. This action
+              cannot be undone.</p>
 
             <div v-if="deleteError" class="alert alert-danger">{{ deleteError }}</div>
 
             <div class="mb-3">
               <label for="deletePassword" class="form-label fw-semibold">Password</label>
-              <input id="deletePassword" v-model="deletePassword" type="password" class="form-control profile-input" placeholder="Enter your password" autocomplete="current-password" @keyup.enter="deleteAccount">
+              <input id="deletePassword" v-model="deletePassword" type="password" class="form-control profile-input"
+                placeholder="Enter your password" autocomplete="current-password" @keyup.enter="deleteAccount">
             </div>
 
             <div class="modal-actions">
-              <button type="button" class="btn btn-outline-secondary" :disabled="deleting" @click="closeDeleteModal">Cancel</button>
+              <button type="button" class="btn btn-outline-secondary" :disabled="deleting"
+                @click="closeDeleteModal">Cancel</button>
               <button type="button" class="btn btn-danger" :disabled="deleting" @click="deleteAccount">
                 {{ deleting ? 'Deleting...' : 'Delete Account' }}
               </button>
@@ -488,8 +499,13 @@ onMounted(async () => {
   background: var(--x-card);
 }
 
-.profile-container { max-width: 1000px; }
-.page-heading { margin-bottom: 1.25rem; }
+.profile-container {
+  max-width: 1000px;
+}
+
+.page-heading {
+  margin-bottom: 1.25rem;
+}
 
 .page-label {
   margin: 0 0 .25rem;
@@ -680,7 +696,9 @@ onMounted(async () => {
   border-bottom: 1px solid var(--x-ink);
 }
 
-.section-heading { margin-bottom: 1rem; }
+.section-heading {
+  margin-bottom: 1rem;
+}
 
 .section-heading h3,
 .settings-row h3 {
@@ -715,7 +733,9 @@ onMounted(async () => {
   background: var(--x-card);
 }
 
-.preference-row > div { min-width: 0; }
+.preference-row>div {
+  min-width: 0;
+}
 
 .preference-row strong,
 .edit-preference strong {
@@ -761,7 +781,9 @@ onMounted(async () => {
   background: var(--ss-danger-soft);
 }
 
-.danger-row h3 { color: var(--ss-danger); }
+.danger-row h3 {
+  color: var(--ss-danger);
+}
 
 .edit-card {
   max-width: 900px;
@@ -769,7 +791,9 @@ onMounted(async () => {
   padding: 1.75rem;
 }
 
-.edit-heading { margin-bottom: 1.5rem; }
+.edit-heading {
+  margin-bottom: 1.5rem;
+}
 
 .edit-heading h2 {
   margin: 0;
@@ -881,11 +905,22 @@ onMounted(async () => {
 }
 
 @media (max-width: 767px) {
-  .profile-page { padding: 1.5rem .75rem 2.5rem; }
-  .page-heading h1 { font-size: 1.75rem; }
-  .profile-header { align-items: flex-start; }
+  .profile-page {
+    padding: 1.5rem .75rem 2.5rem;
+  }
+
+  .page-heading h1 {
+    font-size: 1.75rem;
+  }
+
+  .profile-header {
+    align-items: flex-start;
+  }
+
   .preferences-grid,
-  .edit-preferences { grid-template-columns: 1fr; }
+  .edit-preferences {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 575px) {
@@ -895,11 +930,15 @@ onMounted(async () => {
   }
 
   .edit-button,
-  .settings-button { width: 100%; }
+  .settings-button {
+    width: 100%;
+  }
 
   .profile-section,
   .settings-row,
-  .edit-card { padding: 1.2rem; }
+  .edit-card {
+    padding: 1.2rem;
+  }
 
   .settings-row {
     align-items: flex-start;
@@ -912,14 +951,22 @@ onMounted(async () => {
     font-size: .7rem;
   }
 
-  .preference-row { align-items: flex-start; }
+  .preference-row {
+    align-items: flex-start;
+  }
 
   .edit-actions,
-  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
 
   .edit-actions button,
-  .modal-actions button { width: 100%; }
+  .modal-actions button {
+    width: 100%;
+  }
 
-  .profile-modal-card { padding: 1.4rem; }
+  .profile-modal-card {
+    padding: 1.4rem;
+  }
 }
 </style>

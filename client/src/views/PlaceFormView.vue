@@ -323,7 +323,8 @@ async function savePlace() {
 
           <div class="col-12">
             <label class="form-label">Address</label>
-            <input v-model="address" class="form-control" maxlength="200" placeholder="e.g. 70 Stamford Rd, Singapore 178901">
+            <input v-model="address" class="form-control" maxlength="200"
+              placeholder="e.g. 70 Stamford Rd, Singapore 178901">
           </div>
         </div>
       </section>
@@ -342,19 +343,22 @@ async function savePlace() {
         <div class="row g-3">
           <div class="col-12 col-md-6">
             <label class="form-label">Latitude</label>
-            <input v-model="lat" type="number" step="any" min="-90" max="90" class="form-control" placeholder="e.g. 1.2963">
+            <input v-model="lat" type="number" step="any" min="-90" max="90" class="form-control"
+              placeholder="e.g. 1.2963">
             <div class="form-text">Must be between -90 and 90.</div>
           </div>
 
           <div class="col-12 col-md-6">
             <label class="form-label">Longitude</label>
-            <input v-model="lon" type="number" step="any" min="-180" max="180" class="form-control" placeholder="e.g. 103.8502">
+            <input v-model="lon" type="number" step="any" min="-180" max="180" class="form-control"
+              placeholder="e.g. 103.8502">
             <div class="form-text">Must be between -180 and 180.</div>
           </div>
 
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Seats (approx.)</label>
-            <input v-model="capacity" type="number" min="1" max="5000" step="1" class="form-control" placeholder="e.g. 40" data-test="capacity-input">
+            <input v-model="capacity" type="number" min="1" max="5000" step="1" class="form-control"
+              placeholder="e.g. 40" data-test="capacity-input">
             <div class="form-text">Used to estimate how packed it may be.</div>
           </div>
 
@@ -365,7 +369,8 @@ async function savePlace() {
 
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Closing time</label>
-            <input v-model="closeTime" type="time" :min="openTime" class="form-control" :disabled="closureStatus !== 'normal'">
+            <input v-model="closeTime" type="time" :min="openTime" class="form-control"
+              :disabled="closureStatus !== 'normal'">
           </div>
 
           <div class="col-12 col-sm-6 col-lg-3">
@@ -397,7 +402,9 @@ async function savePlace() {
           </div>
 
           <div v-if="closureStatus !== 'normal'" class="col-12">
-            <div class="closure-note"><strong>{{ closureStatus === 'temporary' ? 'Temporarily closed' : 'Permanently closed' }}</strong> — current status is automatically set to closed and opening hours are not required.</div>
+            <div class="closure-note"><strong>{{ closureStatus === 'temporary' ? 'Temporarily closed' : 'Permanently closed' }}</strong> 
+            <!-- current status is automatically set to closed and opening hours are not required. -->
+            </div>
           </div>
         </div>
       </section>
@@ -414,12 +421,8 @@ async function savePlace() {
         </div>
 
         <div class="facility-grid">
-          <label
-            v-for="f in FACILITIES"
-            :key="f.value"
-            class="facility-chip"
-            :class="{ active: facilities.includes(f.value) }"
-          >
+          <label v-for="f in FACILITIES" :key="f.value" class="facility-chip"
+            :class="{ active: facilities.includes(f.value) }">
             <input v-model="facilities" :value="f.value" type="checkbox">
 
             <span class="facility-check">
@@ -463,7 +466,8 @@ async function savePlace() {
           </div>
 
           <!-- PREVIEW -->
-          <div v-if="canPreviewPhoto(photo1, 0) || canPreviewPhoto(photo2, 1) || canPreviewPhoto(photo3, 2)" class="col-12">
+          <div v-if="canPreviewPhoto(photo1, 0) || canPreviewPhoto(photo2, 1) || canPreviewPhoto(photo3, 2)"
+            class="col-12">
             <div class="photo-panel">
               <div class="photo-panel-title">Photo preview</div>
 
@@ -483,12 +487,8 @@ async function savePlace() {
               </div>
 
               <div class="photo-grid">
-                <img
-                  v-for="(photo, index) in extraPhotos"
-                  :key="index"
-                  :src="photo"
-                  :alt="`${name} photo ${index + 4}`"
-                >
+                <img v-for="(photo, index) in extraPhotos" :key="index" :src="photo"
+                  :alt="`${name} photo ${index + 4}`">
               </div>
 
               <div class="form-text mt-2">
@@ -512,12 +512,8 @@ async function savePlace() {
 
         <label class="form-label">Study space description</label>
 
-        <textarea
-          v-model="description"
-          class="form-control description-box"
-          rows="5"
-          placeholder="Describe the study space..."
-        ></textarea>
+        <textarea v-model="description" class="form-control description-box" rows="5"
+          placeholder="Describe the study space..."></textarea>
 
         <div class="description-counter">
           {{ description.length }} characters
@@ -680,7 +676,14 @@ async function savePlace() {
   font-size: .75rem;
 }
 
-.closure-note { padding: .9rem 1rem; border: 2px solid var(--x-ink); border-radius: 14px; background: var(--x-butter); font-size: .82rem; box-shadow: 3px 3px 0 var(--x-ink); }
+.closure-note {
+  padding: .9rem 1rem;
+  border: 2px solid var(--x-ink);
+  border-radius: 14px;
+  background: var(--x-butter);
+  font-size: .82rem;
+  box-shadow: 3px 3px 0 var(--x-ink);
+}
 
 /* FACILITY CHIPS */
 .facility-grid {

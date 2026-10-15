@@ -64,36 +64,114 @@ onUnmounted(() => {
     <div ref="ring" class="x-cursor__ring" :class="'x-cursor__ring--' + (state || 'idle')">
       <span class="x-cursor__label">{{ label }}</span>
     </div>
-    <div ref="dot" class="x-cursor__dot" :class="{ 'x-cursor__dot--hide': state === 'label' || state === 'label-sm' }"></div>
+    <div ref="dot" class="x-cursor__dot" :class="{ 'x-cursor__dot--hide': state === 'label' || state === 'label-sm' }">
+    </div>
   </div>
 </template>
 
 <style scoped>
-.x-cursor { position: fixed; inset: 0; z-index: 9500; pointer-events: none; transition: opacity .2s; }
-.x-cursor--hidden { opacity: 0; }
-.x-cursor__dot, .x-cursor__ring { position: fixed; left: 0; top: 0; will-change: transform; }
-.x-cursor__dot {
-  width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
-  background: var(--x-orange); transition: opacity .15s, scale .2s;
+.x-cursor {
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  pointer-events: none;
+  transition: opacity .2s;
 }
-.x-cursor__dot--hide { opacity: 0; }
+
+.x-cursor--hidden {
+  opacity: 0;
+}
+
+.x-cursor__dot,
 .x-cursor__ring {
-  width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%;
+  position: fixed;
+  left: 0;
+  top: 0;
+  will-change: transform;
+}
+
+.x-cursor__dot {
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--x-orange);
+  transition: opacity .15s, scale .2s;
+}
+
+.x-cursor__dot--hide {
+  opacity: 0;
+}
+
+.x-cursor__ring {
+  width: 38px;
+  height: 38px;
+  margin: -19px 0 0 -19px;
+  border-radius: 50%;
   border: 1.5px solid var(--x-ink);
-  display: grid; place-items: center;
+  display: grid;
+  place-items: center;
   transition: width .35s var(--x-ease), height .35s var(--x-ease), margin .35s var(--x-ease),
-              background-color .25s, border-color .25s, scale .15s;
+    background-color .25s, border-color .25s, scale .15s;
 }
-.x-cursor__ring--link { width: 58px; height: 58px; margin: -29px 0 0 -29px; background: rgba(198, 244, 50, .35); }
-.x-cursor__ring--text { width: 6px; height: 34px; margin: -17px 0 0 -3px; border-radius: 3px; background: var(--x-ink); }
-.x-cursor__ring--label { width: 86px; height: 86px; margin: -43px 0 0 -43px; background: var(--x-lime); }
-.x-cursor__ring--label-sm { width: 52px; height: 52px; margin: -26px 0 0 -26px; border: 2px solid var(--x-ink); background: transparent; }
-.x-cursor__ring--down { scale: .8; }
+
+.x-cursor__ring--link {
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  background: rgba(198, 244, 50, .35);
+}
+
+.x-cursor__ring--text {
+  width: 6px;
+  height: 34px;
+  margin: -17px 0 0 -3px;
+  border-radius: 3px;
+  background: var(--x-ink);
+}
+
+.x-cursor__ring--label {
+  width: 86px;
+  height: 86px;
+  margin: -43px 0 0 -43px;
+  background: var(--x-lime);
+}
+
+.x-cursor__ring--label-sm {
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border: 2px solid var(--x-ink);
+  background: transparent;
+}
+
+.x-cursor__ring--down {
+  scale: .8;
+}
+
 .x-cursor__label {
-  font-family: var(--x-mono); font-size: .68rem; font-weight: 500; text-transform: uppercase;
-  letter-spacing: .06em; color: var(--x-ink); opacity: 0; transition: opacity .2s;
+  font-family: var(--x-mono);
+  font-size: .68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--x-ink);
+  opacity: 0;
+  transition: opacity .2s;
 }
-.x-cursor__ring--label .x-cursor__label { opacity: 1; }
-.x-cursor__ring--label-sm .x-cursor__label { opacity: 1; position: absolute; top: calc(100% + 6px);
-  padding: 2px 8px; border-radius: 999px; background: var(--x-lime); border: 1.5px solid var(--x-ink); white-space: nowrap; }
+
+.x-cursor__ring--label .x-cursor__label {
+  opacity: 1;
+}
+
+.x-cursor__ring--label-sm .x-cursor__label {
+  opacity: 1;
+  position: absolute;
+  top: calc(100% + 6px);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--x-lime);
+  border: 1.5px solid var(--x-ink);
+  white-space: nowrap;
+}
 </style>

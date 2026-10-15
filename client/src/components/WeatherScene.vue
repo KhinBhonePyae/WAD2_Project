@@ -112,7 +112,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-
 .ss-scene {
   --k: .7;
   --cloud: #fff;

@@ -308,17 +308,10 @@ onMounted(getUsers)
           <div class="search-box">
             <span class="search-icon">⌕</span>
 
-            <input
-              v-model="search"
-              type="text"
-              placeholder="Search by name or email..."
-            >
+            <input v-model="search" type="text" placeholder="Search by name or email...">
           </div>
 
-          <select
-            v-model="roleFilter"
-            class="filter-select"
-          >
+          <select v-model="roleFilter" class="filter-select">
             <option value="all">All roles</option>
             <option value="user">Users</option>
             <option value="admin">Admins</option>
@@ -341,17 +334,10 @@ onMounted(getUsers)
 
             <tbody>
 
-              <tr
-                v-for="user in paginatedUsers"
-                :key="user._id"
-                class="user-row"
-              >
+              <tr v-for="user in paginatedUsers" :key="user._id" class="user-row">
 
                 <!-- NAME -->
-                <td
-                  class="user-name-cell"
-                  data-label="Name"
-                >
+                <td class="user-name-cell" data-label="Name">
                   <div class="user-name-wrap">
                     <span class="avatar">
                       {{ user.name.charAt(0).toUpperCase() }}
@@ -360,10 +346,7 @@ onMounted(getUsers)
                     <div class="name-line">
                       <span>{{ user.name }}</span>
 
-                      <span
-                        v-if="isSelf(user)"
-                        class="you-badge"
-                      >
+                      <span v-if="isSelf(user)" class="you-badge">
                         You
                       </span>
                     </div>
@@ -371,10 +354,7 @@ onMounted(getUsers)
                 </td>
 
                 <!-- EMAIL -->
-                <td
-                  class="email-cell"
-                  data-label="Email"
-                >
+                <td class="email-cell" data-label="Email">
                   {{ user.email }}
                 </td>
 
@@ -385,13 +365,8 @@ onMounted(getUsers)
 
                 <!-- ROLE -->
                 <td data-label="Role">
-                  <select
-                    class="role-select"
-                    :class="user.role"
-                    :value="user.role"
-                    :disabled="updatingId === user._id || isSelf(user)"
-                    @change="updateRole(user, $event.target.value)"
-                  >
+                  <select class="role-select" :class="user.role" :value="user.role"
+                    :disabled="updatingId === user._id || isSelf(user)" @change="updateRole(user, $event.target.value)">
                     <option value="user">User</option>
                     <option value="admin">Admin</option>
                   </select>
@@ -399,25 +374,14 @@ onMounted(getUsers)
 
                 <!-- ACTIONS -->
                 <td data-label="Actions">
-                  <div
-                    v-if="!isSelf(user)"
-                    class="action-buttons"
-                  >
-                    <button
-                      class="action-btn edit-btn"
-                      type="button"
-                      :disabled="deletingId === user._id"
-                      @click="openEdit(user)"
-                    >
+                  <div v-if="!isSelf(user)" class="action-buttons">
+                    <button class="action-btn edit-btn" type="button" :disabled="deletingId === user._id"
+                      @click="openEdit(user)">
                       Edit
                     </button>
 
-                    <button
-                      class="action-btn delete-btn"
-                      type="button"
-                      :disabled="deletingId === user._id"
-                      @click="deleteUser(user)"
-                    >
+                    <button class="action-btn delete-btn" type="button" :disabled="deletingId === user._id"
+                      @click="deleteUser(user)">
                       {{
                         deletingId === user._id
                           ? 'Deleting...'
@@ -426,10 +390,7 @@ onMounted(getUsers)
                     </button>
                   </div>
 
-                  <span
-                    v-else
-                    class="protected-text"
-                  >
+                  <span v-else class="protected-text">
                     Protected
                   </span>
                 </td>
@@ -437,10 +398,7 @@ onMounted(getUsers)
               </tr>
 
               <tr v-if="filteredUsers.length === 0">
-                <td
-                  colspan="5"
-                  class="empty-row"
-                >
+                <td colspan="5" class="empty-row">
                   No users found.
                 </td>
               </tr>
@@ -450,42 +408,24 @@ onMounted(getUsers)
         </div>
 
         <!-- PAGINATION -->
-        <div
-          v-if="filteredUsers.length > 0"
-          class="pagination-section"
-        >
+        <div v-if="filteredUsers.length > 0" class="pagination-section">
           <p>
             Showing {{ startIndex + 1 }}–{{ endIndex }}
             of {{ filteredUsers.length }} users
           </p>
 
-          <div
-            v-if="totalPages > 1"
-            class="pagination-buttons"
-          >
-            <button
-              class="page-button arrow"
-              :disabled="currentPage === 1"
-              @click="changePage(currentPage - 1)"
-            >
+          <div v-if="totalPages > 1" class="pagination-buttons">
+            <button class="page-button arrow" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
               ‹
             </button>
 
-            <button
-              v-for="page in totalPages"
-              :key="page"
-              class="page-button"
-              :class="{ active: currentPage === page }"
-              @click="changePage(page)"
-            >
+            <button v-for="page in totalPages" :key="page" class="page-button" :class="{ active: currentPage === page }"
+              @click="changePage(page)">
               {{ page }}
             </button>
 
-            <button
-              class="page-button arrow"
-              :disabled="currentPage === totalPages"
-              @click="changePage(currentPage + 1)"
-            >
+            <button class="page-button arrow" :disabled="currentPage === totalPages"
+              @click="changePage(currentPage + 1)">
               ›
             </button>
           </div>
@@ -495,11 +435,7 @@ onMounted(getUsers)
     </div>
 
     <!-- EDIT MODAL -->
-    <div
-      v-if="editingUser"
-      class="edit-overlay"
-      @click.self="closeEdit"
-    >
+    <div v-if="editingUser" class="edit-overlay" @click.self="closeEdit">
       <div class="edit-card">
 
         <div class="edit-heading">
@@ -513,66 +449,33 @@ onMounted(getUsers)
             </h2>
           </div>
 
-          <button
-            class="close-btn"
-            type="button"
-            :disabled="savingEdit"
-            aria-label="Close"
-            @click="closeEdit"
-          >
+          <button class="close-btn" type="button" :disabled="savingEdit" aria-label="Close" @click="closeEdit">
             ×
           </button>
         </div>
 
-        <label
-          class="edit-label"
-          for="adminEditName"
-        >
+        <label class="edit-label" for="adminEditName">
           Name
         </label>
 
-        <input
-          id="adminEditName"
-          v-model="editName"
-          class="edit-input"
-          type="text"
-          maxlength="60"
-        >
+        <input id="adminEditName" v-model="editName" class="edit-input" type="text" maxlength="60">
 
-        <label
-          class="edit-label"
-          for="adminEditEmail"
-        >
+        <label class="edit-label" for="adminEditEmail">
           Email
         </label>
 
-        <input
-          id="adminEditEmail"
-          v-model="editEmail"
-          class="edit-input"
-          type="email"
-        >
+        <input id="adminEditEmail" v-model="editEmail" class="edit-input" type="email">
 
         <p class="edit-help">
           Role is managed separately from the Users page.
         </p>
 
         <div class="edit-actions">
-          <button
-            class="btn btn-outline-primary"
-            type="button"
-            :disabled="savingEdit"
-            @click="closeEdit"
-          >
+          <button class="btn btn-outline-primary" type="button" :disabled="savingEdit" @click="closeEdit">
             Cancel
           </button>
 
-          <button
-            class="btn btn-primary"
-            type="button"
-            :disabled="savingEdit"
-            @click="saveEdit"
-          >
+          <button class="btn btn-primary" type="button" :disabled="savingEdit" @click="saveEdit">
             {{ savingEdit ? 'Saving...' : 'Save changes' }}
           </button>
         </div>

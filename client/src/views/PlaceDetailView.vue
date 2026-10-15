@@ -188,23 +188,29 @@ onUnmounted(() => {
     <template v-else>
       <RouterLink to="/places" class="ss-meta text-decoration-none d-inline-block mb-3">← All spots</RouterLink>
 
-      <div v-if="place.photos?.length" id="placeCarousel" ref="carouselRef" class="carousel slide ss-card mb-4 overflow-hidden">
+      <div v-if="place.photos?.length" id="placeCarousel" ref="carouselRef"
+        class="carousel slide ss-card mb-4 overflow-hidden">
         <div v-if="place.photos.length > 1" class="carousel-indicators">
-          <button v-for="(photo, index) in place.photos" :key="'indicator-' + index" type="button" data-bs-target="#placeCarousel" :data-bs-slide-to="index" :class="{ active: index === 0 }" :aria-current="index === 0 ? 'true' : undefined" :aria-label="'Slide ' + (index + 1)"></button>
+          <button v-for="(photo, index) in place.photos" :key="'indicator-' + index" type="button"
+            data-bs-target="#placeCarousel" :data-bs-slide-to="index" :class="{ active: index === 0 }"
+            :aria-current="index === 0 ? 'true' : undefined" :aria-label="'Slide ' + (index + 1)"></button>
         </div>
 
         <div class="carousel-inner">
-          <div v-for="(photo, index) in place.photos" :key="photo" class="carousel-item" :class="{ active: index === 0 }">
+          <div v-for="(photo, index) in place.photos" :key="photo" class="carousel-item"
+            :class="{ active: index === 0 }">
             <img :src="photo" :alt="`${place.name} photo ${index + 1}`" class="d-block w-100 place-carousel-image">
           </div>
         </div>
 
-        <button v-if="place.photos.length > 1" class="carousel-control-prev" type="button" data-bs-target="#placeCarousel" data-bs-slide="prev">
+        <button v-if="place.photos.length > 1" class="carousel-control-prev" type="button"
+          data-bs-target="#placeCarousel" data-bs-slide="prev">
           <span class="carousel-control-prev-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Previous</span>
         </button>
 
-        <button v-if="place.photos.length > 1" class="carousel-control-next" type="button" data-bs-target="#placeCarousel" data-bs-slide="next">
+        <button v-if="place.photos.length > 1" class="carousel-control-next" type="button"
+          data-bs-target="#placeCarousel" data-bs-slide="next">
           <span class="carousel-control-next-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Next</span>
         </button>
@@ -218,32 +224,40 @@ onUnmounted(() => {
         <div class="col-12 col-lg-7">
           <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
             <div>
-              <h1 class="mb-1 x-detail-title" data-test="place-name" :aria-label="place.name"><template v-for="(w, wi) in place.name.split(' ')" :key="wi"><span class="x-wordbox" aria-hidden="true"><span v-for="(c, ci) in w.split('')" :key="ci" class="x-char">{{ c }}</span></span>{{ wi < place.name.split(' ').length - 1 ? ' ' : '' }}</template></h1>
-              <p class="ss-muted mb-2">{{ place.address }}</p>
+              <h1 class="mb-1 x-detail-title" data-test="place-name" :aria-label="place.name"><template
+                  v-for="(w, wi) in place.name.split(' ')" :key="wi"><span class="x-wordbox" aria-hidden="true"><span
+                      v-for="(c, ci) in w.split('')" :key="ci" class="x-char">{{ c }}</span></span>{{ wi <
+                        place.name.split(' ').length - 1 ? ' ' : '' }}</template>
+</h1>
+<p class="ss-muted mb-2">{{ place.address }}</p>
 
-              <div class="d-flex align-items-center gap-3 flex-wrap">
-                <StarRating :value="place.rating" :count="place.reviewCount" />
-                <CrowdMeter :level="place.crowdLevel" />
-              </div>
-            </div>
+<div class="d-flex align-items-center gap-3 flex-wrap">
+  <StarRating :value="place.rating" :count="place.reviewCount" />
+  <CrowdMeter :level="place.crowdLevel" />
+</div>
+</div>
 
-            <div class="text-center">
-              <SuitabilityScore :score="score" />
-              <div class="ss-meta mt-1">{{ isPersonalized ? 'Your match' : 'Suitability' }}</div>
+<div class="text-center">
+  <SuitabilityScore :score="score" />
+  <div class="ss-meta mt-1">{{ isPersonalized ? ' Your match' : 'Suitability' }}</div>
             </div>
           </div>
 
           <p class="mt-3">{{ place.description }}</p>
 
           <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="ss-badge" :class="place.openNow && closureStatus === 'normal' ? 'ss-badge--green' : 'ss-badge--pink'">{{ availabilityLabel() }}</span>
+            <span class="ss-badge"
+              :class="place.openNow && closureStatus === 'normal' ? 'ss-badge--green' : 'ss-badge--pink'">{{
+              availabilityLabel() }}</span>
             <span class="ss-badge ss-badge--neutral">{{ place.indoor ? 'Indoor' : 'Outdoor' }}</span>
-            <span v-if="closureStatus === 'normal' && place.hours" class="ss-badge ss-badge--neutral">{{ place.hours }}</span>
+            <span v-if="closureStatus === 'normal' && place.hours" class="ss-badge ss-badge--neutral">{{ place.hours
+              }}</span>
           </div>
 
           <h2 class="h5 mt-4 mb-2">Facilities</h2>
           <div class="d-flex flex-wrap gap-2">
-            <span v-for="f in place.facilities" :key="f" class="ss-badge ss-badge--sky">{{ FACILITY_LABELS[f] || f }}</span>
+            <span v-for="f in place.facilities" :key="f" class="ss-badge ss-badge--sky">{{ FACILITY_LABELS[f] || f
+              }}</span>
           </div>
         </div>
 
@@ -260,11 +274,14 @@ onUnmounted(() => {
               <div v-if="isPersonalized" class="mb-3">
                 <div class="ss-meta fw-bold mb-2">Your study preferences</div>
                 <div class="d-flex flex-wrap gap-2">
-                  <span v-for="item in preferenceMatches" :key="item.key" class="ss-badge" :class="item.matched ? 'ss-badge--green' : 'ss-badge--pink'">{{ item.matched ? '✓' : '✕' }} {{ item.label }}</span>
+                  <span v-for="item in preferenceMatches" :key="item.key" class="ss-badge"
+                    :class="item.matched ? 'ss-badge--green' : 'ss-badge--pink'">{{ item.matched ? '✓' : '✕' }} {{
+                    item.label }}</span>
                 </div>
               </div>
 
-              <RouterLink v-if="isPersonalized" to="/profile?edit=1" class="btn btn-outline-primary btn-sm mt-3">Edit preferences</RouterLink>
+              <RouterLink v-if="isPersonalized" to="/profile?edit=1" class="btn btn-outline-primary btn-sm mt-3">Edit
+                preferences</RouterLink>
             </template>
           </div>
         </div>
@@ -277,7 +294,8 @@ onUnmounted(() => {
 
         <div class="row g-4">
           <div class="col-12 col-lg-5">
-            <ReviewForm v-if="currentUser" :place-id="Number(place.id)" :busy="busy" :author-name="currentUser.name" @submit-review="addReview" />
+            <ReviewForm v-if="currentUser" :place-id="Number(place.id)" :busy="busy" :author-name="currentUser.name"
+              @submit-review="addReview" />
 
             <div v-else class="ss-card p-4" data-test="review-login">
               <h3 class="ss-card__title mb-2">Leave a review</h3>
@@ -287,7 +305,8 @@ onUnmounted(() => {
           </div>
 
           <div class="col-12 col-lg-7">
-            <ReviewList :reviews="reviews" :current-user-id="currentUser?._id" @edit-review="editReview" @delete-review="deleteReview" />
+            <ReviewList :reviews="reviews" :current-user-id="currentUser?._id" @edit-review="editReview"
+              @delete-review="deleteReview" />
           </div>
         </div>
       </section>

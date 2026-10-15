@@ -44,7 +44,7 @@ server.get('/health', (req, res) => {
 
 server.use('/places', placesRoutes);
 server.use('/reviews', reviewsRoutes);
-server.use('/users', usersRoutes); 
+server.use('/users', usersRoutes);
 server.use('/search', searchRoutes) // search bar
 server.use('/saved', savedRoutes); // saved places
 server.use('/intents', intentsRoutes); // "planning to go" intents

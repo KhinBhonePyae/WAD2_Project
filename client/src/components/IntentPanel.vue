@@ -74,23 +74,29 @@ onMounted(load)
     <div v-if="loading" class="ss-skeleton" style="height:120px"></div>
 
     <template v-else>
-      <p v-if="!days.length && !errorMessage" class="ss-meta mb-2" data-test="intent-none">Not open in the next two days, so there's nothing to plan for.</p>
+      <p v-if="!days.length && !errorMessage" class="ss-meta mb-2" data-test="intent-none">Not open in the next two
+        days, so there's nothing to plan for.</p>
 
       <div class="row g-4 mb-2">
         <div v-for="d in days" :key="d.day" class="col-12 col-md-6">
           <div class="ss-meta fw-bold mb-2">{{ d.day }}</div>
 
-          <div v-for="s in d.slots" :key="keyOf(s)" class="d-flex align-items-center justify-content-between gap-2 py-2 border-bottom" :data-test="'intent-slot-' + s.slot">
+          <div v-for="s in d.slots" :key="keyOf(s)"
+            class="d-flex align-items-center justify-content-between gap-2 py-2 border-bottom"
+            :data-test="'intent-slot-' + s.slot">
             <div>
               <div class="fw-semibold">{{ s.label }}</div>
               <div class="ss-meta">
                 <span v-if="s.count" data-test="intent-count">{{ s.count }} planning to go</span>
                 <span v-else>No one yet</span>
-                <span v-if="s.level" class="ss-badge ms-1" :class="LEVEL_BADGES[s.level]">{{ LEVEL_LABELS[s.level] }}</span>
+                <span v-if="s.level" class="ss-badge ms-1" :class="LEVEL_BADGES[s.level]">{{ LEVEL_LABELS[s.level]
+                }}</span>
               </div>
             </div>
 
-            <button type="button" class="btn btn-sm text-nowrap" :class="isMine(s) ? 'btn-outline-primary' : 'btn-ghost'" :disabled="busyKey === keyOf(s)" :aria-pressed="isMine(s)" data-test="intent-toggle" @click="toggle(s)">{{ isMine(s) ? '✓ Going' : "I'm going" }}</button>
+            <button type="button" class="btn btn-sm text-nowrap"
+              :class="isMine(s) ? 'btn-outline-primary' : 'btn-ghost'" :disabled="busyKey === keyOf(s)"
+              :aria-pressed="isMine(s)" data-test="intent-toggle" @click="toggle(s)">{{ isMine(s) ? '✓ Going' : "I'm going" }}</button>
           </div>
         </div>
       </div>
@@ -98,6 +104,7 @@ onMounted(load)
       <p v-if="errorMessage" class="text-danger small mb-2" role="alert">{{ errorMessage }}</p>
     </template>
 
-    <a v-if="place.branchCode && days.length" :href="NLB_BOOKING_URL" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm w-100 mt-1" data-test="nlb-booking">Book a seat on NLB ↗</a>
+    <a v-if="place.branchCode && days.length" :href="NLB_BOOKING_URL" target="_blank" rel="noopener"
+      class="btn btn-outline-primary btn-sm w-100 mt-1" data-test="nlb-booking">Book a seat on NLB ↗</a>
   </div>
 </template>
