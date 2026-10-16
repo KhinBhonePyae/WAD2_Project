@@ -496,7 +496,6 @@ onMounted(async () => {
 .profile-page {
   min-height: calc(100vh - 120px);
   padding: 2rem 1rem 3rem;
-  background: var(--x-card);
 }
 
 .profile-container {

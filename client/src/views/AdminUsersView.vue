@@ -352,7 +352,6 @@ onUnmounted(() => {
 .users-page {
   min-height:calc(100vh - 140px);
   padding:7rem 1rem 3rem;
-  background:var(--x-card);
 }
 
 .users-container { max-width:1180px; }

@@ -19,6 +19,7 @@ import ReportIssue from '../components/ReportIssue.vue'
 
 const route = useRoute()
 const carouselRef = ref(null)
+const reviewsScrollRef = ref(null)
 const place = ref(null)
 const reviews = ref([])
 const summary = ref({ rating:0, reviewCount:0, crowdLevel:null })
@@ -128,6 +129,15 @@ async function deleteReview(id) {
   } catch (e) {
     console.error('Could not delete review', e)
   }
+}
+
+function scrollReviews(event) {
+  const el = reviewsScrollRef.value
+  if (!el) return
+
+  event.preventDefault()
+  event.stopPropagation()
+  el.scrollTop += event.deltaY
 }
 
 onMounted(async () => {
@@ -273,10 +283,12 @@ onUnmounted(() => {
 
             <RouterLink to="/profile?edit=1" class="btn btn-outline-primary btn-sm mt-3">Edit preferences</RouterLink>
           </div>
+          <div class="report-right mt-3">
+            <ReportIssue :place="place" />
+          </div>
         </div>
       </div>
 
-      <ReportIssue :place="place" />
       <IntentPanel :place="place" class="mt-4" @changed="refreshPlaceScoreData" />
 
       <section class="mt-5 reviews-section">
@@ -298,7 +310,7 @@ onUnmounted(() => {
           </div>
 
           <div class="col-12 col-lg-7">
-            <div class="reviews-scroll">
+            <div ref="reviewsScrollRef" class="reviews-scroll" @wheel.stop.prevent="scrollReviews">
               <ReviewList :reviews="reviews" :current-user-id="currentUser?._id" @edit-review="editReview" @delete-review="deleteReview" />
             </div>
           </div>
@@ -328,7 +340,8 @@ onUnmounted(() => {
   padding-right:.7rem;
   padding-bottom:.25rem;
   scrollbar-gutter:stable;
-  overscroll-behavior:contain;
+  overscroll-behavior-y:contain;
+  touch-action:pan-y;
 }
 
 .reviews-scroll::-webkit-scrollbar { width:8px; }
@@ -338,6 +351,12 @@ onUnmounted(() => {
   background:var(--x-lilac);
   border:1px solid var(--x-ink);
   border-radius:999px;
+}
+
+.report-right {
+  display:flex;
+  justify-content:flex-end;
+  width:100%;
 }
 
 .map-section {
