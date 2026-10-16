@@ -10,16 +10,23 @@
  */
 const express = require('express');
 const dotenv = require('dotenv');
+const path = require('path');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-dotenv.config({ path: './config.env' });
+dotenv.config({ path: path.join(__dirname, 'config.env') });
 
 // DEMO ONLY: lets sign-up work on a fresh clone with no config.env.
 // Set a real JWT_SECRET in config.env before deploying.
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'studyspot-dev-secret';
   console.warn('JWT_SECRET not set in config.env - using an insecure dev default.');
+}
+
+// optional keys: the app still runs without them, but say which features are off
+const OPTIONAL_KEYS = { GEMINI_API_KEY: 'AI study assistant', ONEMAP_TOKEN: 'map lookup and directions' };
+for (const [key, feature] of Object.entries(OPTIONAL_KEYS)) {
+  if (!process.env[key]) console.warn(`${key} not set in config.env - ${feature} disabled.`);
 }
 
 const placesRoutes = require('./routes/places-routes');

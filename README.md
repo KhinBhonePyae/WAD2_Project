@@ -141,23 +141,29 @@ cd WAD2_Project
 
 ### 2. Install dependencies
 
+The team uses **pnpm** (install it once with `npm install -g pnpm`). npm still works too: swap `pnpm` for `npm` / `pnpm <script>` for `npm run <script>` in any command below.
+
 ```bash
-cd client && npm install
-cd ../server && npm install
+cd client && pnpm install
+cd ../server && pnpm install
 ```
 
 ### 3. Environment variables
 
-Copy `server/config.env.example` to `server/config.env` (the course convention — loaded with `dotenv.config({ path: './config.env' })`) and fill in:
+Copy `server/config.env.example` to `server/config.env` and fill it in. The server only ever reads `server/config.env` (found relative to the server folder, so it works whichever folder you start it from); the `.example` file is just the template.
 
 ```
 DB=<your MongoDB Atlas connection string>
 JWT_SECRET=<any long random string>
+GEMINI_API_KEY=<Google Gemini key>
+ONEMAP_TOKEN=<OneMap access token>
 ```
 
 | Key | Required? | What happens without it |
 |---|---|---|
 | `JWT_SECRET` | **Yes** | Sign-up and login fail with a 500 error. |
+| `GEMINI_API_KEY` | No | The AI study assistant replies that it isn't switched on. |
+| `ONEMAP_TOKEN` | No | The map falls back to each place's saved coordinates; directions are unavailable. |
 | `DB` | No | The server starts in **mock mode**: places load from `server/data/places.json`, and users and reviews are kept in memory (lost on restart). `GET /health` reports which mode is active. |
 
 If `DB` is set but `/health` still reports `mock`, check that your IP is on the Atlas **Network Access** allowlist.
@@ -176,11 +182,11 @@ Two terminals:
 ```bash
 # Terminal 1 — API
 cd server
-npm run dev          # http://localhost:8000
+pnpm dev             # http://localhost:8000
 
 # Terminal 2 — client
 cd client
-npm run dev          # http://localhost:5173
+pnpm dev             # http://localhost:5173
 ```
 
 Open **http://localhost:5173** — this is the first page of the application.
@@ -189,8 +195,8 @@ Production preview:
 
 ```bash
 cd client
-npm run build
-npm run preview      # http://localhost:4173
+pnpm build
+pnpm preview         # http://localhost:4173
 ```
 
 ---
@@ -203,27 +209,26 @@ The project uses the testing setup that ships with the course Vue scaffold.
 
 ```bash
 cd client
-npx playwright install      # first run only — downloads browsers
-npm run test:e2e
+pnpm exec playwright install chromium   # first run only — downloads the test browser
+pnpm test:e2e
 ```
 
-Specs live in `client/e2e/`. Playwright starts the dev server automatically (`http://localhost:5173`) and runs against Chromium, Firefox and WebKit. Configuration is in `client/playwright.config.js`.
+Specs live in `client/e2e/`. Playwright starts the dev server automatically (`http://localhost:5173`) and runs against Chromium. Configuration is in `client/playwright.config.js`.
 
 Useful variations:
 
 ```bash
-npm run test:e2e -- --project=chromium        # one browser only
-npm run test:e2e -- --debug                   # step through interactively
-npx playwright show-report                    # open the HTML report
+pnpm test:e2e --debug                         # step through interactively
+pnpm exec playwright show-report              # open the HTML report
 ```
 
-> The API server must be running and the database reachable for end-to-end tests that hit live data.
+> Start the API first (`cd server && pnpm dev`): Playwright starts the client by itself but not the API. The API server must be running and the database reachable for end-to-end tests that hit live data.
 
 ### Unit tests (Vitest)
 
 ```bash
 cd client
-npm run test:unit
+pnpm test:unit
 ```
 
 ### Core user journeys covered

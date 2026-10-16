@@ -19,9 +19,9 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
   /* NOTE: the Express API on :8000 must be running separately
-     (cd ../server && npm run dev) for these tests to pass. */
+     (cd ../server && pnpm dev, or npm run dev) for these tests to pass. */
   webServer: {
-    command: process.env.CI ? 'npm run preview' : 'npm run dev',
+    command: process.env.CI ? 'vite preview' : 'vite',   // works under pnpm or npm
     port: process.env.CI ? 4173 : 5173,
     reuseExistingServer: !process.env.CI,
   },

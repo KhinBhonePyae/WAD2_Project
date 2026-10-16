@@ -163,6 +163,12 @@ async function fetchRoute(mode, origin) {
     routeSummary.value = data
     routeStatus.value = 'ready'
   } catch (error) {
+    // 503 = no ONEMAP_TOKEN on the server: expected, so no console noise
+    if (error.response?.status === 503) {
+      routeError.value = 'Directions aren’t available right now.'
+      routeStatus.value = 'idle'
+      return
+    }
     console.error(`Could not show ${mode} route:`, error)
     routeError.value = error.response?.data?.error || error.message || 'Could not get directions. Please try again.'
     routeStatus.value = 'idle'
@@ -235,7 +241,7 @@ onMounted(async () => {
     }
     location.value = data
   } catch (error) {
-    console.error('Could not resolve this place with OneMap:', error)
+    if (error.response?.status !== 503) console.error('Could not resolve this place with OneMap:', error)
     if (validCoordinates(props.place.lat, props.place.lon)) {
       location.value = {
         lat: Number(props.place.lat),

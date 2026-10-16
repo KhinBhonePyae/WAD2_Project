@@ -12,6 +12,7 @@ const props = defineProps({
 })
 
 const open = ref(false)
+const root = ref(null)
 const assistantOpen = ref(false)
 const messages = ref([])
 const draft = ref('')
@@ -186,19 +187,31 @@ watch(hasUser, (loggedIn) => {
   }
 })
 
+// close when the user presses anywhere outside the chat, or hits Esc
+function onOutsidePress(event) {
+  if (open.value && root.value && !root.value.contains(event.target)) closePanel()
+}
+function onKeydown(event) {
+  if (open.value && event.key === 'Escape') closePanel()
+}
+
 onMounted(() => {
   window.addEventListener('floating-chat-open', onOtherChatOpened)
   window.addEventListener('floating-chat-close', onOtherChatClosed)
+  document.addEventListener('pointerdown', onOutsidePress)
+  document.addEventListener('keydown', onKeydown)
 })
 onUnmounted(() => {
   stopPolling()
   window.removeEventListener('floating-chat-open', onOtherChatOpened)
   window.removeEventListener('floating-chat-close', onOtherChatClosed)
+  document.removeEventListener('pointerdown', onOutsidePress)
+  document.removeEventListener('keydown', onKeydown)
 })
 </script>
 
 <template>
-  <div v-if="hasUser" class="x-world-chat">
+  <div v-if="hasUser" ref="root" class="x-world-chat">
     <Transition :name="reducedMotion ? '' : 'x-world-chat-pop'">
       <section v-if="open" id="world-chat-panel" class="x-world-chat__panel" role="dialog" aria-label="World chat">
         <header class="x-world-chat__header">
@@ -245,12 +258,15 @@ onUnmounted(() => {
     </Transition>
 
     <button v-if="!assistantOpen" type="button" class="x-world-chat__button" :aria-expanded="open"
-      aria-controls="world-chat-panel" :aria-label="open ? 'Close world chat' : 'Open world chat'" data-cursor="ask"
+      aria-controls="world-chat-panel" :aria-label="open ? 'Close world chat' : 'Open world chat'" data-cursor="Global Chat"
       data-test="world-chat-btn" @click="toggle">
       <svg v-if="!open" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-        <path d="M4 5.5h16v10H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-        <path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6"
-          stroke-linecap="round" />
+        <!-- globe with a speech bubble -->
+        <circle cx="10" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="2" />
+        <path d="M2.5 12h15M10 4.5c-2.4 2.2-2.4 12.8 0 15M10 4.5c2.4 2.2 2.4 12.8 0 15" fill="none"
+          stroke="currentColor" stroke-width="1.6" />
+        <path d="M14.5 2.5h7v5h-3.2l-2.3 2v-2h-1.5z" fill="var(--x-lime)" stroke="currentColor" stroke-width="1.8"
+          stroke-linejoin="round" />
       </svg>
       <svg v-else viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
         <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />

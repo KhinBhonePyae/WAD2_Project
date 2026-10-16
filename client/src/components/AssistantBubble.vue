@@ -12,6 +12,7 @@ const messages = ref([
     text: 'Hello! I’m your LockedIN study assistant. Ask me about finding a study spot or planning your next study session.',
   },
 ])
+const root = ref(null)
 const conversation = ref(null)
 const messageInput = ref(null)
 let requestController = null
@@ -75,7 +76,10 @@ async function sendMessage(event) {
     if (!response.ok) {
       messages.value.push({
         role: 'error',
-        text: data.error || 'Sorry, I couldn’t get a response. Please try again.',
+        // 503 = no GEMINI_API_KEY on the server, not something the user can fix by retrying
+        text: response.status === 503
+          ? 'The assistant isn’t switched on yet. Try again later.'
+          : data.error || 'Sorry, I couldn’t get a response. Please try again.',
       })
       return
     }
@@ -105,15 +109,29 @@ function useSuggestion(suggestion) {
   messageInput.value?.focus()
 }
 
-onMounted(() => window.addEventListener('floating-chat-open', onOtherChatOpened))
+// close when the user presses anywhere outside the assistant, or hits Esc
+function onOutsidePress(event) {
+  if (open.value && root.value && !root.value.contains(event.target)) toggle()
+}
+function onKeydown(event) {
+  if (open.value && event.key === 'Escape') toggle()
+}
+
+onMounted(() => {
+  window.addEventListener('floating-chat-open', onOtherChatOpened)
+  document.addEventListener('pointerdown', onOutsidePress)
+  document.addEventListener('keydown', onKeydown)
+})
 onUnmounted(() => {
   requestController?.abort()
   window.removeEventListener('floating-chat-open', onOtherChatOpened)
+  document.removeEventListener('pointerdown', onOutsidePress)
+  document.removeEventListener('keydown', onKeydown)
 })
 </script>
 
 <template>
-  <div class="x-assist">
+  <div ref="root" class="x-assist">
     <Transition :name="reducedMotion ? '' : 'x-pop'">
       <section v-if="open" id="assist-card" class="x-assist__card" role="dialog" aria-label="LockedIN study assistant">
         <header class="x-assist__header">
@@ -152,12 +170,16 @@ onUnmounted(() => {
     </Transition>
 
     <button type="button" class="x-assist__btn" :aria-expanded="open" aria-controls="assist-card"
-      :aria-label="open ? 'Close assistant' : 'Open study assistant'" data-cursor="ask" data-test="assistant-btn"
+      :aria-label="open ? 'Close assistant' : 'Open study assistant'" data-cursor="Ask Locker" data-test="assistant-btn"
       @click="toggle">
       <svg v-if="!open" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-        <path d="M4 5.5h16v10H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
-        <path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" stroke="currentColor" stroke-width="2.6"
-          stroke-linecap="round" />
+        <!-- bot: antenna, rounded head, eyes, mouth -->
+        <path d="M12 3.5v3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+        <circle cx="12" cy="3" r="1.3" fill="currentColor" />
+        <rect x="4.5" y="7" width="15" height="12" rx="4" fill="none" stroke="currentColor" stroke-width="2.2" />
+        <path d="M2.5 12v3M21.5 12v3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+        <path d="M9.2 12h.01M14.8 12h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+        <path d="M9.5 15.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
       </svg>
       <svg v-else viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
         <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />

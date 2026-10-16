@@ -1,13 +1,14 @@
 /* Copies data/places.json into the MongoDB `places` collection.
- * Run with: npm run seed
+ * Run with: pnpm seed  (or npm run seed)
  * Safe to re-run: each place is matched by its `id` and replaced,
  * so nothing is duplicated and places added through the app are kept. */
 const dotenv = require('dotenv');
+const path = require('path');
 const mongoose = require('mongoose');
 const places = require('./data/places.json');
 const { Place } = require('./models/place-model');
 
-dotenv.config({ path: './config.env' });
+dotenv.config({ path: path.join(__dirname, 'config.env') });
 
 async function seed() {
   if (!process.env.DB) {

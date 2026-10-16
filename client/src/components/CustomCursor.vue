@@ -9,6 +9,7 @@ const ring = ref(null)
 const label = ref('')
 const state = ref('')   // '', 'link', 'label', 'down'
 const visible = ref(false)
+const beside = ref(false)   // label to the right of the ring instead of underneath
 const enabled = finePointer && !reducedMotion
 
 let moveDot, moveDotY, moveRing, moveRingY
@@ -26,6 +27,9 @@ function onMove(e) {
     // so the icon itself stays visible
     const box = target.getBoundingClientRect()
     state.value = box.width < 70 && box.height < 70 ? 'label-sm' : 'label'
+    // near the bottom or left edge (e.g. the floating chat buttons) a centred label
+    // underneath would be cut off, so put it to the right instead
+    beside.value = box.bottom > window.innerHeight - 60 || box.left < 60
     label.value = text
   }
   else if (/INPUT|TEXTAREA|SELECT/.test(target.tagName)) { state.value = 'text'; label.value = '' }
@@ -61,7 +65,8 @@ onUnmounted(() => {
 
 <template>
   <div v-if="enabled" class="x-cursor" :class="{ 'x-cursor--hidden': !visible }" aria-hidden="true">
-    <div ref="ring" class="x-cursor__ring" :class="'x-cursor__ring--' + (state || 'idle')">
+    <div ref="ring" class="x-cursor__ring"
+         :class="['x-cursor__ring--' + (state || 'idle'), { 'x-cursor__ring--beside': beside }]">
       <span class="x-cursor__label">{{ label }}</span>
     </div>
     <div ref="dot" class="x-cursor__dot" :class="{ 'x-cursor__dot--hide': state === 'label' || state === 'label-sm' }">
@@ -173,5 +178,11 @@ onUnmounted(() => {
   background: var(--x-lime);
   border: 1.5px solid var(--x-ink);
   white-space: nowrap;
+}
+
+.x-cursor__ring--label-sm.x-cursor__ring--beside .x-cursor__label {
+  top: 50%;
+  left: calc(100% + 8px);
+  translate: 0 -50%;
 }
 </style>

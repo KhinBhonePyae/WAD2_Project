@@ -1,11 +1,15 @@
 import { test, expect } from '@playwright/test'
 
+// pages wait on the API (MongoDB Atlas), which can be slower than Playwright's 5s default
+const LOAD = 15000
+
 test.describe('Search and filters', () => {
   test.beforeEach(async ({ page }) => { await page.goto('/search') })
 
-  test('shows results with a suitability score', async ({ page }) => {
-    await expect(page.locator('[data-test="place-card"]').first()).toBeVisible()
-    await expect(page.locator('[data-test="score"]').first()).toBeVisible()
+  // the score badge was taken off the cards; each result now lists why it scored as it did
+  test('shows results with their suitability reasons', async ({ page }) => {
+    await expect(page.locator('[data-test="place-card"]').first()).toBeVisible({ timeout: LOAD })
+    await expect(page.locator('[data-test="score-reasons"]').first()).toBeVisible()
   })
 
   test('searching with no match shows the empty state', async ({ page }) => {
