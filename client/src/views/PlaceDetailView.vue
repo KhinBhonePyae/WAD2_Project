@@ -12,6 +12,7 @@ import StarRating from '../components/StarRating.vue'
 import { gsap, reducedMotion } from '../utils/motion.js'
 import ReviewForm from '../components/ReviewForm.vue'
 import ReviewList from '../components/ReviewList.vue'
+import CrowdHistogram from '../components/CrowdHistogram.vue'
 import IntentPanel from '../components/IntentPanel.vue'
 import PlaceMap from '../components/PlaceMap.vue'
 import ReportIssue from '../components/ReportIssue.vue'
@@ -20,7 +21,7 @@ const route = useRoute()
 const carouselRef = ref(null)
 const place = ref(null)
 const reviews = ref([])
-const summary = ref({ rating: 0, reviewCount: 0, crowdLevel: null })
+const summary = ref({ rating:0, reviewCount:0, crowdLevel:null })
 const weather = ref(null)
 const loading = ref(true)
 const busy = ref(false)
@@ -42,7 +43,7 @@ function syncUser() {
 }
 
 const scoreInfo = computed(() => {
-  if (!place.value || !currentUser.value) return { score: 0, reasons: [] }
+  if (!place.value || !currentUser.value) return { score:0, reasons:[] }
   return suitabilityBreakdown(place.value, profileWanted.value, weather.value)
 })
 
@@ -53,10 +54,10 @@ const preferenceMatches = computed(() => {
   const facilities = place.value.facilities || []
 
   return [
-    { key: 'wifi', label: 'Wi-Fi', active: currentUser.value?.preferences?.wifiRequired, matched: facilities.includes('wifi') },
-    { key: 'sockets', label: 'Power sockets', active: currentUser.value?.preferences?.socketsRequired, matched: facilities.includes('sockets') },
-    { key: 'quiet', label: 'Quiet environment', active: currentUser.value?.preferences?.quietPreferred, matched: facilities.includes('quiet') },
-    { key: 'indoor', label: 'Indoor location', active: currentUser.value?.preferences?.indoorPreferred, matched: !!place.value.indoor }
+    { key:'wifi', label:'Wi-Fi', active:currentUser.value?.preferences?.wifiRequired, matched:facilities.includes('wifi') },
+    { key:'sockets', label:'Power sockets', active:currentUser.value?.preferences?.socketsRequired, matched:facilities.includes('sockets') },
+    { key:'quiet', label:'Quiet environment', active:currentUser.value?.preferences?.quietPreferred, matched:facilities.includes('quiet') },
+    { key:'indoor', label:'Indoor location', active:currentUser.value?.preferences?.indoorPreferred, matched:!!place.value.indoor }
   ].filter(item => item.active)
 })
 
@@ -69,7 +70,7 @@ function availabilityLabel() {
 }
 
 function authHeader() {
-  return { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+  return { headers:{ Authorization:`Bearer ${localStorage.getItem('token')}` } }
 }
 
 async function refreshPlaceScoreData() {
@@ -91,9 +92,9 @@ async function loadReviews(id) {
   if (place.value) {
     place.value = {
       ...place.value,
-      crowdLevel: data.summary.crowdLevel,
-      rating: data.summary.reviewCount ? data.summary.rating : place.value.rating,
-      reviewCount: data.summary.reviewCount
+      crowdLevel:data.summary.crowdLevel,
+      rating:data.summary.reviewCount ? data.summary.rating : place.value.rating,
+      reviewCount:data.summary.reviewCount
     }
   }
 }
@@ -153,19 +154,25 @@ onMounted(async () => {
   await nextTick()
 
   if (carouselRef.value && place.value?.photos?.length > 1) {
-    const carousel = new Carousel(carouselRef.value, { interval: 4000, pause: false, wrap: true })
+    const carousel = new Carousel(carouselRef.value, { interval:4000, pause:false, wrap:true })
     carousel.cycle()
   }
 
   if (!reducedMotion && place.value) {
     ctx = gsap.context(() => {
-      gsap.from('.x-detail-title .x-char', { yPercent: 100, rotation: () => gsap.utils.random(-12, 12), autoAlpha: 0, duration: .9, ease: 'expo.out', stagger: .025 })
-      gsap.from('.x-detail-head .ss-score, .x-detail-head .ss-badge', { scale: 0, rotation: -30, duration: .7, ease: 'back.out(2)', stagger: .08, delay: .3 })
+      gsap.from('.x-detail-title .x-char', {
+        yPercent:100, rotation:() => gsap.utils.random(-12,12), autoAlpha:0,
+        duration:.9, ease:'expo.out', stagger:.025
+      })
+
+      gsap.from('.x-detail-head .ss-score, .x-detail-head .ss-badge', {
+        scale:0, rotation:-30, duration:.7, ease:'back.out(2)', stagger:.08, delay:.3
+      })
 
       if (carouselRef.value) {
         gsap.to(carouselRef.value.querySelectorAll('img'), {
-          yPercent: 12, ease: 'none',
-          scrollTrigger: { trigger: carouselRef.value, start: 'top top', end: 'bottom top', scrub: true }
+          yPercent:12, ease:'none',
+          scrollTrigger:{ trigger:carouselRef.value, start:'top top', end:'bottom top', scrub:true }
         })
       }
     })
@@ -190,128 +197,166 @@ onUnmounted(() => {
     <template v-else>
       <RouterLink to="/places" class="ss-meta text-decoration-none d-inline-block mb-3">← All spots</RouterLink>
 
-      <div v-if="place.photos?.length" id="placeCarousel" ref="carouselRef"
-        class="carousel slide ss-card mb-4 overflow-hidden">
+      <div v-if="place.photos?.length" id="placeCarousel" ref="carouselRef" class="carousel slide ss-card mb-4 overflow-hidden">
         <div v-if="place.photos.length > 1" class="carousel-indicators">
-          <button v-for="(photo, index) in place.photos" :key="'indicator-' + index" type="button"
-            data-bs-target="#placeCarousel" :data-bs-slide-to="index" :class="{ active: index === 0 }"
-            :aria-current="index === 0 ? 'true' : undefined" :aria-label="'Slide ' + (index + 1)"></button>
+          <button v-for="(photo,index) in place.photos" :key="'indicator-'+index" type="button" data-bs-target="#placeCarousel" :data-bs-slide-to="index" :class="{ active:index===0 }" :aria-current="index===0?'true':undefined" :aria-label="'Slide '+(index+1)"></button>
         </div>
 
         <div class="carousel-inner">
-          <div v-for="(photo, index) in place.photos" :key="photo" class="carousel-item"
-            :class="{ active: index === 0 }">
-            <img :src="photo" :alt="`${place.name} photo ${index + 1}`" class="d-block w-100 place-carousel-image">
+          <div v-for="(photo,index) in place.photos" :key="photo" class="carousel-item" :class="{ active:index===0 }">
+            <img :src="photo" :alt="`${place.name} photo ${index+1}`" class="d-block w-100 place-carousel-image">
           </div>
         </div>
 
-        <button v-if="place.photos.length > 1" class="carousel-control-prev" type="button"
-          data-bs-target="#placeCarousel" data-bs-slide="prev">
+        <button v-if="place.photos.length > 1" class="carousel-control-prev" type="button" data-bs-target="#placeCarousel" data-bs-slide="prev">
           <span class="carousel-control-prev-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Previous</span>
         </button>
 
-        <button v-if="place.photos.length > 1" class="carousel-control-next" type="button"
-          data-bs-target="#placeCarousel" data-bs-slide="next">
+        <button v-if="place.photos.length > 1" class="carousel-control-next" type="button" data-bs-target="#placeCarousel" data-bs-slide="next">
           <span class="carousel-control-next-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Next</span>
         </button>
       </div>
 
       <div v-else class="ss-card mb-4">
-        <div class="ss-card__media" :style="{ background: art, aspectRatio: '21/8' }"></div>
+        <div class="ss-card__media" :style="{ background:art, aspectRatio:'21/8' }"></div>
       </div>
 
       <div class="row g-4 x-detail-head">
-        <div class="col-12" :class="{ 'col-lg-7': currentUser }">
+        <div class="col-12" :class="{ 'col-lg-7':isPersonalized && profileWanted.length }">
           <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
             <div>
-              <h1 class="mb-1 x-detail-title" data-test="place-name" :aria-label="place.name"><template
-                  v-for="(w, wi) in place.name.split(' ')" :key="wi"><span class="x-wordbox" aria-hidden="true"><span
-                      v-for="(c, ci) in w.split('')" :key="ci" class="x-char">{{ c }}</span></span>{{ wi <
-                        place.name.split(' ').length - 1 ? ' ' : '' }}</template>
-</h1>
-<p class="ss-muted mb-2">{{ place.address }}</p>
+              <h1 class="mb-1 x-detail-title" data-test="place-name" :aria-label="place.name"><template v-for="(w,wi) in place.name.split(' ')" :key="wi"><span class="x-wordbox" aria-hidden="true"><span v-for="(c,ci) in w.split('')" :key="ci" class="x-char">{{ c }}</span></span>{{ wi < place.name.split(' ').length-1 ? ' ' : '' }}</template></h1>
+              <p class="ss-muted mb-2">{{ place.address }}</p>
 
-<div class="d-flex align-items-center gap-3 flex-wrap">
-  <StarRating :value="place.rating" :count="place.reviewCount" />
-  <CrowdMeter :level="place.crowdLevel" />
-</div>
-</div>
-
-
-</div>
-
-<p class="mt-3">{{ place.description }}</p>
-
-<div class="d-flex flex-wrap gap-2 mb-3">
-  <span class="ss-badge" :class="place.openNow && closureStatus === ' normal' ? 'ss-badge--green' : 'ss-badge--pink'"></span>
-  <span class=" ss-badge ss-badge--neutral">{{ place.indoor ? 'Indoor' : 'Outdoor' }}</span>
-                    <span v-if="closureStatus === 'normal' && place.hours" class="ss-badge ss-badge--neutral">{{
-                      place.hours }}</span>
-            </div>
-
-            <h2 class="h5 mt-4 mb-2">Facilities</h2>
-            <div class="d-flex flex-wrap gap-2">
-              <span v-for="f in place.facilities" :key="f" class="ss-badge ss-badge--sky">{{ FACILITY_LABELS[f] || f
-                }}</span>
+              <div class="d-flex align-items-center gap-3 flex-wrap">
+                <StarRating :value="place.rating" :count="place.reviewCount" />
+                <CrowdMeter :level="place.crowdLevel" />
+              </div>
             </div>
           </div>
 
-          <div v-if="isPersonalized && profileWanted.length" class="col-12 col-lg-5">
-            <div class="ss-card h-auto p-4">
-              <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3">
-                <h2 class="h6 mb-0">Why this matches you</h2>
+          <p class="mt-3">{{ place.description }}</p>
 
-                <div class="text-center ss-score--compact">
-                  <SuitabilityScore :score="score" />
-                  <div class="ss-meta mt-1">Your match</div>
-                </div>
-              </div>
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="ss-badge" :class="place.openNow && closureStatus === 'normal' ? 'ss-badge--green' : 'ss-badge--pink'">{{ availabilityLabel() }}</span>
+            <span class="ss-badge ss-badge--neutral">{{ place.indoor ? 'Indoor' : 'Outdoor' }}</span>
+            <span v-if="closureStatus === 'normal' && place.hours" class="ss-badge ss-badge--neutral">{{ place.hours }}</span>
+          </div>
 
-              <div class="mb-3">
-                <div class="ss-meta fw-bold mb-2">Your study preferences</div>
-                <div class="d-flex flex-wrap gap-2">
-                  <span v-for="item in preferenceMatches" :key="item.key" class="ss-badge"
-                    :class="item.matched ? 'ss-badge--green' : 'ss-badge--pink'">
-                    {{ item.matched ? '✓' : '✕' }} {{ item.label }}
-                  </span>
-                </div>
-              </div>
+          <h2 class="h5 mt-4 mb-2">Facilities</h2>
 
-              <RouterLink to="/profile?edit=1" class="btn btn-outline-primary btn-sm mt-3">
-                Edit preferences
-              </RouterLink>
-            </div>
+          <div class="d-flex flex-wrap gap-2">
+            <span v-for="f in place.facilities" :key="f" class="ss-badge ss-badge--sky">{{ FACILITY_LABELS[f] || f }}</span>
           </div>
         </div>
 
-        <ReportIssue :place="place" />
-        <IntentPanel :place="place" class="mt-4" @changed="refreshPlaceScoreData" />
+        <div v-if="isPersonalized && profileWanted.length" class="col-12 col-lg-5">
+          <div class="ss-card h-auto p-4">
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3">
+              <h2 class="h6 mb-0">Why this matches you</h2>
 
-        <section class="mt-5">
-          <h2 class="mb-3">Reviews &amp; crowd reports</h2>
+              <div class="text-center ss-score--compact">
+                <SuitabilityScore :score="score" />
+                <div class="ss-meta mt-1">Your match</div>
+              </div>
+            </div>
 
-          <div class="row g-4">
-            <div class="col-12 col-lg-5">
-              <ReviewForm v-if="currentUser" :place-id="Number(place.id)" :busy="busy" :author-name="currentUser.name"
-                @submit-review="addReview" />
+            <div class="mb-3">
+              <div class="ss-meta fw-bold mb-2">Your study preferences</div>
 
-              <div v-else class="ss-card p-4" data-test="review-login">
+              <div class="d-flex flex-wrap gap-2">
+                <span v-for="item in preferenceMatches" :key="item.key" class="ss-badge" :class="item.matched ? 'ss-badge--green' : 'ss-badge--pink'">{{ item.matched ? '✓' : '✕' }} {{ item.label }}</span>
+              </div>
+            </div>
+
+            <RouterLink to="/profile?edit=1" class="btn btn-outline-primary btn-sm mt-3">Edit preferences</RouterLink>
+          </div>
+        </div>
+      </div>
+
+      <ReportIssue :place="place" />
+      <IntentPanel :place="place" class="mt-4" @changed="refreshPlaceScoreData" />
+
+      <section class="mt-5 reviews-section">
+        <h2 class="mb-3">Reviews &amp; crowd reports</h2>
+
+        <CrowdHistogram :reviews="reviews" class="mb-4" />
+
+        <div class="row g-4 align-items-stretch review-row">
+          <div class="col-12 col-lg-5">
+            <div class="review-form-wrap">
+              <ReviewForm v-if="currentUser" class="review-form-box" :place-id="Number(place.id)" :busy="busy" :author-name="currentUser.name" @submit-review="addReview" />
+
+              <div v-else class="ss-card p-4 h-100" data-test="review-login">
                 <h3 class="ss-card__title mb-2">Leave a review</h3>
                 <p class="ss-meta mb-3">Log in to rate this spot and report how busy it is.</p>
                 <RouterLink to="/login" class="btn btn-primary">Log in</RouterLink>
               </div>
             </div>
+          </div>
 
-            <div class="col-12 col-lg-7">
-              <ReviewList :reviews="reviews" :current-user-id="currentUser?._id" @edit-review="editReview"
-                @delete-review="deleteReview" />
+          <div class="col-12 col-lg-7">
+            <div class="reviews-scroll">
+              <ReviewList :reviews="reviews" :current-user-id="currentUser?._id" @edit-review="editReview" @delete-review="deleteReview" />
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
+      <div class="map-section">
         <PlaceMap :place="place" />
+      </div>
     </template>
   </main>
 </template>
+
+<style scoped>
+.reviews-section { margin-bottom:3rem; }
+
+.review-form-wrap,
+.reviews-scroll {
+  height:430px;
+}
+
+.review-form-box { height:100%; }
+
+.reviews-scroll {
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:.7rem;
+  padding-bottom:.25rem;
+  scrollbar-gutter:stable;
+  overscroll-behavior:contain;
+}
+
+.reviews-scroll::-webkit-scrollbar { width:8px; }
+.reviews-scroll::-webkit-scrollbar-track { background:transparent; }
+
+.reviews-scroll::-webkit-scrollbar-thumb {
+  background:var(--x-lilac);
+  border:1px solid var(--x-ink);
+  border-radius:999px;
+}
+
+.map-section {
+  width:100%;
+  margin-top:2rem;
+}
+
+@media(max-width:991.98px) {
+  .review-form-wrap,
+  .reviews-scroll {
+    height:auto;
+  }
+
+  .reviews-scroll {
+    overflow:visible;
+    padding-right:0;
+  }
+
+  .reviews-section { margin-bottom:2rem; }
+  .map-section { margin-top:1rem; }
+}
+</style>
