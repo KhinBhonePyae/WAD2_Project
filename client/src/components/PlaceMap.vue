@@ -163,7 +163,7 @@ async function fetchRoute(mode, origin) {
     routeSummary.value = data
     routeStatus.value = 'ready'
   } catch (error) {
-    // 503 = no ONEMAP_TOKEN on the server: expected, so no console noise
+    // OneMap configuration failures are expected when credentials are absent.
     if (error.response?.status === 503) {
       routeError.value = 'Directions aren’t available right now.'
       routeStatus.value = 'idle'

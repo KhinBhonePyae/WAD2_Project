@@ -4,6 +4,7 @@ const intentModel = require('../models/intent-model');
 const intentsController = require('./intents-controller');
 const { getOneMapToken, clearOneMapToken } = require('../utils/onemap-token');
 const axios = require('axios');
+const { withOneMapToken } = require('../utils/onemap-auth');
 
 const ALLOWED_FACILITIES = ['wifi', 'sockets', 'toilets', 'water', 'fnb', 'quiet'];
 const ALLOWED_CLOSURE_STATUSES = ['normal', 'temporary', 'permanent'];
@@ -12,15 +13,19 @@ const ALLOWED_CLOSURE_STATUSES = ['normal', 'temporary', 'permanent'];
 async function resolveOneMapLocation(place) {
   const postalCode = place.address?.match(/\b\d{6}\b/)?.[0];
   const searchVal = postalCode || place.address?.replace(/,\s*Singapore\b.*$/i, '').trim() || place.name;
-  const { data } = await axios.get('https://www.onemap.gov.sg/api/common/elastic/search', {
-    params: {
-      searchVal,
-      returnGeom: 'Y',
-      getAddrDetails: 'Y',
-      pageNum: 1
-    },
-    timeout: 8000
-  });
+  const { data } = await withOneMapToken(token => axios.get(
+    'https://www.onemap.gov.sg/api/common/elastic/search',
+    {
+      params: {
+        searchVal,
+        returnGeom: 'Y',
+        getAddrDetails: 'Y',
+        pageNum: 1
+      },
+      headers: { Authorization: token },
+      timeout: 8000
+    }
+  ));
 
   const result = data.results?.find(candidate => {
     const lat = Number(candidate.LATITUDE);
@@ -276,18 +281,14 @@ exports.getMapRoute = async (req, res) => {
       requestParams.numItineraries = 3;
     }
 
-    const token = await getOneMapToken();
-    if (!token) {
-      const error = new Error('OneMap is not configured on the server.');
-      error.status = 503;
-      throw error;
-    }
-
-    const askOneMap = authToken => axios.get('https://www.onemap.gov.sg/api/public/routingsvc/route', {
-      params: requestParams,
-      headers: { Authorization: authToken },
-      timeout: 15000
-    });
+    const { data } = await withOneMapToken(token => axios.get(
+      'https://www.onemap.gov.sg/api/public/routingsvc/route',
+      {
+        params: requestParams,
+        headers: { Authorization: token },
+        timeout: 15000
+      }
+    ));
 
     let data;
     try {

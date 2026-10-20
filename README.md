@@ -156,17 +156,18 @@ Copy `server/config.env.example` to `server/config.env` and fill it in. The serv
 DB=<your MongoDB Atlas connection string>
 JWT_SECRET=<any long random string>
 GEMINI_API_KEY=<Google Gemini key>
-ONEMAP_EMAIL=<OneMap account email>
-ONEMAP_PASSWORD=<OneMap account password>
+ONEMAP_EMAIL=<OneMap login email>
+ONEMAP_PASSWORD=<OneMap login password>
 ```
 
 | Key | Required? | What happens without it |
 |---|---|---|
 | `JWT_SECRET` | **Yes** | Sign-up and login fail with a 500 error. |
 | `GEMINI_API_KEY` | No | The AI study assistant replies that it isn't switched on. |
-| `ONEMAP_EMAIL` + `ONEMAP_PASSWORD` | No | Directions on the map are unavailable. With them, the server fetches a new OneMap token by itself before the old one expires (tokens last 3 days). Finding a place on the map needs no key. |
-| `ONEMAP_TOKEN` | No | Fallback used only when the OneMap account details are empty. Stops working after 3 days. |
+| `ONEMAP_EMAIL` and `ONEMAP_PASSWORD` | No | The map falls back to each place's saved coordinates; directions are unavailable. The server uses these credentials to fetch and refresh OneMap access tokens automatically. |
 | `DB` | No | The server starts in **mock mode**: places load from `server/data/places.json`, and users and reviews are kept in memory (lost on restart). `GET /health` reports which mode is active. |
+
+`ONEMAP_TOKEN` may still be used as a legacy, manually managed fallback if login credentials are not configured. Keep all OneMap credentials in the git-ignored `server/config.env`; do not commit them.
 
 If `DB` is set but `/health` still reports `mock`, check that your IP is on the Atlas **Network Access** allowlist.
 
