@@ -24,9 +24,11 @@ if (!process.env.JWT_SECRET) {
 }
 
 // optional keys: the app still runs without them, but say which features are off
-const OPTIONAL_KEYS = { GEMINI_API_KEY: 'AI study assistant', ONEMAP_TOKEN: 'map lookup and directions' };
-for (const [key, feature] of Object.entries(OPTIONAL_KEYS)) {
-  if (!process.env[key]) console.warn(`${key} not set in config.env - ${feature} disabled.`);
+if (!process.env.GEMINI_API_KEY) console.warn('GEMINI_API_KEY not set in config.env - AI study assistant disabled.');
+if (!process.env.ONEMAP_EMAIL || !process.env.ONEMAP_PASSWORD) {
+  console.warn(process.env.ONEMAP_TOKEN
+    ? 'ONEMAP_EMAIL/ONEMAP_PASSWORD not set - using the fixed ONEMAP_TOKEN, so directions stop when it expires (every 3 days).'
+    : 'ONEMAP_EMAIL/ONEMAP_PASSWORD not set in config.env - map directions disabled.');
 }
 
 const placesRoutes = require('./routes/places-routes');

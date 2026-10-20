@@ -2,18 +2,14 @@ const placeModel = require('../models/place-model');
 const reviewModel = require('../models/review-model');
 const intentModel = require('../models/intent-model');
 const intentsController = require('./intents-controller');
+const { getOneMapToken, clearOneMapToken } = require('../utils/onemap-token');
 const axios = require('axios');
 
 const ALLOWED_FACILITIES = ['wifi', 'sockets', 'toilets', 'water', 'fnb', 'quiet'];
 const ALLOWED_CLOSURE_STATUSES = ['normal', 'temporary', 'permanent'];
 
+// OneMap's search is public, so finding a place needs no token (only directions do)
 async function resolveOneMapLocation(place) {
-  if (!process.env.ONEMAP_TOKEN) {
-    const error = new Error('OneMap is not configured on the server.');
-    error.status = 503;
-    throw error;
-  }
-
   const postalCode = place.address?.match(/\b\d{6}\b/)?.[0];
   const searchVal = postalCode || place.address?.replace(/,\s*Singapore\b.*$/i, '').trim() || place.name;
   const { data } = await axios.get('https://www.onemap.gov.sg/api/common/elastic/search', {
@@ -23,7 +19,6 @@ async function resolveOneMapLocation(place) {
       getAddrDetails: 'Y',
       pageNum: 1
     },
-    headers: { Authorization: process.env.ONEMAP_TOKEN },
     timeout: 8000
   });
 
@@ -281,11 +276,30 @@ exports.getMapRoute = async (req, res) => {
       requestParams.numItineraries = 3;
     }
 
-    const { data } = await axios.get('https://www.onemap.gov.sg/api/public/routingsvc/route', {
+    const token = await getOneMapToken();
+    if (!token) {
+      const error = new Error('OneMap is not configured on the server.');
+      error.status = 503;
+      throw error;
+    }
+
+    const askOneMap = authToken => axios.get('https://www.onemap.gov.sg/api/public/routingsvc/route', {
       params: requestParams,
-      headers: { Authorization: process.env.ONEMAP_TOKEN },
+      headers: { Authorization: authToken },
       timeout: 15000
     });
+
+    let data;
+    try {
+      ({ data } = await askOneMap(token));
+    } catch (error) {
+      // token rejected (e.g. expired early): get a fresh one and try once more
+      if (error.response?.status !== 401) throw error;
+      clearOneMapToken();
+      const freshToken = await getOneMapToken();
+      if (!freshToken || freshToken === token) throw error;
+      ({ data } = await askOneMap(freshToken));
+    }
 
     if (isPublicTransport) {
       const itinerary = data.plan?.itineraries?.[0];
