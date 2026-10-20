@@ -1,7 +1,8 @@
 const placeModel = require('../models/place-model');
 const reviewModel = require('../models/review-model');
 const intentModel = require('../models/intent-model');
-const intentsController = require('./intents-controller');
+const savedModel = require('../models/saved-model');
+const { summarisePlaces } = require('../utils/place-summary');
 const { getOneMapToken, clearOneMapToken } = require('../utils/onemap-token');
 const axios = require('axios');
 
@@ -40,13 +41,6 @@ async function resolveOneMapLocation(place) {
     address: result.ADDRESS || place.address,
     source: 'onemap'
   };
-}
-
-function inferClosureStatus(place) {
-  const hours = (place.hours || '').toLowerCase();
-  if (place.closureStatus === 'permanent' || hours.includes('permanent')) return 'permanent';
-  if (place.closureStatus === 'temporary' || hours.includes('renovation') || hours.includes('temporar')) return 'temporary';
-  return 'normal';
 }
 
 function timeToMinutes(time) {
@@ -129,13 +123,7 @@ function validatePlace(data) {
 /* GET /places - optional ?q= &facilities=wifi,sockets &indoor=true|false &openNow=true */
 exports.getPlaces = async (req, res, next) => {
   try {
-    let list = await placeModel.retrieveAll();
-    list = list.map(p => {
-      const place = p.toObject ? p.toObject() : { ...p };
-      place.closureStatus = inferClosureStatus(place);
-      if (place.closureStatus !== 'normal') place.openNow = false;
-      return place;
-    });
+    let list = await summarisePlaces(await placeModel.retrieveAll());
 
     const q = (req.query.q || '').trim().toLowerCase();
     if (q) {
@@ -155,21 +143,6 @@ exports.getPlaces = async (req, res, next) => {
     if (req.query.indoor === 'false') list = list.filter(p => p.indoor === false);
     if (req.query.openNow === 'true') list = list.filter(p => p.openNow === true);
 
-    // attach the live crowd level from the latest review (one query for all places)
-    const aggs = await reviewModel.aggregateAll();
-    for (const p of list) {
-      const agg = aggs[p.id] || { rating: 0, reviewCount: 0, crowdLevel: null };
-      p.crowdLevel = agg.crowdLevel;
-      if (agg.reviewCount) {
-        p.rating = agg.rating;
-        p.reviewCount = agg.reviewCount;
-      }
-    }
-
-    // attach how many people plan to go in the next time slot (one query for all places)
-    const intents = await intentsController.nextSlotSummary(list);
-    for (const p of list) p.intent = intents[p.id] || null;
-
     res.json(list);
   } catch (e) {
     next(e);
@@ -182,21 +155,7 @@ exports.getPlace = async (req, res, next) => {
     const found = await placeModel.findByID(req.params.id);
     if (!found) return res.status(404).json({ error: 'Place not found' });
 
-    const place = found.toObject ? found.toObject() : { ...found };
-    place.closureStatus = inferClosureStatus(place);
-    if (place.closureStatus !== 'normal') place.openNow = false;
-    const agg = await reviewModel.aggregateForPlace(place.id);
-
-    place.crowdLevel = agg.crowdLevel;
-
-    if (agg.reviewCount) {
-      place.rating = agg.rating;
-      place.reviewCount = agg.reviewCount;
-    }
-
-    const intents = await intentsController.nextSlotSummary([place]);
-    place.intent = intents[place.id] || null;
-
+    const [place] = await summarisePlaces([found]);
     res.json(place);
   } catch (e) {
     next(e);
@@ -433,7 +392,12 @@ exports.deletePlace = async (req, res, next) => {
     const deleted = await placeModel.deletePlace(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Place not found' });
 
-    await intentModel.deleteAllForPlace(deleted.id);
+    // nothing should point at a place that no longer exists
+    await Promise.all([
+      intentModel.deleteAllForPlace(deleted.id),
+      reviewModel.deleteAllForPlace(deleted.id),
+      savedModel.deleteAllForPlace(deleted.id)
+    ]);
 
     res.json(deleted);
   } catch (e) {

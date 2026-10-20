@@ -88,6 +88,7 @@ async function saveProfile() {
   successMessage.value = ''
 
   if (!name.value.trim()) return errorMessage.value = 'Name is required.'
+  if (name.value.trim().length > 60) return errorMessage.value = 'Name must be 60 characters or fewer.'
   if (!email.value.trim()) return errorMessage.value = 'Email is required.'
 
   const token = localStorage.getItem('token')
@@ -156,6 +157,11 @@ async function changePassword() {
 
   if (newPassword.value !== confirmPassword.value) {
     passwordError.value = 'New passwords do not match.'
+    return
+  }
+
+  if (newPassword.value.length < 8) {
+    passwordError.value = 'New password must be at least 8 characters.'
     return
   }
 
@@ -369,7 +375,7 @@ onMounted(async () => {
             <div class="row g-3">
               <div class="col-md-6">
                 <label for="name" class="form-label fw-semibold">Name</label>
-                <input id="name" v-model="name" type="text" class="form-control profile-input" required>
+                <input id="name" v-model="name" type="text" class="form-control profile-input" maxlength="60" required>
               </div>
 
               <div class="col-md-6">

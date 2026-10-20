@@ -19,7 +19,7 @@ function submit() {
     comment: comment.value.trim(),
     crowdLevel: crowdLevel.value,
   })
-  comment.value = ''; rating.value = 5; crowdLevel.value = 'moderate'
+  // the page resets this form once the review is saved, so a failed post keeps the text
 }
 </script>
 

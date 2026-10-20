@@ -15,30 +15,51 @@ function userResponse(user) {
   }
 }
 
+const MIN_PASSWORD = 8
+
+// Returns an error message, or null when the name/email are fine
+function checkNameAndEmail(name, email) {
+  if (typeof name !== 'string' || !name.trim()) return 'Name is required'
+  if (name.trim().length > 60) return 'Name must be 60 characters or fewer'
+  if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return 'Enter a valid email address'
+  return null
+}
+
+function checkPassword(password) {
+  if (typeof password !== 'string' || password.length < MIN_PASSWORD) return `Password must be at least ${MIN_PASSWORD} characters`
+  return null
+}
+
+// Only the four known yes/no preferences are stored
+function cleanPreferences(preferences) {
+  return {
+    wifiRequired: preferences?.wifiRequired === true,
+    socketsRequired: preferences?.socketsRequired === true,
+    quietPreferred: preferences?.quietPreferred === true,
+    indoorPreferred: preferences?.indoorPreferred === true
+  }
+}
+
 /* POST /users/register */
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, preferences } = req.body
     if (!name || !email || !password) return res.status(400).json({ error: 'Name, email and password are required' })
+    const invalid = checkNameAndEmail(name, email) || checkPassword(password)
+    if (invalid) return res.status(400).json({ error: invalid })
 
     const cleanEmail = email.trim().toLowerCase()
     const existingUser = await userModel.findByEmail(cleanEmail)
     if (existingUser) return res.status(409).json({ error: 'Email is already registered' })
 
     const hashedPassword = await bcrypt.hash(password, 10)
-    const cleanPreferences = {
-      wifiRequired: preferences?.wifiRequired === true,
-      socketsRequired: preferences?.socketsRequired === true,
-      quietPreferred: preferences?.quietPreferred === true,
-      indoorPreferred: preferences?.indoorPreferred === true
-    }
 
     const newUser = await userModel.createUser({
       name: name.trim(),
       email: cleanEmail,
       password: hashedPassword,
       role: 'user',
-      preferences: cleanPreferences
+      preferences: cleanPreferences(preferences)
     })
 
     res.status(201).json({ message: 'Account created successfully', user: userResponse(newUser) })
@@ -51,7 +72,9 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body
-    if (!email || !password) return res.status(400).json({ error: 'Email and password are required' })
+    if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' })
+    }
 
     const user = await userModel.findByEmail(email.trim().toLowerCase())
     if (!user) return res.status(401).json({ error: 'Invalid email or password' })
@@ -82,6 +105,8 @@ exports.updateProfile = async (req, res, next) => {
   try {
     const { name, email, preferences } = req.body
     if (!name || !email) return res.status(400).json({ error: 'Name and email are required' })
+    const invalid = checkNameAndEmail(name, email)
+    if (invalid) return res.status(400).json({ error: invalid })
 
     const currentUser = await userModel.findByID(req.userId)
     if (!currentUser) return res.status(404).json({ error: 'User not found' })
@@ -93,7 +118,7 @@ exports.updateProfile = async (req, res, next) => {
     }
 
     const updateData = { name: name.trim(), email: cleanEmail }
-    if (preferences !== undefined) updateData.preferences = preferences
+    if (preferences !== undefined) updateData.preferences = cleanPreferences(preferences)
 
     const updatedUser = await userModel.updateUser(req.userId, updateData)
     if (!updatedUser) return res.status(404).json({ error: 'User not found' })
@@ -112,6 +137,8 @@ exports.changePassword = async (req, res, next) => {
 
     if (!currentPassword || !newPassword || !confirmPassword) return res.status(400).json({ error: 'All password fields are required' })
     if (newPassword !== confirmPassword) return res.status(400).json({ error: 'New passwords do not match' })
+    const weak = checkPassword(newPassword)
+    if (weak) return res.status(400).json({ error: weak })
 
     const user = await userModel.findByID(req.userId)
     if (!user) return res.status(404).json({ error: 'User not found' })
@@ -181,6 +208,8 @@ exports.updateUserByAdmin = async (req, res, next) => {
 
     const { name, email } = req.body
     if (!name?.trim() || !email?.trim()) return res.status(400).json({ error: 'Name and email are required' })
+    const invalid = checkNameAndEmail(name, email)
+    if (invalid) return res.status(400).json({ error: invalid })
 
     const targetUser = await userModel.findByID(req.params.id)
     if (!targetUser) return res.status(404).json({ error: 'User not found' })

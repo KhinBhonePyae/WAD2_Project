@@ -22,8 +22,16 @@ const preferences = ref({
 
 function goToPreferences() {
   errorMessage.value = ''
-  if (!name.value || !email.value || !password.value || !confirmPassword.value) {
+  if (!name.value.trim() || !email.value.trim() || !password.value || !confirmPassword.value) {
     errorMessage.value = 'Please fill in all fields.'
+    return
+  }
+  if (name.value.trim().length > 60) {
+    errorMessage.value = 'Name must be 60 characters or fewer.'
+    return
+  }
+  if (password.value.length < 8) {
+    errorMessage.value = 'Password must be at least 8 characters.'
     return
   }
   if (password.value !== confirmPassword.value) {
@@ -38,8 +46,8 @@ async function register() {
   try {
     loading.value = true
     await axios.post(`${BASE_URL}/users/register`, {
-      name: name.value,
-      email: email.value,
+      name: name.value.trim(),
+      email: email.value.trim(),
       password: password.value,
       preferences: preferences.value
     })
@@ -86,7 +94,7 @@ async function register() {
             <div class="form-group">
               <label for="name" class="form-label">Name</label>
               <input id="name" v-model="name" type="text" class="form-control auth-input" placeholder="Enter your name"
-                autocomplete="name">
+                autocomplete="name" maxlength="60">
             </div>
 
             <div class="form-group">
@@ -98,7 +106,7 @@ async function register() {
             <div class="form-group">
               <label for="password" class="form-label">Password</label>
               <input id="password" v-model="password" type="password" class="form-control auth-input"
-                placeholder="Enter your password" autocomplete="new-password">
+                placeholder="At least 8 characters" autocomplete="new-password">
             </div>
 
             <div class="form-group">

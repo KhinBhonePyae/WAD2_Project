@@ -8,11 +8,13 @@ const days = [
   { label:'TUE', value:2 },
   { label:'WED', value:3 },
   { label:'THU', value:4 },
-  { label:'FRI', value:5 }
+  { label:'FRI', value:5 },
+  { label:'SAT', value:6 },
+  { label:'SUN', value:0 }
 ]
 
 const today = new Date().getDay()
-const selectedDay = ref(today >= 1 && today <= 5 ? today : 1)
+const selectedDay = ref(today)
 
 const selectedDayLabel = computed(() => days.find(d => d.value === selectedDay.value)?.label || 'MON')
 

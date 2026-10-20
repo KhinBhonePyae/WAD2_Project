@@ -65,7 +65,7 @@ Additional features include user accounts, saved places, reviews, crowd-level re
 | API | Use | Docs |
 |---|---|---|
 | **Google Places API (New)** | Primary source of study space data: name, address, coordinates, opening hours and place photos | [Overview](https://developers.google.com/maps/documentation/places/web-service/op-overview) · [Place Photos](https://developers.google.com/maps/documentation/places/web-service/place-photos) |
-| **Open-Meteo Weather API** | Current and forecast weather per study-space location, used as an input to the suitability score | [Docs](https://open-meteo.com/en/docs) |
+| **Open-Meteo Weather API** | Current weather in central Singapore, used as an input to the suitability score (outdoor spots score lower when it rains) | [Docs](https://open-meteo.com/en/docs) |
 | **Google Maps API / OneMap API** *(tentative)* | Map rendering and location search | [OneMap](https://www.onemap.gov.sg/apidocs/) |
 | **LLM chatbot — Claude API / OpenAI GPT API** | AI study assistant: recommendations and general study-related questions | [Claude keys](https://platform.claude.com/settings/keys) · [OpenAI keys](https://platform.openai.com/api-keys) |
 

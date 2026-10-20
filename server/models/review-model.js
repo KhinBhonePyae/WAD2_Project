@@ -70,6 +70,11 @@ exports.deleteReview = async (id) => {
   return Review.deleteOne({ _id: id });
 };
 
+exports.deleteAllForPlace = async (placeId) => {
+  if (global.MOCK_MODE) { mem = mem.filter(r => r.placeId !== Number(placeId)); return; }
+  return Review.deleteMany({ placeId: Number(placeId) });
+};
+
 /* Aggregate rating + crowd level for one place.
  * Crowd is the most recent report, because "how busy is it right now"
  * is a now-question, not an average. */

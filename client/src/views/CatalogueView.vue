@@ -17,6 +17,7 @@ const places = ref([])
 const weather = ref(null)
 const saved = ref([])
 const loading = ref(true)
+const loadError = ref(false)
 const q = ref(route.query.q || '')
 
 function readStoredUser() {
@@ -93,6 +94,7 @@ const results = computed(() => {
 
 async function load() {
   loading.value = true
+  loadError.value = false
 
   try {
     const [res, w, ids] = await Promise.all([
@@ -106,6 +108,7 @@ async function load() {
     saved.value = ids
   } catch (e) {
     console.error('Failed to load places', e)
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -213,6 +216,12 @@ watch(() => route.query.q, v => { q.value = v || '' })
           </div>
         </div>
       </div>
+    </div>
+
+    <div v-else-if="loadError" class="ss-empty" role="alert" data-test="load-error">
+      <p class="mb-2" style="font-weight:600;color:var(--ss-text)">Couldn't load the study spots</p>
+      <p class="mb-3">Check your connection and try again.</p>
+      <button class="btn btn-outline-primary btn-sm" @click="load">Try again</button>
     </div>
 
     <div v-else-if="!results.length" class="ss-empty" data-test="empty-state">

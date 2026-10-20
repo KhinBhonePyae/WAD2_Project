@@ -57,9 +57,10 @@ export function suitabilityBreakdown(place, wanted = [], weather = null) {
   if (place.openNow) { score += 15; reasons.push('Open now') }
   else reasons.push('Closed right now')
 
-  if (place.crowdLevel === 'quiet') { score += 20; reasons.push('Quiet right now') }
-  else if (place.crowdLevel === 'moderate') { score += 10; reasons.push('Moderately busy') }
-  else if (place.crowdLevel === 'packed') reasons.push('Packed right now')
+  // crowd comes from the latest review, which may be a few days old, so say "last reported"
+  if (place.crowdLevel === 'quiet') { score += 20; reasons.push('Last reported quiet') }
+  else if (place.crowdLevel === 'moderate') { score += 10; reasons.push('Last reported moderately busy') }
+  else if (place.crowdLevel === 'packed') reasons.push('Last reported packed')
 
   score += (Number(place.rating) || 0) / 5 * 15
 

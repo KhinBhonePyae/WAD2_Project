@@ -24,6 +24,9 @@ async function resync(placeId) {
 /* GET /reviews/place/:placeId */
 exports.getByPlace = async (req, res, next) => {
   try {
+    if (!Number.isInteger(Number(req.params.placeId))) {
+      return res.status(404).json({ error: 'Place not found' });
+    }
     const list = await reviewModel.findByPlace(req.params.placeId);
     const agg = await reviewModel.aggregateForPlace(req.params.placeId);
     res.json({ reviews: list, summary: agg });
@@ -41,8 +44,11 @@ exports.addReview = async (req, res, next) => {
     const user = await userModel.findByID(req.userId);
     if (!user) return res.status(401).json({ error: 'Please log in again' });
     const n = Number(rating);
-    if (Number.isNaN(n) || n < 1 || n > 5) {
-      return res.status(400).json({ error: 'rating must be a number from 1 to 5' });
+    if (!Number.isInteger(n) || n < 1 || n > 5) {
+      return res.status(400).json({ error: 'rating must be a whole number from 1 to 5' });
+    }
+    if (!(await placeModel.findByID(placeId))) {
+      return res.status(404).json({ error: 'Place not found' });
     }
     const doc = await reviewModel.addReview({
       placeId: Number(placeId), userId: user._id, author: user.name, rating: n,
@@ -61,8 +67,8 @@ exports.editReview = async (req, res, next) => {
     const fields = {};
     if (rating !== undefined) {
       const n = Number(rating);
-      if (Number.isNaN(n) || n < 1 || n > 5) {
-        return res.status(400).json({ error: 'rating must be a number from 1 to 5' });
+      if (!Number.isInteger(n) || n < 1 || n > 5) {
+        return res.status(400).json({ error: 'rating must be a whole number from 1 to 5' });
       }
       fields.rating = n;
     }

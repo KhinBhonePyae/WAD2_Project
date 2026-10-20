@@ -71,7 +71,8 @@ onMounted(async () => {
     closeTime.value = times[1] || ''
     indoor.value = data.indoor ?? true
     closureStatus.value = inferClosureStatus(data)
-    openNow.value = closureStatus.value === 'normal' ? (data.openNow ?? true) : false
+    // markedOpen is the saved switch; openNow from the API is live and depends on the time of day
+    openNow.value = closureStatus.value === 'normal' ? (data.markedOpen ?? data.openNow ?? true) : false
     description.value = data.description || ''
     capacity.value = data.capacity ?? ''
     facilities.value = data.facilities || []
@@ -383,12 +384,12 @@ async function savePlace() {
           </div>
 
           <div class="col-12 col-sm-6 col-lg-3">
-            <label class="form-label">Current status</label>
+            <label class="form-label">Status</label>
             <select v-model="openNow" class="form-select" :disabled="closureStatus !== 'normal'">
-              <option :value="true">Open now</option>
-              <option :value="false">Closed now</option>
+              <option :value="true">Open during its hours</option>
+              <option :value="false">Closed until further notice</option>
             </select>
-            <div class="form-text">Whether students can use the place right now.</div>
+            <div class="form-text">"Open now" is worked out from the opening hours; choose closed to override them.</div>
           </div>
 
           <div class="col-12 col-sm-6 col-lg-3">

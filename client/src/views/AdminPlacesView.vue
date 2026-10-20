@@ -114,12 +114,12 @@ onMounted(loadPlaces)
 
       <div class="admin-stat admin-stat-open">
         <span class="admin-stat-number">{{ openPlaces }}</span>
-        <span class="admin-stat-label">Open</span>
+        <span class="admin-stat-label">Open now</span>
       </div>
 
       <div class="admin-stat admin-stat-closed">
         <span class="admin-stat-number">{{ closedPlaces }}</span>
-        <span class="admin-stat-label">Closed</span>
+        <span class="admin-stat-label">Closed now</span>
       </div>
     </div>
 

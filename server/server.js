@@ -87,11 +87,12 @@ async function connectDB() {
   }
 }
 
+// Locally this is http://localhost:8000. A host (e.g. Render) sets PORT itself and
+// needs the server to accept outside connections, so no fixed hostname here.
 function startServer() {
-  const hostname = 'localhost';
-  const port = 8000;
-  server.listen(port, hostname, () => {
-    console.log(`StudySpot API running at http://${hostname}:${port}/`);
+  const port = Number(process.env.PORT) || 8000;
+  server.listen(port, () => {
+    console.log(`LockedIN API running on port ${port} (locally: http://localhost:${port}/)`);
   });
 }
 

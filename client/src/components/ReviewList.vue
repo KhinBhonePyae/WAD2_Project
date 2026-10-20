@@ -14,18 +14,21 @@ const emit = defineEmits(['edit-review','delete-review'])
 const editingId = ref(null)
 const draftRating = ref(5)
 const draftComment = ref('')
+const draftCrowd = ref('moderate')
 
 function startEdit(r) {
   editingId.value = r._id
   draftRating.value = r.rating
   draftComment.value = r.comment || ''
+  draftCrowd.value = r.crowdLevel || 'moderate'
 }
 
 function saveEdit(r) {
   emit('edit-review', {
     id:r._id,
     rating:Number(draftRating.value),
-    comment:draftComment.value
+    comment:draftComment.value,
+    crowdLevel:draftCrowd.value
   })
 
   editingId.value = null
@@ -60,8 +63,8 @@ function fmt(d) {
 
       <template v-if="editingId === r._id">
         <div class="row g-2 mt-2">
-          <div class="col-4 col-md-2">
-            <select v-model.number="draftRating" class="form-select" data-test="edit-rating">
+          <div class="col-6 col-md-2">
+            <select v-model.number="draftRating" class="form-select" aria-label="Rating" data-test="edit-rating">
               <option :value="5">5</option>
               <option :value="4">4</option>
               <option :value="3">3</option>
@@ -70,8 +73,16 @@ function fmt(d) {
             </select>
           </div>
 
-          <div class="col-8 col-md-10">
-            <input v-model="draftComment" class="form-control" data-test="edit-comment">
+          <div class="col-6 col-md-3">
+            <select v-model="draftCrowd" class="form-select" aria-label="How busy was it" data-test="edit-crowd">
+              <option value="quiet">Quiet</option>
+              <option value="moderate">Moderate</option>
+              <option value="packed">Packed</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md-7">
+            <input v-model="draftComment" class="form-control" aria-label="Comment" data-test="edit-comment">
           </div>
         </div>
 

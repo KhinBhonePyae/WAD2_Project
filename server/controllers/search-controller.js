@@ -1,15 +1,17 @@
 /* Search controller. Follows the routes -> controllers -> models convention.
- * Uses placeModel.retrieveAll() so it works in both MOCK_MODE and MongoDB mode. */
+ * Uses placeModel.retrieveAll() so it works in both MOCK_MODE and MongoDB mode,
+ * and summarisePlaces() so results carry the same live status, crowd level and
+ * review-based rating as GET /places. */
 
 const placeModel = require('../models/place-model');
+const { summarisePlaces } = require('../utils/place-summary');
 
 const norm = (s) => String(s).trim().toLowerCase();
-const plain = (p) => (p.toObject ? p.toObject() : p);
 
 // GET /search?q=&facilities=wifi,aircon&strict=true&area=&minRating=
 exports.search = async (req, res, next) => {
   try {
-    const all = (await placeModel.retrieveAll()).map(plain);
+    const all = await summarisePlaces(await placeModel.retrieveAll());
 
     const q = norm(req.query.q || '');
     const wanted = (req.query.facilities || '').split(',').map(norm).filter(Boolean);

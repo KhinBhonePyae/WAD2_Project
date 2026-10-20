@@ -26,6 +26,8 @@ const summary = ref({ rating:0, reviewCount:0, crowdLevel:null })
 const weather = ref(null)
 const loading = ref(true)
 const busy = ref(false)
+const reviewError = ref('')
+const reviewFormKey = ref(0)   // bumped after a successful post to reset the form
 const notFound = ref(false)
 let ctx = null
 
@@ -94,46 +96,65 @@ async function loadReviews(id) {
     place.value = {
       ...place.value,
       crowdLevel:data.summary.crowdLevel,
-      rating:data.summary.reviewCount ? data.summary.rating : place.value.rating,
+      rating:data.summary.rating,
       reviewCount:data.summary.reviewCount
     }
   }
 }
 
+// Tell the user why a review action failed, instead of failing silently
+function explainReviewError(e, action) {
+  if (e.response?.status === 401) return 'Your login has expired. Please log in again to ' + action + '.'
+  return e.response?.data?.error || 'Could not ' + action + '. Please try again.'
+}
+
 async function addReview(payload) {
   busy.value = true
+  reviewError.value = ''
 
   try {
     await axios.post(`${BASE_URL}/reviews`, payload, authHeader())
+    reviewFormKey.value++   // only clear the form once the review is saved
     await loadReviews(route.params.id)
   } catch (e) {
     console.error('Could not post review', e)
+    reviewError.value = explainReviewError(e, 'post your review')
   } finally {
     busy.value = false
   }
 }
 
 async function editReview({ id, rating, comment, crowdLevel }) {
+  reviewError.value = ''
   try {
     await axios.put(`${BASE_URL}/reviews/${id}`, { rating, comment, crowdLevel }, authHeader())
     await loadReviews(route.params.id)
   } catch (e) {
     console.error('Could not edit review', e)
+    reviewError.value = explainReviewError(e, 'save your changes')
   }
 }
 
 async function deleteReview(id) {
+  reviewError.value = ''
   try {
     await axios.delete(`${BASE_URL}/reviews/${id}`, authHeader())
     await loadReviews(route.params.id)
   } catch (e) {
     console.error('Could not delete review', e)
+    reviewError.value = explainReviewError(e, 'delete your review')
   }
 }
 
+// Scroll the review list with the wheel; once it can't go further (or is too
+// short to scroll), let the wheel scroll the page as normal
 function scrollReviews(event) {
   const el = reviewsScrollRef.value
   if (!el) return
+
+  const atTop = el.scrollTop <= 0
+  const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+  if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) return
 
   event.preventDefault()
   event.stopPropagation()
@@ -283,9 +304,11 @@ onUnmounted(() => {
 
             <RouterLink to="/profile?edit=1" class="btn btn-outline-primary btn-sm mt-3">Edit preferences</RouterLink>
           </div>
-          <div class="report-right mt-3">
-            <ReportIssue :place="place" />
-          </div>
+        </div>
+
+        <!-- everyone can report wrong information (logged-out visitors are sent to log in first) -->
+        <div class="col-12 report-right">
+          <ReportIssue :place="place" />
         </div>
       </div>
 
@@ -299,7 +322,8 @@ onUnmounted(() => {
         <div class="row g-4 align-items-stretch review-row">
           <div class="col-12 col-lg-5">
             <div class="review-form-wrap">
-              <ReviewForm v-if="currentUser" class="review-form-box" :place-id="Number(place.id)" :busy="busy" :author-name="currentUser.name" @submit-review="addReview" />
+              <div v-if="reviewError" class="alert alert-danger py-2 mb-3" role="alert" data-test="review-error">{{ reviewError }}</div>
+              <ReviewForm v-if="currentUser" :key="reviewFormKey" class="review-form-box" :place-id="Number(place.id)" :busy="busy" :author-name="currentUser.name" @submit-review="addReview" />
 
               <div v-else class="ss-card p-4 h-100" data-test="review-login">
                 <h3 class="ss-card__title mb-2">Leave a review</h3>
@@ -310,7 +334,7 @@ onUnmounted(() => {
           </div>
 
           <div class="col-12 col-lg-7">
-            <div ref="reviewsScrollRef" class="reviews-scroll" @wheel.stop.prevent="scrollReviews">
+            <div ref="reviewsScrollRef" class="reviews-scroll" @wheel="scrollReviews">
               <ReviewList :reviews="reviews" :current-user-id="currentUser?._id" @edit-review="editReview" @delete-review="deleteReview" />
             </div>
           </div>

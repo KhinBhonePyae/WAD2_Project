@@ -61,6 +61,7 @@ exports.findByEmail = async (email) => {
 // Find user by ID
 exports.findByID = async (id) => {
   if (global.MOCK_MODE) return mem.find(user => String(user._id) === String(id)) || null
+  if (!mongoose.Types.ObjectId.isValid(id)) return null // e.g. /users/admin/abc -> 404, not a crash
   return User.findById(id)
 }
 
@@ -74,6 +75,7 @@ exports.updateUser = async (id, data) => {
     return user
   }
 
+  if (!mongoose.Types.ObjectId.isValid(id)) return null
   return User.findByIdAndUpdate(id, { ...data, updatedAt: new Date() }, { new: true, runValidators: true })
 }
 
@@ -85,6 +87,7 @@ exports.deleteUser = async (id) => {
     return mem.splice(index, 1)[0]
   }
 
+  if (!mongoose.Types.ObjectId.isValid(id)) return null
   return User.findByIdAndDelete(id)
 }
 

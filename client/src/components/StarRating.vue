@@ -9,7 +9,9 @@ const stars = computed(() => {
 </script>
 
 <template>
-  <span class="ss-stars" data-test="stars">
+  <!-- a place with no reviews says so, instead of showing five empty stars and 0.0 -->
+  <span v-if="count === 0" class="ss-meta" data-test="stars">No reviews yet</span>
+  <span v-else class="ss-stars" data-test="stars">
     {{ stars }}
     <span class="ss-meta" v-if="count !== undefined">{{ (value || 0).toFixed(1) }} ({{ count }})</span>
   </span>

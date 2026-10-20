@@ -106,4 +106,13 @@ exports.deleteAllForUser = async (userId) => {
   return SavedPlace.deleteMany({ userId });
 };
 
+exports.deleteAllForPlace = async (placeId) => {
+  if (global.MOCK_MODE) {
+    mem = mem.filter(item => item.placeId !== Number(placeId));
+    return;
+  }
+
+  return SavedPlace.deleteMany({ placeId: Number(placeId) });
+};
+
 exports.SavedPlace = SavedPlace;
