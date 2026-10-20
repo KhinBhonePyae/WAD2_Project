@@ -2,7 +2,6 @@ const placeModel = require('../models/place-model');
 const reviewModel = require('../models/review-model');
 const intentModel = require('../models/intent-model');
 const intentsController = require('./intents-controller');
-const { getOneMapToken, clearOneMapToken } = require('../utils/onemap-token');
 const axios = require('axios');
 const { withOneMapToken } = require('../utils/onemap-auth');
 
@@ -289,18 +288,6 @@ exports.getMapRoute = async (req, res) => {
         timeout: 15000
       }
     ));
-
-    let data;
-    try {
-      ({ data } = await askOneMap(token));
-    } catch (error) {
-      // token rejected (e.g. expired early): get a fresh one and try once more
-      if (error.response?.status !== 401) throw error;
-      clearOneMapToken();
-      const freshToken = await getOneMapToken();
-      if (!freshToken || freshToken === token) throw error;
-      ({ data } = await askOneMap(freshToken));
-    }
 
     if (isPublicTransport) {
       const itinerary = data.plan?.itineraries?.[0];
