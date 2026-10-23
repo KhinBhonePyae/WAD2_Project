@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "seed": "node seed.js"
+    "seed": "node seed.js",
+    "import:google": "node import-google-places.js",
+    "import:google:preview": "node import-google-places.js --dry-run"
   },
   "dependencies": {
     "@google/genai": "^2.28.0",

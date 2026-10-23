@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { filterPlaces, prefsFromUserPreferences, DEFAULT_PREFS } from '../searchFilters.js'
 
 const places = [
-  { id: 1, openNow: true, indoor: true, crowdLevel: 'quiet' },
+  { id: 1, openNow: true, indoor: true, crowdLevel: 'quiet', entry: 'free' },
   { id: 2, openNow: false, indoor: true, crowdLevel: 'packed' },
-  { id: 3, openNow: true, indoor: false, crowdLevel: 'moderate' },
-  { id: 4, openNow: true, indoor: true, crowdLevel: null },   // no crowd reports yet
+  { id: 3, openNow: true, indoor: false, crowdLevel: 'moderate', entry: 'purchase' },
+  { id: 4, openNow: true, indoor: true, crowdLevel: null, entry: 'pass' },   // no crowd reports yet
 ]
 const ids = list => list.map(p => p.id)
 
@@ -15,6 +15,9 @@ describe('filterPlaces', () => {
   })
   it('can show only places open now', () => {
     expect(ids(filterPlaces(places, { ...DEFAULT_PREFS, openNowOnly: true }))).toEqual([1, 3, 4])
+  })
+  it('can show only places with free entry', () => {
+    expect(ids(filterPlaces(places, { ...DEFAULT_PREFS, freeEntryOnly: true }))).toEqual([1])
   })
   it('can show only indoor or only outdoor places', () => {
     expect(ids(filterPlaces(places, { ...DEFAULT_PREFS, setting: 'indoor' }))).toEqual([1, 2, 4])

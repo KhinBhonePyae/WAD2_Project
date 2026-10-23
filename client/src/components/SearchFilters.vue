@@ -90,6 +90,11 @@ function reset() { local.value = { ...DEFAULT_PREFS, facilities: [] }; emit('res
         <label class="form-check-label" for="openNow">Open now</label>
       </div>
 
+      <div class="form-check form-switch mt-2">
+        <input class="form-check-input" type="checkbox" id="freeEntry" v-model="local.freeEntryOnly" data-test="free-entry" />
+        <label class="form-check-label" for="freeEntry">Free entry</label>
+      </div>
+
       <div class="d-flex gap-2 mt-3">
         <button class="btn btn-primary flex-fill" @click="apply" data-test="apply-filters">Apply</button>
         <button class="btn btn-outline-secondary flex-fill" @click="reset" data-test="reset-filters">Reset</button>

@@ -2,7 +2,8 @@
  * Used by GET /places, GET /places/:id and GET /search so they always agree:
  *  - closureStatus  'normal' | 'temporary' | 'permanent'
  *  - markedOpen     the admin's saved switch (false = closed until further notice)
- *  - openNow        live: marked open, not closed, and inside today's opening hours (Singapore time)
+ *  - openNow        live: marked open, not closed, and inside today's opening hours (Singapore time);
+ *                   Google-imported places use their exact weekly periods
  *  - rating, reviewCount, crowdLevel   from real reviews only
  *  - intent         how many people plan to go in the next time slot */
 const reviewModel = require('../models/review-model');
@@ -33,6 +34,25 @@ function withinHours(hours, now = new Date()) {
   return minutes >= open && minutes < close;
 }
 
+/* Google's weekly periods (day 0 = Sunday). A close on a later day means the
+ * place stays open past midnight; a single period with no close means 24/7. */
+function withinPeriods(periods, now = new Date()) {
+  if (periods.length === 1 && !periods[0].close) return true;
+  const sg = new Date(now.getTime() + SG_OFFSET_MS);
+  const WEEK = 7 * 24 * 60;
+  const minuteOfWeek = sg.getUTCDay() * 24 * 60 + sg.getUTCHours() * 60 + sg.getUTCMinutes();
+  const toWeekMinutes = (t) => t.day * 24 * 60 + t.hour * 60 + t.minute;
+
+  return periods.some(p => {
+    if (!p.close) return false;
+    const open = toWeekMinutes(p.open);
+    let close = toWeekMinutes(p.close);
+    if (close <= open) close += WEEK; // e.g. Saturday 10pm -> Sunday 2am
+    return (minuteOfWeek >= open && minuteOfWeek < close) ||
+      (minuteOfWeek + WEEK >= open && minuteOfWeek + WEEK < close);
+  });
+}
+
 function plain(place) {
   return place.toObject ? place.toObject() : { ...place };
 }
@@ -46,7 +66,9 @@ async function summarisePlaces(stored, now = new Date()) {
   for (const place of list) {
     place.closureStatus = closureStatusOf(place);
     place.markedOpen = place.closureStatus === 'normal' && place.openNow !== false;
-    place.openNow = place.markedOpen && withinHours(place.hours, now);
+    place.openNow = place.markedOpen && (place.openingPeriods?.length
+      ? withinPeriods(place.openingPeriods, now)
+      : withinHours(place.hours, now));
 
     const agg = aggs[place.id] || { rating: 0, reviewCount: 0, crowdLevel: null };
     place.rating = agg.rating;
@@ -60,4 +82,4 @@ async function summarisePlaces(stored, now = new Date()) {
   return list;
 }
 
-module.exports = { summarisePlaces, closureStatusOf, withinHours };
+module.exports = { summarisePlaces, closureStatusOf, withinHours, withinPeriods };
