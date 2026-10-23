@@ -8,6 +8,7 @@ const { withOneMapToken } = require('../utils/onemap-auth');
 
 const ALLOWED_FACILITIES = ['wifi', 'sockets', 'toilets', 'water', 'fnb', 'quiet'];
 const ALLOWED_CLOSURE_STATUSES = ['normal', 'temporary', 'permanent'];
+const ALLOWED_ENTRY = ['free', 'purchase', 'pass', ''];
 
 // OneMap's search is public, so finding a place needs no token (only directions do)
 async function resolveOneMapLocation(place) {
@@ -105,6 +106,7 @@ function validatePlace(data) {
   }
 
   if (typeof data.indoor !== 'boolean') return 'Location must be indoor or outdoor.';
+  if (data.entry !== undefined && !ALLOWED_ENTRY.includes(data.entry)) return 'Entry type is invalid.';
   if (typeof data.openNow !== 'boolean') return 'Status must be open or closed.';
 
   if (!Array.isArray(data.facilities)) return 'Facilities must be an array.';
@@ -351,8 +353,17 @@ exports.editPlace = async (req, res, next) => {
     if (error) return res.status(400).json({ error });
 
     const closureStatus = data.closureStatus || 'normal';
+    const hours = closureStatus === 'normal' ? data.hours : '';
+
+    // Admin changed the hours by hand: Google's weekly periods no longer apply
+    const current = await placeModel.findByID(req.params.id);
+    const hoursOverride = current?.openingPeriods?.length && current.hours !== hours
+      ? { openingPeriods: [], weekdayHours: [] }
+      : {};
+
     const updated = await placeModel.updatePlace(req.params.id, {
       ...data,
+      ...hoursOverride,
       closureStatus,
       openNow: closureStatus === 'normal' ? data.openNow : false,
       hours: closureStatus === 'normal' ? data.hours : '',

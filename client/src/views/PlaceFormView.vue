@@ -21,6 +21,7 @@ const openNow = ref(true)
 const closureStatus = ref('normal')
 const description = ref('')
 const capacity = ref('')
+const entry = ref('')
 const facilities = ref([])
 
 const photo1 = ref('')
@@ -75,6 +76,7 @@ onMounted(async () => {
     openNow.value = closureStatus.value === 'normal' ? (data.markedOpen ?? data.openNow ?? true) : false
     description.value = data.description || ''
     capacity.value = data.capacity ?? ''
+    entry.value = data.entry || ''
     facilities.value = data.facilities || []
 
     photo1.value = data.photos?.[0] || ''
@@ -221,6 +223,7 @@ async function savePlace() {
     lon: Number(lon.value),
     hours: closureStatus.value === 'normal' && openTime.value && closeTime.value ? `${openTime.value} - ${closeTime.value}` : '',
     indoor: indoor.value,
+    entry: entry.value,
     openNow: closureStatus.value === 'normal' ? openNow.value : false,
     closureStatus: closureStatus.value,
     facilities: facilities.value,
@@ -380,6 +383,16 @@ async function savePlace() {
             <select v-model="indoor" class="form-select">
               <option :value="true">Indoor</option>
               <option :value="false">Outdoor</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-sm-6 col-lg-3">
+            <label class="form-label">Entry</label>
+            <select v-model="entry" class="form-select" data-test="entry-select">
+              <option value="">Not set</option>
+              <option value="free">Free entry</option>
+              <option value="purchase">Buy a drink</option>
+              <option value="pass">Requires membership/day pass</option>
             </select>
           </div>
 

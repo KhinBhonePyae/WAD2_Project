@@ -15,6 +15,9 @@ export const FACILITY_LABELS = {
   wifi: 'Wi-Fi', sockets: 'Power sockets', fnb: 'Food & drink', water: 'Water dispenser', toilets: 'Toilets', quiet: 'Quiet environment', indoor: 'Indoor location'
 }
 
+// What it costs to sit and study there (place.entry)
+export const ENTRY_LABELS = { free: 'Free entry', purchase: 'Buy a drink', pass: 'Requires membership/day pass' }
+
 export function preferencesToWanted(preferences = {}) {
   const wanted = []
   if (preferences.wifiRequired) wanted.push('wifi')

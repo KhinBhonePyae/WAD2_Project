@@ -9,6 +9,7 @@ export const DEFAULT_PREFS = {
   area: '',                // server-side
   minRating: 0,            // server-side
   openNowOnly: false,      // client-side
+  freeEntryOnly: false,    // client-side: only places with entry 'free'
   setting: 'any',          // 'any' | 'indoor' | 'outdoor'   (client-side)
   maxCrowd: 'any',         // 'any' | 'moderate' | 'quiet'   (client-side)
 }
@@ -19,6 +20,7 @@ const CROWD_RANK = { quiet: 1, moderate: 2, packed: 3 }
 export function filterPlaces(list, prefs) {
   return list.filter((p) => {
     if (prefs.openNowOnly && !p.openNow) return false
+    if (prefs.freeEntryOnly && p.entry !== 'free') return false
     if (prefs.setting === 'indoor' && !p.indoor) return false
     if (prefs.setting === 'outdoor' && p.indoor) return false
     if (prefs.maxCrowd !== 'any') {

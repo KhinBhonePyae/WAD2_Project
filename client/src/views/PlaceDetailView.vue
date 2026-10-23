@@ -4,7 +4,7 @@ import { Carousel } from 'bootstrap'
 import { useRoute, RouterLink } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
-import { suitabilityBreakdown, preferencesToWanted, FACILITY_LABELS, closureStatusOf } from '../utils/suitability.js'
+import { suitabilityBreakdown, preferencesToWanted, FACILITY_LABELS, ENTRY_LABELS, closureStatusOf } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'
 import SuitabilityScore from '../components/SuitabilityScore.vue'
 import CrowdMeter from '../components/CrowdMeter.vue'
@@ -16,6 +16,7 @@ import CrowdHistogram from '../components/CrowdHistogram.vue'
 import IntentPanel from '../components/IntentPanel.vue'
 import PlaceMap from '../components/PlaceMap.vue'
 import ReportIssue from '../components/ReportIssue.vue'
+import GoogleReviews from '../components/GoogleReviews.vue'
 
 const route = useRoute()
 const carouselRef = ref(null)
@@ -254,6 +255,8 @@ onUnmounted(() => {
         <div class="ss-card__media" :style="{ background:art, aspectRatio:'21/8' }"></div>
       </div>
 
+      <p v-if="place.photoAttributions?.length" class="ss-meta mt-n3 mb-4">Photos: {{ place.photoAttributions.join(', ') }} via Google</p>
+
       <div class="row g-4 x-detail-head">
         <div class="col-12" :class="{ 'col-lg-7':isPersonalized && profileWanted.length }">
           <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
@@ -263,6 +266,7 @@ onUnmounted(() => {
 
               <div class="d-flex align-items-center gap-3 flex-wrap">
                 <StarRating :value="place.rating" :count="place.reviewCount" />
+                <span v-if="place.googleRating" class="ss-meta" data-test="google-rating">Google {{ place.googleRating.toFixed(1) }} ★ ({{ place.googleRatingCount }})</span>
                 <CrowdMeter :level="place.crowdLevel" />
               </div>
             </div>
@@ -274,6 +278,19 @@ onUnmounted(() => {
             <span class="ss-badge" :class="place.openNow && closureStatus === 'normal' ? 'ss-badge--green' : 'ss-badge--pink'">{{ availabilityLabel() }}</span>
             <span class="ss-badge ss-badge--neutral">{{ place.indoor ? 'Indoor' : 'Outdoor' }}</span>
             <span v-if="closureStatus === 'normal' && place.hours" class="ss-badge ss-badge--neutral">{{ place.hours }}</span>
+            <span v-if="ENTRY_LABELS[place.entry]" class="ss-badge" :class="place.entry === 'free' ? 'ss-badge--green' : 'ss-badge--neutral'" data-test="entry-badge">{{ ENTRY_LABELS[place.entry] }}</span>
+          </div>
+
+          <details v-if="place.weekdayHours?.length" class="mb-3">
+            <summary class="ss-meta">Opening hours this week</summary>
+            <ul class="list-unstyled ss-meta mt-2 mb-0">
+              <li v-for="line in place.weekdayHours" :key="line">{{ line }}</li>
+            </ul>
+          </details>
+
+          <div v-if="place.googleMapsUri || place.website" class="d-flex gap-3 mb-3">
+            <a v-if="place.googleMapsUri" :href="place.googleMapsUri" target="_blank" rel="noopener" class="ss-meta">Open in Google Maps ↗</a>
+            <a v-if="place.website" :href="place.website" target="_blank" rel="noopener" class="ss-meta">Website ↗</a>
           </div>
 
           <h2 class="h5 mt-4 mb-2">Facilities</h2>
@@ -339,6 +356,8 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+
+        <GoogleReviews :place="place" />
       </section>
 
       <div class="map-section">

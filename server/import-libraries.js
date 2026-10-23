@@ -44,6 +44,7 @@ function mapPlace(branch) {
         lat: Number(branch.coordinates.geoLatitude),
         lon: Number(branch.coordinates.geoLongitude),
         indoor: true,
+        entry: 'free',
         capacity: 200, // rough default; adjust per branch in the admin form
         openNow: schedules.length > 0,
         closureStatus: schedules.length > 0 ? 'normal' : 'temporary',

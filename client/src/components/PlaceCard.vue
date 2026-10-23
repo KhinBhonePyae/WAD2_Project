@@ -6,6 +6,7 @@ import { RouterLink } from 'vue-router'
 import SuitabilityScore from './SuitabilityScore.vue'
 import StarRating from './StarRating.vue'
 import { LEVEL_LABELS } from '../utils/intents.js'
+import { ENTRY_LABELS } from '../utils/suitability.js'
 import { gsap, finePointer, reducedMotion } from '../utils/motion.js'
 
 const props = defineProps({ place: Object, score: Number, saved: Boolean })
@@ -89,7 +90,7 @@ onUnmounted(() => ctx?.revert())
                         style="color:inherit" data-test="place-link">{{ place.name }}</RouterLink>
           </h3>
         </div>
-        <div class="xc-meta">{{ place.area }} · {{ place.hours }}</div>
+        <div class="xc-meta">{{ place.area }} · {{ place.hours }}<template v-if="ENTRY_LABELS[place.entry]"> · {{ ENTRY_LABELS[place.entry] }}</template></div>
         <div v-if="place.intent" class="xc-intent" data-test="card-intent">
           <b>{{ place.intent.count }}</b> heading here
           {{ place.intent.day === 'Today' ? 'this' : 'tomorrow' }} {{ place.intent.label.toLowerCase() }}
