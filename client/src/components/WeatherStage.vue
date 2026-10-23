@@ -5,7 +5,7 @@
  *   night -> twinkling stars and the odd shooting star
  *   clear -> slow floating dust motes in the sunlight
  * A dial lets people preview other conditions; "Live" goes back to Open-Meteo. */
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { gsap, reducedMotion } from '../utils/motion.js'
 
 const props = defineProps({ weather: Object, area: String, compact: Boolean })
@@ -17,6 +17,38 @@ const MODES = [
   { key: 'rain', label: 'Rain' },
   { key: 'night', label: 'Night' },
 ]
+
+/* Weather-specific cloud compositions.
+   Sizes are percentages, positions are carefully staggered to avoid 
+   the sun, the moon, and the UI cards at the bottom.
+   Opacity is fully 1 for day scenes so the sun doesn't bleed through.
+   Opacity is lowered for night to give a translucent effect. */
+const CLOUD_SCENES = {
+  clear: [
+    { size: 13, left: 10, top: 5, opacity: 1, dur: 40, drift: 8, delay: 0, bob: 3 },
+    // Safely moved to center-left (left: 35) and made opaque
+    { size: 16, left: 35, top: 30, opacity: 1, dur: 35, drift: -10, delay: -5, bob: 4 }
+  ],
+  cloudy: [
+    { size: 20, left: 5, top: 2, opacity: 1, dur: 32, drift: 12, delay: 0, bob: 5 },
+    { size: 16, left: 30, top: 20, opacity: 1, dur: 28, drift: -8, delay: -10, bob: 4 },
+    { size: 22, left: 60, top: 35, opacity: 1, dur: 36, drift: 10, delay: -5, bob: 6 }
+  ],
+  rain: [
+    // Staggered in a 3-top, 2-bottom formation so they don't overlap vertically
+    { size: 24, left: 5, top: -2, opacity: 0.95, dur: 30, drift: 10, delay: 0, bob: 5 },
+    { size: 22, left: 35, top: -5, opacity: 0.9, dur: 35, drift: -12, delay: -10, bob: 6 },
+    { size: 26, left: 70, top: -2, opacity: 0.95, dur: 28, drift: 8, delay: -5, bob: 4 },
+    { size: 18, left: 15, top: 28, opacity: 0.85, dur: 40, drift: -10, delay: -15, bob: 7 },
+    { size: 20, left: 50, top: 30, opacity: 0.9, dur: 32, drift: 12, delay: -8, bob: 5 }
+  ],
+  night: [
+    // Translucent night clouds
+    { size: 28, left: 6, top: 5, opacity: 0.55, dur: 30, drift: 15, delay: 0, bob: 7 },
+    { size: 26, left: 55, top: 40, opacity: 0.65, dur: 34, drift: -12, delay: -8, bob: 6 }
+  ]
+}
+
 const modeIndex = ref(0)
 const mode = computed(() => MODES[modeIndex.value].key)
 
@@ -30,8 +62,9 @@ const scene = computed(() => {
   if (mode.value === 'night') return { kind: 'clear', night: true, storm: false }
   return { kind: mode.value, night: false, storm: false }
 })
+
 const skyKey = computed(() => (scene.value.night ? 'night' : scene.value.kind))
-const cloudCount = computed(() => ({ clear: 2, cloudy: 5, rain: 5 }[scene.value.kind] || 2))
+const activeClouds = computed(() => CLOUD_SCENES[skyKey.value] || CLOUD_SCENES.clear)
 
 const tempShown = ref(0)
 const label = computed(() => {
@@ -52,6 +85,7 @@ let ctx2d = null, raf = 0, w = 0, h = 0, visible = true, observer = null
 let particles = [], splashes = [], shooting = null
 let mouse = { x: -999, y: -999 }
 let gctx = null, sunX = null, sunY = null, cloudsX = null
+let cloudTweens = []
 
 /* ---------- particles ---------- */
 function makeParticles() {
@@ -91,7 +125,6 @@ function frame() {
     ctx2d.lineWidth = 1.3
     ctx2d.beginPath()
     for (const p of particles) {
-      // umbrella: drops near the cursor slide off sideways
       const dx = p.x - mouse.x, dy = p.y - mouse.y
       const dist = Math.hypot(dx, dy)
       if (dist < 90 && dy < 0) p.x += (dx >= 0 ? 1 : -1) * (90 - dist) * 0.12
@@ -131,7 +164,6 @@ function frame() {
     }
   } else {
     for (const p of particles) {
-      // motes drift, and scatter a little from the cursor
       const dx = p.x - mouse.x, dy = p.y - mouse.y
       const dist = Math.hypot(dx, dy)
       if (dist < 70) { p.x += dx / dist * 1.4; p.y += dy / dist * 1.4 }
@@ -206,7 +238,32 @@ function scheduleLightning() {
   }, 4000 + Math.random() * 6000)
 }
 
-watch(skyKey, () => { makeParticles(); splashes = [] })
+function initClouds() {
+  cloudTweens.forEach(t => t.kill())
+  cloudTweens = []
+  if (reducedMotion || !root.value) return
+  
+  gsap.utils.toArray('.ws-cloud').forEach((c, i) => {
+    const cfg = activeClouds.value[i]
+    if (!cfg) return
+    cloudTweens.push(
+      gsap.fromTo(c, { xPercent: -cfg.drift }, {
+        xPercent: cfg.drift, duration: cfg.dur, ease: 'sine.inOut',
+        yoyo: true, repeat: -1, delay: cfg.delay
+      }),
+      gsap.to(c, {
+        y: cfg.bob, duration: cfg.dur * 0.45, ease: 'sine.inOut',
+        yoyo: true, repeat: -1, delay: cfg.delay
+      })
+    )
+  })
+}
+
+watch(skyKey, () => { 
+  makeParticles(); 
+  splashes = [];
+  nextTick(() => { initClouds(); })
+})
 watch(() => [props.weather, mode.value], () => { countTemp(); scheduleLightning() })
 
 onMounted(() => {
@@ -214,17 +271,17 @@ onMounted(() => {
   countTemp()
   scheduleLightning()
   window.addEventListener('resize', resize)
+  
   if (!reducedMotion) {
     raf = requestAnimationFrame(frame)
     gctx = gsap.context(() => {
       sunX = gsap.quickTo('.ws-sun', 'x', { duration: 1.2, ease: 'power3' })
       sunY = gsap.quickTo('.ws-sun', 'y', { duration: 1.2, ease: 'power3' })
       cloudsX = gsap.quickTo('.ws-clouds', 'x', { duration: 1.6, ease: 'power3' })
-      gsap.utils.toArray('.ws-cloud').forEach((c, i) => {
-        gsap.fromTo(c, { xPercent: -30 - i * 10 }, { xPercent: 30 + i * 8, duration: 18 + i * 5, ease: 'sine.inOut', yoyo: true, repeat: -1 })
-      })
     }, root.value)
+    initClouds()
   }
+  
   observer = new IntersectionObserver(([entry]) => { visible = entry.isIntersecting })
   observer.observe(root.value)
 })
@@ -233,6 +290,7 @@ onUnmounted(() => {
   cancelAnimationFrame(raf)
   clearTimeout(flashTimer)
   window.removeEventListener('resize', resize)
+  cloudTweens.forEach(t => t.kill())
   observer?.disconnect()
   gctx?.revert()
 })
@@ -252,9 +310,31 @@ onUnmounted(() => {
     </div>
 
     <div class="ws-clouds" aria-hidden="true">
-      <svg v-for="n in 5" :key="n" class="ws-cloud" :class="{ 'ws-cloud--off': n > cloudCount }" :style="{ '--i': n }"
+      <!-- shared gradients: soft daylight body, cooler storm body, deep night body -->
+      <svg class="ws-cloud-defs" width="0" height="0" aria-hidden="true">
+        <defs>
+          <linearGradient id="ws-cloud-g-day" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#FFFFFF" />
+            <stop offset=".6" stop-color="#FBF8F0" />
+            <stop offset="1" stop-color="#E2EAF2" />
+          </linearGradient>
+          <linearGradient id="ws-cloud-g-rain" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#D8E0E8" />
+            <stop offset="1" stop-color="#AEBAC6" />
+          </linearGradient>
+          <!-- Night gradient made slightly translucent -->
+          <linearGradient id="ws-cloud-g-night" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#5A548C" stop-opacity="0.85" />
+            <stop offset="1" stop-color="#36326A" stop-opacity="0.6" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <svg v-for="(c, i) in activeClouds" :key="skyKey + i" class="ws-cloud"
+        :style="{ '--w': c.size + '%', left: c.left + '%', top: c.top + '%', opacity: c.opacity }"
         viewBox="-4 -30 208 116">
-        <path d="M30 80a28 28 0 0 1 4-55 40 40 0 0 1 74-12 32 32 0 0 1 54 18 26 26 0 0 1 8 49z" />
+        <path class="ws-cloud__body"
+          d="M30 80a28 28 0 0 1 4-55 40 40 0 0 1 74-12 32 32 0 0 1 54 18 26 26 0 0 1 8 49z" />
       </svg>
     </div>
 
@@ -307,7 +387,7 @@ onUnmounted(() => {
   inset: 0;
   opacity: 0;
   transition: opacity 1s ease;
-  z-index: -2;
+  z-index: -3;
 }
 
 .ws-sky--clear {
@@ -340,7 +420,7 @@ onUnmounted(() => {
   top: 14%;
   width: 120px;
   height: 120px;
-  z-index: -1;
+  z-index: -2;
   transition: opacity .8s, filter .8s;
 }
 
@@ -358,7 +438,8 @@ onUnmounted(() => {
   position: absolute;
   inset: -18px;
   border-radius: 50%;
-  background: repeating-conic-gradient(rgba(255, 216, 74, .55) 0 6deg, transparent 6deg 22deg);
+  /* 22.5deg ensures perfect division of 360 degrees (no glitchy overlapping ray) */
+  background: repeating-conic-gradient(rgba(255, 216, 74, .55) 0 6deg, transparent 6deg 22.5deg);
   -webkit-mask: radial-gradient(circle, transparent 46%, #000 47%, #000 66%, transparent 67%);
   mask: radial-gradient(circle, transparent 46%, #000 47%, #000 66%, transparent 67%);
   animation: ws-spin 30s linear infinite;
@@ -375,9 +456,12 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.ws--rain .ws-sun,
+.ws--rain .ws-sun {
+  opacity: 0; /* Sun completely disappears in rain */
+}
+
 .ws--cloudy .ws-sun {
-  opacity: .25;
+  opacity: .3;
   filter: blur(2px);
 }
 
@@ -394,30 +478,39 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
+.ws-cloud-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
 .ws-cloud {
   position: absolute;
   overflow: visible;
-  width: calc(150px + var(--i) * 22px);
-  top: calc(var(--i) * 9% - 4%);
-  left: calc(var(--i) * 17% - 12%);
-  fill: #FFFDF8;
+  width: clamp(70px, var(--w, 20%), 230px);
   stroke: var(--x-ink);
   stroke-width: 3;
-  transition: opacity 1s, fill 1s;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 8px 14px rgba(22, 30, 46, .1));
+  transition: opacity 1s, stroke 1s, fill 1s;
+  will-change: transform;
 }
 
-.ws--rain .ws-cloud {
-  fill: #C9D2DB;
+.ws-cloud__body {
+  fill: url(#ws-cloud-g-day);
+  transition: fill 1s;
+}
+
+.ws--rain .ws-cloud__body {
+  fill: url(#ws-cloud-g-rain);
+}
+
+.ws--night .ws-cloud__body {
+  fill: url(#ws-cloud-g-night);
 }
 
 .ws--night .ws-cloud {
-  fill: #3B3870;
   stroke: #0E1330;
-  opacity: .7;
-}
-
-.ws-cloud--off {
-  opacity: 0 !important;
 }
 
 .ws-canvas {
@@ -426,6 +519,7 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 1;
 }
 
 .ws-flash {
@@ -434,6 +528,7 @@ onUnmounted(() => {
   background: #fff;
   opacity: 0;
   pointer-events: none;
+  z-index: 2;
 }
 
 .ws-card {
@@ -449,6 +544,7 @@ onUnmounted(() => {
   border: var(--x-line);
   border-radius: 20px;
   box-shadow: var(--x-pop);
+  z-index: 10;
 }
 
 .ws-card__temp {
@@ -484,6 +580,7 @@ onUnmounted(() => {
   position: absolute;
   right: 22px;
   bottom: 22px;
+  z-index: 10;
 }
 
 .ws-dial {
