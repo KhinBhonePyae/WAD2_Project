@@ -1,4 +1,4 @@
-# StudySpot SG
+# LockIn
 
 **IS216 — Web Application Development II · Group Project**
 Section **G10** · Team **T3**
