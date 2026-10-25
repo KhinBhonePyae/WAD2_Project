@@ -2,6 +2,7 @@ const placeModel = require('../models/place-model');
 const reviewModel = require('../models/review-model');
 const intentModel = require('../models/intent-model');
 const savedModel = require('../models/saved-model');
+const checkinModel = require('../models/checkin-model');
 const { summarisePlaces } = require('../utils/place-summary');
 const axios = require('axios');
 const { withOneMapToken } = require('../utils/onemap-auth');
@@ -395,7 +396,8 @@ exports.deletePlace = async (req, res, next) => {
     await Promise.all([
       intentModel.deleteAllForPlace(deleted.id),
       reviewModel.deleteAllForPlace(deleted.id),
-      savedModel.deleteAllForPlace(deleted.id)
+      savedModel.deleteAllForPlace(deleted.id),
+      checkinModel.deleteAllForPlace(deleted.id)
     ]);
 
     res.json(deleted);

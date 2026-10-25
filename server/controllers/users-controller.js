@@ -1,6 +1,7 @@
 const userModel = require('../models/user-model')
 const savedModel = require('../models/saved-model')
 const intentModel = require('../models/intent-model')
+const checkinModel = require('../models/checkin-model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
@@ -180,7 +181,8 @@ exports.deleteAccount = async (req, res, next) => {
 
     await Promise.all([
       savedModel.deleteAllForUser(req.userId),
-      intentModel.deleteAllForUser(req.userId)
+      intentModel.deleteAllForUser(req.userId),
+      checkinModel.deleteAllForUser(req.userId)
     ])
 
     res.json({ message: 'Account deleted successfully' })
@@ -271,7 +273,11 @@ exports.deleteUserByAdmin = async (req, res, next) => {
     const deletedUser = await userModel.deleteUser(req.params.id)
     if (!deletedUser) return res.status(404).json({ error: 'User not found' })
 
-    await Promise.all([savedModel.deleteAllForUser(req.params.id), intentModel.deleteAllForUser(req.params.id)])
+    await Promise.all([
+      savedModel.deleteAllForUser(req.params.id),
+      intentModel.deleteAllForUser(req.params.id),
+      checkinModel.deleteAllForUser(req.params.id)
+    ])
     res.json({ message: `${deletedUser.name}'s account was deleted successfully` })
   } catch (e) {
     next(e)

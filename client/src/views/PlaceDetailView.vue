@@ -23,6 +23,7 @@ const carouselRef = ref(null)
 const reviewsScrollRef = ref(null)
 const place = ref(null)
 const reviews = ref([])
+const crowdRef = ref(null)
 const summary = ref({ rating:0, reviewCount:0, crowdLevel:null })
 const weather = ref(null)
 const loading = ref(true)
@@ -92,6 +93,7 @@ async function loadReviews(id) {
   const { data } = await axios.get(`${BASE_URL}/reviews/place/${id}`)
   reviews.value = data.reviews
   summary.value = data.summary
+  crowdRef.value?.reload()   // a review's crowd level is a crowd report too
 
   if (place.value) {
     place.value = {
@@ -101,6 +103,13 @@ async function loadReviews(id) {
       reviewCount:data.summary.reviewCount
     }
   }
+}
+
+// A check-in is the newest crowd report, so the header meter shows it straight away.
+// After an undo there is no level, so ask the server what the newest report is now.
+function onCrowdReported(level) {
+  if (level) place.value = { ...place.value, crowdLevel:level }
+  else loadReviews(route.params.id)
 }
 
 // Tell the user why a review action failed, instead of failing silently
@@ -334,7 +343,7 @@ onUnmounted(() => {
       <section class="mt-5 reviews-section">
         <h2 class="mb-3">Reviews &amp; crowd reports</h2>
 
-        <CrowdHistogram :reviews="reviews" class="mb-4" />
+        <CrowdHistogram ref="crowdRef" :place="place" class="mb-4" @reported="onCrowdReported" />
 
         <div class="row g-4 align-items-stretch review-row">
           <div class="col-12 col-lg-5">

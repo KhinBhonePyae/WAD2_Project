@@ -45,6 +45,7 @@ const intentsRoutes = require('./routes/intents-routes');
 const aiRoutes = require('./routes/ai-routes');
 const worldChatRoutes = require('./routes/world-chat-routes');
 const reportsRoutes = require('./routes/reports-routes');
+const crowdRoutes = require('./routes/crowd-routes');
 
 const server = express();
 
@@ -66,6 +67,7 @@ server.use('/intents', intentsRoutes); // "planning to go" intents
 server.use('/ai', aiRoutes);
 server.use('/world-chat', worldChatRoutes);
 server.use('/reports', reportsRoutes);
+server.use('/crowd', crowdRoutes); // one-tap crowd check-ins
 
 // 404 + error handler (borrowed from the better-engineered wk5 blog example)
 server.use((req, res) => res.status(404).json({ error: 'Not found' }));

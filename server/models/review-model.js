@@ -1,6 +1,7 @@
 /* Review model + data-access helpers. This is Jeffrey's area:
  * ratings, reviews and crowd reporting. */
 const mongoose = require('mongoose');
+const checkinModel = require('./checkin-model');
 
 const reviewSchema = new mongoose.Schema({
   placeId: { type: Number, required: true },
@@ -76,20 +77,25 @@ exports.deleteAllForPlace = async (placeId) => {
 };
 
 /* Aggregate rating + crowd level for one place.
- * Crowd is the most recent report, because "how busy is it right now"
- * is a now-question, not an average. */
-function summarise(list) {
-  if (!list.length) return { rating: 0, reviewCount: 0, crowdLevel: null };
+ * Crowd is the most recent report (a review or a one-tap check-in), because
+ * "how busy is it right now" is a now-question, not an average. */
+function summarise(list, checkin) {
+  const review = list[0];
+  const newest = checkin && (!review || new Date(checkin.createdAt) > new Date(review.createdAt))
+    ? checkin.level
+    : review?.crowdLevel;
+  if (!list.length) return { rating: 0, reviewCount: 0, crowdLevel: newest || null };
   const sum = list.reduce((t, r) => t + r.rating, 0);
   return {
     rating: Math.round((sum / list.length) * 10) / 10,
     reviewCount: list.length,
-    crowdLevel: list[0].crowdLevel || null,
+    crowdLevel: newest || null,
   };
 }
 
 exports.aggregateForPlace = async (placeId) => {
-  return summarise(await exports.findByPlace(placeId));
+  const [list, checkins] = await Promise.all([exports.findByPlace(placeId), checkinModel.findByPlace(placeId)]);
+  return summarise(list, checkins[0]);
 };
 
 /* Same aggregate for every place in one query, keyed by placeId.
@@ -105,7 +111,10 @@ exports.aggregateAll = async () => {
     byPlace[r.placeId].push(r);
   }
 
+  const checkins = await checkinModel.latestAll();
   const result = {};
-  for (const placeId in byPlace) result[placeId] = summarise(byPlace[placeId]);
+  for (const placeId of new Set([...Object.keys(byPlace), ...Object.keys(checkins)])) {
+    result[placeId] = summarise(byPlace[placeId] || [], checkins[placeId]);
+  }
   return result;
 };
