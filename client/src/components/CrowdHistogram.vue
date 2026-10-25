@@ -16,6 +16,7 @@ const loading = ref(true)
 const busy = ref(false)
 const myLevel = ref('')
 const errorMessage = ref('')
+const loadFailed = ref(false)
 
 const latest = computed(() => crowd.value.latest)
 const fresh = computed(() => latest.value && isFresh(latest.value.at))
@@ -27,13 +28,16 @@ function pct(level) {
 }
 
 async function load() {
+  errorMessage.value = ''
   try {
     const [data, mine] = await Promise.all([fetchPlaceCrowd(props.place.id), fetchMyCheckin(props.place.id)])
     crowd.value = data
     myLevel.value = mine || ''
+    loadFailed.value = false
   } catch (e) {
     console.error('Could not load crowd reports', e)
     errorMessage.value = 'Could not load crowd reports.'
+    loadFailed.value = true
   } finally {
     loading.value = false
   }
@@ -115,7 +119,7 @@ onMounted(load)
           <div class="crowd-sub">Reported {{ timeAgo(latest.at) }} in a {{ latest.source }}</div>
         </div>
       </div>
-      <p v-else class="crowd-sub mb-3" data-test="crowd-none">No one has reported the crowd here yet. Be the first!</p>
+      <p v-else-if="!loadFailed" class="crowd-sub mb-3" data-test="crowd-none">No one has reported the crowd here yet. Be the first!</p>
 
       <p v-if="place.intent" class="crowd-intent" data-test="crowd-intent">
         {{ place.intent.count }} {{ place.intent.count === 1 ? 'person is' : 'people are' }} planning to go

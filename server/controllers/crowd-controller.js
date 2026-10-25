@@ -1,7 +1,7 @@
 const checkinModel = require('../models/checkin-model')
 const reviewModel = require('../models/review-model')
 const placeModel = require('../models/place-model')
-const { closureStatusOf } = require('../utils/place-summary')
+const { closureStatusOf, isOpenNow } = require('../utils/place-summary')
 
 const LEVELS = ['quiet', 'moderate', 'packed']
 
@@ -36,7 +36,10 @@ exports.getPlaceCrowd = async (req, res, next) => {
  * page can show which level they picked and let them change or undo it */
 exports.getMyCheckin = async (req, res, next) => {
   try {
-    const recent = await checkinModel.findRecent(req.userId, Number(req.params.placeId))
+    const placeId = Number(req.params.placeId)
+    if (!Number.isInteger(placeId)) return res.status(404).json({ error: 'Place not found' })
+
+    const recent = await checkinModel.findRecent(req.userId, placeId)
     res.json({ level: recent ? recent.level : null })
   } catch (e) {
     next(e)
@@ -46,7 +49,10 @@ exports.getMyCheckin = async (req, res, next) => {
 /* DELETE /crowd/:placeId - undo the user's check-in from the last hour */
 exports.undoCheckin = async (req, res, next) => {
   try {
-    const removed = await checkinModel.removeRecent(req.userId, Number(req.params.placeId))
+    const placeId = Number(req.params.placeId)
+    if (!Number.isInteger(placeId)) return res.status(404).json({ error: 'Place not found' })
+
+    const removed = await checkinModel.removeRecent(req.userId, placeId)
     if (!removed) return res.status(404).json({ error: 'No recent report to undo' })
     res.json({ message: 'Report removed' })
   } catch (e) {
@@ -67,6 +73,10 @@ exports.checkIn = async (req, res, next) => {
     if (!place) return res.status(404).json({ error: 'Place not found' })
     if (closureStatusOf(place) !== 'normal') {
       return res.status(400).json({ error: 'This place is closed, so there is no crowd to report' })
+    }
+    // the page hides the buttons outside opening hours; the API has to refuse too
+    if (!isOpenNow(place)) {
+      return res.status(400).json({ error: 'This place is not open right now, so there is no crowd to report' })
     }
 
     const saved = await checkinModel.report(req.userId, placeId, level)

@@ -14,6 +14,7 @@ const checkinSchema = new mongoose.Schema({
 }, { versionKey: false });
 
 checkinSchema.index({ placeId: 1, createdAt: -1 });
+checkinSchema.index({ userId: 1, placeId: 1, createdAt: -1 });
 
 const Checkin = mongoose.model('Checkin', checkinSchema, 'checkins');
 
@@ -77,9 +78,14 @@ exports.report = async (userId, placeId, level) => {
 
 /* The newest check-in per place, keyed by placeId, for GET /places (one query) */
 exports.latestAll = async () => {
-  const all = global.MOCK_MODE ? newestFirst(mem) : await Checkin.find().sort({ createdAt: -1 });
+  const latest = global.MOCK_MODE
+    ? newestFirst(mem)
+    : await Checkin.aggregate([
+      { $sort: { createdAt: -1 } },
+      { $group: { _id: '$placeId', placeId: { $first: '$placeId' }, level: { $first: '$level' }, createdAt: { $first: '$createdAt' } } },
+    ]);
   const result = {};
-  for (const c of all) {
+  for (const c of latest) {
     if (!result[c.placeId]) result[c.placeId] = c;
   }
   return result;

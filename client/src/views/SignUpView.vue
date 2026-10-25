@@ -88,7 +88,7 @@ async function register() {
             <h2>{{ step === 1 ? 'Create account' : 'Study preferences' }}</h2>
           </div>
 
-          <div v-if="errorMessage" class="alert alert-danger auth-alert" role="alert">{{ errorMessage }}</div>
+          <div v-if="errorMessage" class="alert alert-danger auth-alert" role="alert" data-test="auth-error">{{ errorMessage }}</div>
 
           <form v-if="step === 1" @submit.prevent="goToPreferences">
             <div class="form-group">
@@ -115,14 +115,14 @@ async function register() {
                 placeholder="Confirm your password" autocomplete="new-password">
             </div>
 
-            <button type="submit" class="btn auth-button">Next</button>
+            <button type="submit" class="btn auth-button" data-test="signup-next">Next</button>
           </form>
 
           <form v-else @submit.prevent="register">
             <div class="preference-list">
               <label class="preference-item">
                 <span>Wi-Fi</span>
-                <input v-model="preferences.wifiRequired" class="form-check-input" type="checkbox">
+                <input v-model="preferences.wifiRequired" class="form-check-input" type="checkbox" data-test="pref-wifi">
               </label>
 
               <label class="preference-item">
@@ -143,7 +143,7 @@ async function register() {
 
             <div class="step-actions">
               <button type="button" class="secondary-step-button" :disabled="loading" @click="step = 1">Back</button>
-              <button type="submit" class="btn auth-button create-button" :disabled="loading">
+              <button type="submit" class="btn auth-button create-button" :disabled="loading" data-test="signup-submit">
                 <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
                 {{ loading ? 'Creating account...' : 'Create account' }}
               </button>

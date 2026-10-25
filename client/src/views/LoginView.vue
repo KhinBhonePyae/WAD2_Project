@@ -61,7 +61,7 @@ async function login() {
             <h2>Log in</h2>
           </div>
 
-          <div v-if="errorMessage" class="alert alert-danger auth-alert" role="alert">
+          <div v-if="errorMessage" class="alert alert-danger auth-alert" role="alert" data-test="auth-error">
             {{ errorMessage }}
           </div>
 
@@ -84,7 +84,7 @@ async function login() {
                 placeholder="Enter your password" autocomplete="current-password">
             </div>
 
-            <button type="submit" class="btn auth-button" :disabled="loading">
+            <button type="submit" class="btn auth-button" :disabled="loading" data-test="login-submit">
               <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
 
               {{ loading ? 'Logging in...' : 'Log in' }}

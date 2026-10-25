@@ -112,8 +112,12 @@ WAD2_Project/
 │  ├─ vitest.config.js
 │  └─ package.json
 ├─ server/                 # Express + Mongoose REST API
+│  ├─ controllers/
+│  ├─ middleware/
 │  ├─ models/
 │  ├─ routes/
+│  ├─ tests/            # server tests (node --test)
+│  ├─ utils/
 │  ├─ server.js
 │  └─ package.json
 └─ README.md
@@ -206,17 +210,53 @@ pnpm preview         # http://localhost:4173
 
 ## Testing
 
-The project uses the testing setup that ships with the course Vue scaffold.
+There are three layers of automated tests: client unit and component tests (Vitest), server tests (Node's built-in test runner) and end-to-end tests (Playwright).
+
+| Layer | Where | Tests | Needs the API / database? |
+|---|---|---|---|
+| Unit tests | `client/src/utils/__tests__/` | 33 | No |
+| Component tests | `client/src/components/__tests__/` | 17 | No (API calls are faked) |
+| Server tests | `server/tests/` | 30 | No (runs in mock mode) |
+| End-to-end tests | `client/e2e/` | 20 | Yes |
+
+### Unit and component tests (Vitest)
+
+```bash
+cd client
+pnpm test:unit            # watch mode; add -- --run to run once
+```
+
+Unit tests check pure functions with fixed inputs, e.g. the suitability score (`suitability.spec.js`), the Browse filters (`searchFilters.spec.js`) and the crowd "time ago" wording (`crowd.spec.js`).
+
+Component tests mount a single Vue component in a simulated browser (jsdom) with `@vue/test-utils` and check what it renders and emits:
+
+- `StarRating.spec.js`: stars, average and count, and "No reviews yet" for a place without reviews
+- `CrowdHistogram.spec.js`: the "How busy is it?" card, including the empty state, "right now" vs "last reported", the report split, "planning to go" counts, hiding check-ins while closed, the login redirect, checking in, and undo
+
+### Server tests (Node test runner)
+
+```bash
+cd server
+pnpm test
+```
+
+These call the controllers and models directly in mock mode (`data/places.json`, in-memory reviews and check-ins), so they never touch MongoDB Atlas and leave no data behind. No extra packages are needed.
+
+- `crowd.test.js`: crowd reports and check-ins, including validation (bad level, unknown or closed place), one report per user per hour, undo, and the place's crowd level following the newest report
+- `place-summary.test.js`: "Open now" in Singapore time, including Google weekly hours, past-midnight hours and 24/7 places
+- `auth-middleware.test.js`: the login guard rejects missing, malformed and forged tokens and deleted accounts
 
 ### End-to-end tests (Playwright)
 
 ```bash
 cd client
-pnpm exec playwright install chromium   # first run only — downloads the test browser
+pnpm exec playwright install chromium   # first run only, downloads the test browser
 pnpm test:e2e
 ```
 
-Specs live in `client/e2e/`. Playwright starts the dev server automatically (`http://localhost:5173`) and runs against Chromium. Configuration is in `client/playwright.config.js`.
+Playwright starts the client dev server by itself and runs the specs in `client/e2e/` against Chromium. Configuration is in `client/playwright.config.js`.
+
+> Start the API first (`cd server && pnpm dev`) with a reachable database. Playwright starts the client but not the API. Tests that need a login create a throwaway account through the API and delete it afterwards, together with anything it posted.
 
 Useful variations:
 
@@ -225,27 +265,18 @@ pnpm test:e2e --debug                         # step through interactively
 pnpm exec playwright show-report              # open the HTML report
 ```
 
-> Start the API first (`cd server && pnpm dev`): Playwright starts the client by itself but not the API. The API server must be running and the database reachable for end-to-end tests that hit live data.
-
-### Unit tests (Vitest)
-
-```bash
-cd client
-pnpm test:unit
-```
-
 ### Core user journeys covered
 
-| # | Journey | Status |
+| # | Journey | End-to-end test |
 |---|---|---|
-| 1 | Register, log in, log out | *TODO* |
-| 2 | Browse the study space catalogue and open a place detail page | *TODO* |
-| 3 | Search and apply advanced filters | *TODO* |
-| 4 | Submit, edit and delete a review | *TODO* |
-| 5 | Submit a crowd-level report | *TODO* |
-| 6 | Save and remove a favourite place | *TODO* |
+| 1 | Register, log in, log out | `accounts.spec.js` (sign-up with preferences, password checks, duplicate email, wrong password, log in, log out) |
+| 2 | Browse the study space catalogue and open a place detail page | `reviews.spec.js` (home page lists places), `search.spec.js` (opens a place from a result) |
+| 3 | Search and apply advanced filters | `search.spec.js`, `reviews.spec.js` (catalogue filters) |
+| 4 | Submit, edit and delete a review | `reviews.spec.js` |
+| 5 | Submit a crowd-level report | `crowd.spec.js` (check in, change it, undo it) |
+| 6 | Save and remove a favourite place | `saved.spec.js` (log-in prompt for visitors, save from Browse, Saved page, remove) |
 
-> Each team member writes the end-to-end tests for the feature they own. Use stable `data-test` attributes as selectors rather than CSS classes, so tests do not break when styling changes.
+> Each team member writes the tests for the feature they own. Use stable `data-test` attributes as selectors rather than CSS classes, so tests do not break when styling changes.
 
 ---
 

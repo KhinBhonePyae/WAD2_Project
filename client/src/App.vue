@@ -106,7 +106,7 @@ onUnmounted(() => {
 
       <template v-if="!user">
         <RouterLink to="/signup" class="x-nav__link">Sign up</RouterLink>
-        <RouterLink to="/login" class="btn btn-primary btn-sm">Log in</RouterLink>
+        <RouterLink to="/login" class="btn btn-primary btn-sm" data-test="nav-login">Log in</RouterLink>
       </template>
 
       <template v-else>
@@ -114,7 +114,7 @@ onUnmounted(() => {
         </RouterLink>
         <RouterLink v-if="user.role === 'admin'" to="/admin/users" class="x-nav__link">Users</RouterLink>
         <RouterLink v-if="user.role === 'admin'" to="/admin/reports" class="x-nav__link">Reports</RouterLink>
-        <RouterLink to="/profile" class="x-nav__link x-nav__user">{{ user.name }}</RouterLink>
+        <RouterLink to="/profile" class="x-nav__link x-nav__user" data-test="nav-user">{{ user.name }}</RouterLink>
       </template>
 
       <RouterLink to="/saved" class="x-nav__saved" aria-label="Saved places" title="Saved places" data-test="nav-saved"

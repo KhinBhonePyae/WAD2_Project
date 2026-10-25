@@ -53,6 +53,14 @@ function withinPeriods(periods, now = new Date()) {
   });
 }
 
+/* Open right now: marked open by an admin, not closed, and inside its hours */
+function isOpenNow(place, now = new Date()) {
+  if (closureStatusOf(place) !== 'normal' || place.openNow === false) return false;
+  return place.openingPeriods?.length
+    ? withinPeriods(place.openingPeriods, now)
+    : withinHours(place.hours, now);
+}
+
 function plain(place) {
   return place.toObject ? place.toObject() : { ...place };
 }
@@ -66,9 +74,7 @@ async function summarisePlaces(stored, now = new Date()) {
   for (const place of list) {
     place.closureStatus = closureStatusOf(place);
     place.markedOpen = place.closureStatus === 'normal' && place.openNow !== false;
-    place.openNow = place.markedOpen && (place.openingPeriods?.length
-      ? withinPeriods(place.openingPeriods, now)
-      : withinHours(place.hours, now));
+    place.openNow = isOpenNow(place, now);
 
     const agg = aggs[place.id] || { rating: 0, reviewCount: 0, crowdLevel: null };
     place.rating = agg.rating;
@@ -82,4 +88,4 @@ async function summarisePlaces(stored, now = new Date()) {
   return list;
 }
 
-module.exports = { summarisePlaces, closureStatusOf, withinHours, withinPeriods };
+module.exports = { summarisePlaces, closureStatusOf, isOpenNow, withinHours, withinPeriods };
