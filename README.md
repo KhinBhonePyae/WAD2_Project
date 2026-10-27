@@ -1,4 +1,4 @@
-# LockIn
+# LockedIN
 
 **IS216 — Web Application Development II · Group Project**
 Section **G10** · Team **T3**
@@ -12,9 +12,10 @@ A web application that helps students discover suitable study locations across S
 | | |
 |---|---|
 | **Source repository** | https://github.com/KhinBhonePyae/WAD2_Project |
-| **Deployed application** | ⚠️ **TODO — cloud platform not yet selected.** Required for Week 12 submission. |
+| **Deployed application** | ⚠️ **TODO — add the Vercel URL after deployment** (see [Deployment](#deployment)) |
+| **API server** | ⚠️ **TODO — add the Render URL after deployment** |
 
-> ⚠️ The deployed link and the hosting platform are still undecided. The project proposal lists only "Cloud Deployment Platform". This must be resolved and this section filled in before the Week 12 deadline (Fri 6 Nov, 9:00am).
+> Planned hosting: the website on **Vercel**, the API on **Render**, data in **MongoDB Atlas**. Fill in both links once the site is live, before the Week 12 deadline (Fri 6 Nov, 9:00am).
 
 ---
 
@@ -26,22 +27,26 @@ Students often waste time travelling to study locations only to discover that th
 
 ### The solution
 
-StudySpot SG provides a centralized platform where users can browse, search and filter study locations based on facilities, study environment, opening hours and location. The application integrates external APIs to retrieve location information, photographs and weather forecasts, and incorporates a suitability scoring system that evaluates study locations based on users' selected preferences and weather conditions.
+LockedIN provides a centralized platform where users can browse, search and filter study locations based on facilities, study environment, opening hours and location. Study spaces are imported from the NLB and Google Places APIs into our own database, and the app combines them with live weather and a suitability score that rates each place against the user's preferences and the current conditions.
 
-Additional features include user accounts, saved places, reviews, crowd-level reporting and an AI-powered assistant that helps users find suitable study locations and answer study-related queries.
+Users can also save places, write reviews, report how busy a place is right now, say when they plan to go, chat with other students and ask an AI study assistant for recommendations.
 
 ---
 
 ## Features
 
-1. User authentication and profile management
-2. Study place discovery and management
-3. Search, advanced filters and suitability scoring
-4. Map and location search
-5. Ratings, reviews and crowd reporting
-6. Saved places and personal preferences
-7. Weather integration
-8. AI-powered study assistant
+1. **Accounts and profiles:** sign-up with study preferences, log in and out, edit profile, change password, delete account
+2. **Study space catalogue:** browse places, detail pages with a photo carousel, facilities, opening hours and a live "Open now" status in Singapore time
+3. **Search, filters and suitability scoring:** filter by facilities, area, crowd level, rating, open now, free entry and indoor or outdoor; each place gets a score and plain-language reasons based on your preferences and the weather
+4. **Map and directions:** OneMap map, location search, and walking, driving and public-transport routes
+5. **Ratings, reviews and crowd reporting:** star ratings and reviews from real users only; a "How busy is it?" card with one-tap crowd check-ins (change or undo within the hour)
+6. **"Planning to go":** say which time slot you'll visit, and see how busy a slot is likely to be
+7. **Saved places**
+8. **Weather integration:** current Singapore weather feeds into the suitability score
+9. **AI study assistant ("Ask Locker"):** recommendations and study questions, powered by Google Gemini
+10. **Global chat:** a shared chat room for logged-in users
+11. **Report incorrect information** about a place, and **admin pages** to manage study spaces, users and reports
+12. **Installable app:** can be added to a phone's home screen
 
 ---
 
@@ -50,52 +55,63 @@ Additional features include user accounts, saved places, reviews, crowd-level re
 | Layer | Technology |
 |---|---|
 | Markup & styling | HTML, CSS, **Bootstrap** |
-| Front-end framework | **Vue.js** (interactive components) |
+| Front-end framework | **Vue.js 3** with Vue Router (Vite) |
+| Map | **Leaflet** with OneMap tiles |
+| Animation | GSAP, Lenis smooth scrolling |
 | Back-end | **Node.js + Express.js** |
-| Database | **MongoDB + Mongoose** |
+| Database | **MongoDB Atlas + Mongoose** |
 | HTTP client | **Axios** (async requests from the client to our API and to external APIs) |
 | Version control | **GitHub** |
-| Deployment | ⚠️ **TODO — not yet selected** |
-| Testing | **Playwright** (end-to-end) + **Vitest** (unit) |
+| Deployment | **Vercel** (website) + **Render** (API) |
+| Testing | **Vitest** + Vue Test Utils (unit and component), **Node test runner** (server), **Playwright** (end-to-end) |
 
 ---
 
 ## External APIs
 
-| API | Use | Docs |
-|---|---|---|
-| **Google Places API (New)** | Primary source of study space data: name, address, coordinates, opening hours and place photos | [Overview](https://developers.google.com/maps/documentation/places/web-service/op-overview) · [Place Photos](https://developers.google.com/maps/documentation/places/web-service/place-photos) |
-| **Open-Meteo Weather API** | Current weather in central Singapore, used as an input to the suitability score (outdoor spots score lower when it rains) | [Docs](https://open-meteo.com/en/docs) |
-| **Google Maps API / OneMap API** *(tentative)* | Map rendering and location search | [OneMap](https://www.onemap.gov.sg/apidocs/) |
-| **LLM chatbot — Claude API / OpenAI GPT API** | AI study assistant: recommendations and general study-related questions | [Claude keys](https://platform.claude.com/settings/keys) · [OpenAI keys](https://platform.openai.com/api-keys) |
+| API | Use | When it is called | Docs |
+|---|---|---|---|
+| **NLB Open Web API** | Public library branches (names, addresses, hours) | Once, by `server/import-libraries.js`; results are stored in MongoDB | [NLB Open Web](https://openweb.nlb.gov.sg/) |
+| **Google Places API (New)** | Study spaces near SMU: name, address, coordinates, opening hours, photos and Google ratings | Once, by `server/import-google-places.js`; results are stored in MongoDB | [Overview](https://developers.google.com/maps/documentation/places/web-service/op-overview) |
+| **OneMap API** | Map tiles, location search and directions | While the app runs (directions go through our server, which logs in to OneMap and refreshes its token automatically) | [OneMap](https://www.onemap.gov.sg/apidocs/) |
+| **Open-Meteo Weather API** | Current weather in central Singapore, used in the suitability score (outdoor spots score lower when it rains) | While the app runs, from the browser; no key needed | [Docs](https://open-meteo.com/en/docs) |
+| **Google Gemini API** | The AI study assistant (`gemini-3.5-flash-lite`) | While the app runs, from our server only | [Gemini API](https://ai.google.dev/gemini-api/docs) |
 
 ### API cost controls
 
-The Google Places API requires a Google Cloud **billing account**, and both the Claude and OpenAI APIs are **paid**. The application must remain running and operational for grading until Week 18, so the following controls apply:
+The application must keep running until Week 18, so:
 
-- **One nominated owner per paid account.** Record who owns each below.
-- **Hard spend cap / quota limit** set in each provider console, so a runaway loop cannot drain credit.
-- **Cache Places API responses into MongoDB** on first fetch. Repeat page views read from our own database rather than re-calling the API. This protects both cost and the grading window.
-- **Graceful fallback for the AI assistant.** If the LLM key fails, is rate-limited or runs out of credit, the assistant returns a clear message and the rest of the application continues to work. The assistant must never block a core user journey.
+- **Google Places and NLB are only called by the import scripts**, never by the running app. Every page reads from our own database, so normal use costs nothing and can't run out of quota.
+- **Google Places needs a billing account.** Restrict the key to "Places API (New)" and set a quota cap in Google Cloud Console. The import script prints its quota use per run (`pnpm import:google:preview` shows what it would do without calling the API).
+- **Gemini:** set a daily request limit on the key. If the key fails, is rate-limited or runs out, the assistant shows a clear message and the rest of the app keeps working.
+- **OneMap, NLB and Open-Meteo are free.** OneMap tokens expire every 3 days; the server renews them by itself from `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`.
+- **One nominated owner per account:**
 
 | Service | Account owner | Spend cap |
 |---|---|---|
 | Google Cloud (Places API) | *TODO* | *TODO* |
-| Claude / OpenAI API | *TODO* | *TODO* |
+| Google Gemini API | *TODO* | *TODO* |
+| OneMap | *TODO* | Free |
+| MongoDB Atlas | *TODO* | Free tier |
+| Render (API hosting) | *TODO* | *TODO* |
+| Vercel (website hosting) | *TODO* | Free tier |
 
 ---
 
 ## Data stores
 
-MongoDB collections, per the project proposal:
+MongoDB collections:
 
 | Collection | Contents |
 |---|---|
-| **Users** | User IDs, names, email addresses, hashed passwords and study preferences |
-| **Study Spaces** | Study space IDs, names, addresses, locations, opening hours, descriptions and facility information |
-| **Reviews and Ratings** | User-submitted reviews, ratings, associated study locations, submission dates |
-| **Crowd Reports** | Reported crowd levels, associated study locations and submission dates |
-| **Saved Places** | User IDs and references to their saved study locations |
+| `users` | Names, email addresses, hashed passwords, roles (user or admin) and study preferences |
+| `places` | Study spaces: names, addresses, coordinates, opening hours, photos, facilities and descriptions |
+| `reviews` | Ratings, review text, a crowd level, the place and the author |
+| `checkins` | One-tap crowd reports: the place, the user, the crowd level and the time |
+| `savedplaces` | Each user's saved places |
+| `intents` | "Planning to go" entries for a place and time slot (deleted automatically once the slot is over) |
+| `reports` | Incorrect-information reports from users, and whether an admin has resolved them |
+| `chatMessages` | Global chat messages |
 
 ---
 
@@ -107,17 +123,23 @@ MongoDB collections, per the project proposal:
 WAD2_Project/
 ├─ client/                 # Vite + Vue 3 single-page application
 │  ├─ e2e/                 # Playwright end-to-end specs
+│  ├─ public/              # images, icons, app manifest
 │  ├─ src/
 │  ├─ playwright.config.js
 │  ├─ vitest.config.js
+│  ├─ vercel.json          # lets Vercel serve every page route
 │  └─ package.json
 ├─ server/                 # Express + Mongoose REST API
 │  ├─ controllers/
+│  ├─ data/places.json     # sample places for mock mode and seeding
 │  ├─ middleware/
 │  ├─ models/
 │  ├─ routes/
-│  ├─ tests/            # server tests (node --test)
+│  ├─ tests/               # server tests (node --test)
 │  ├─ utils/
+│  ├─ import-google-places.js
+│  ├─ import-libraries.js
+│  ├─ seed.js
 │  ├─ server.js
 │  └─ package.json
 └─ README.md
@@ -128,9 +150,9 @@ WAD2_Project/
 ## Prerequisites
 
 - **Node.js** — `^22.18.0 || >=24.12.0` (as required by the course Vue scaffold)
-- **npm** (or pnpm)
-- A **MongoDB** connection string (local `mongod` or a hosted cluster)
-- API keys — see [Environment variables](#environment-variables)
+- **pnpm** (or npm)
+- A **MongoDB** connection string (local `mongod` or a hosted cluster), or none at all for mock mode
+- API keys — see [Environment variables](#3-environment-variables)
 
 ---
 
@@ -166,19 +188,33 @@ ONEMAP_PASSWORD=<OneMap login password>
 
 | Key | Required? | What happens without it |
 |---|---|---|
-| `JWT_SECRET` | **Yes** | Sign-up and login fail with a 500 error. |
+| `JWT_SECRET` | **Yes** for a real deployment | Locally the server falls back to an insecure development secret and prints a warning. Always set your own when deploying. |
+| `DB` | No | The server starts in **mock mode**: places load from `server/data/places.json`, and users, reviews and check-ins are kept in memory (lost on restart). `GET /health` reports which mode is active. |
 | `GEMINI_API_KEY` | No | The AI study assistant replies that it isn't switched on. |
-| `ONEMAP_EMAIL` and `ONEMAP_PASSWORD` | No | The map falls back to each place's saved coordinates; directions are unavailable. The server uses these credentials to fetch and refresh OneMap access tokens automatically. |
-| `DB` | No | The server starts in **mock mode**: places load from `server/data/places.json`, and users and reviews are kept in memory (lost on restart). `GET /health` reports which mode is active. |
+| `ONEMAP_EMAIL` and `ONEMAP_PASSWORD` | No | The map still shows each place, but directions are unavailable. The server uses these credentials to fetch and refresh OneMap tokens automatically. |
+| `PORT` | No | The server listens on port 8000. Hosts such as Render set `PORT` themselves. |
+| `GOOGLE_PLACES_API_KEY` | Only for `pnpm import:google` | Not needed to run the app. |
+| `NLB_API_KEY` and `NLB_API_CODE` | Only for `import-libraries.js` | Not needed to run the app. |
 
-`ONEMAP_TOKEN` may still be used as a legacy, manually managed fallback if login credentials are not configured. Keep all OneMap credentials in the git-ignored `server/config.env`; do not commit them.
+`ONEMAP_TOKEN` may still be used as a legacy, manually managed fallback if login credentials are not configured.
 
 If `DB` is set but `/health` still reports `mock`, check that your IP is on the Atlas **Network Access** allowlist.
 
-The server always runs on port 8000. The client needs no env file — the API base URL is set in `client/src/utils/api.js`.
+**Client:** no env file is needed locally; the client talks to `http://localhost:8000`. For a deployed build, set `VITE_API_BASE_URL` to the API's address (see [Deployment](#deployment)).
 
-> `config.env` is git-ignored and must **never** be committed. The repo is public at submission, so a committed password is a public password. Copy `server/config.env.example` and fill it in. Keys are shared within the team privately.
-> Open-Meteo requires no API key.
+> `config.env` is git-ignored and must **never** be committed. The repo is public at submission, so a committed password is a public password. Keys are shared within the team privately.
+
+### 4. Data (optional)
+
+The shared Atlas database already holds every study space. For a fresh database:
+
+```bash
+cd server
+pnpm seed                    # copies data/places.json into MongoDB (safe to re-run)
+pnpm import:google:preview   # shows what the Google Places import would add, without calling the API
+pnpm import:google           # imports study spaces near SMU (needs GOOGLE_PLACES_API_KEY)
+node import-libraries.js     # imports NLB library branches (needs NLB_API_KEY and NLB_API_CODE)
+```
 
 ---
 
@@ -198,6 +234,8 @@ pnpm dev             # http://localhost:5173
 
 Open **http://localhost:5173** — this is the first page of the application.
 
+> `pnpm dev` restarts the API by itself whenever server files change, including after a `git pull`. If a pull changes a `package.json`, run `pnpm install` in that folder first. (Starting the API with `node server.js` instead does not restart; stop it with Ctrl+C and start it again.)
+
 Production preview:
 
 ```bash
@@ -215,9 +253,9 @@ There are three layers of automated tests: client unit and component tests (Vite
 | Layer | Where | Tests | Needs the API / database? |
 |---|---|---|---|
 | Unit tests | `client/src/utils/__tests__/` | 33 | No |
-| Component tests | `client/src/components/__tests__/` | 17 | No (API calls are faked) |
-| Server tests | `server/tests/` | 30 | No (runs in mock mode) |
-| End-to-end tests | `client/e2e/` | 20 | Yes |
+| Component tests | `client/src/components/__tests__/`, `client/src/views/__tests__/` | 27 | No (API calls are faked) |
+| Server tests | `server/tests/` | 47 | No (runs in mock mode) |
+| End-to-end tests | `client/e2e/` | 33 | Yes |
 
 ### Unit and component tests (Vitest)
 
@@ -232,6 +270,8 @@ Component tests mount a single Vue component in a simulated browser (jsdom) with
 
 - `StarRating.spec.js`: stars, average and count, and "No reviews yet" for a place without reviews
 - `CrowdHistogram.spec.js`: the "How busy is it?" card, including the empty state, "right now" vs "last reported", the report split, "planning to go" counts, hiding check-ins while closed, the login redirect, checking in, and undo
+- `ReportIssue.spec.js`: the report form's login redirect, validation and success message
+- `AdminReportsView.spec.js`: the admin reports page, including filters, resolving, deleting and the non-admin redirect
 
 ### Server tests (Node test runner)
 
@@ -240,11 +280,12 @@ cd server
 pnpm test
 ```
 
-These call the controllers and models directly in mock mode (`data/places.json`, in-memory reviews and check-ins), so they never touch MongoDB Atlas and leave no data behind. No extra packages are needed.
+These run in mock mode (`data/places.json`, in-memory data), so they never touch MongoDB Atlas and leave no data behind. No extra packages are needed.
 
-- `crowd.test.js`: crowd reports and check-ins, including validation (bad level, unknown or closed place), one report per user per hour, undo, and the place's crowd level following the newest report
-- `place-summary.test.js`: "Open now" in Singapore time, including Google weekly hours, past-midnight hours and 24/7 places
+- `crowd.test.js`: crowd reports and check-ins, including validation (bad level, unknown place, or a place that is closed right now), one report per user per hour, undo, and the place's crowd level following the newest report
+- `place-summary.test.js`: "Open now" in Singapore time, including Google weekly hours, past-midnight hours, 24/7 places and admin closures
 - `auth-middleware.test.js`: the login guard rejects missing, malformed and forged tokens and deleted accounts
+- `report-model.test.js` and `reports-integration.test.js`: incorrect-information reports, from submitting to an admin resolving, reopening and deleting them, through the real routes
 
 ### End-to-end tests (Playwright)
 
@@ -256,7 +297,21 @@ pnpm test:e2e
 
 Playwright starts the client dev server by itself and runs the specs in `client/e2e/` against Chromium. Configuration is in `client/playwright.config.js`.
 
-> Start the API first (`cd server && pnpm dev`) with a reachable database. Playwright starts the client but not the API. Tests that need a login create a throwaway account through the API and delete it afterwards, together with anything it posted.
+> **Before running:** start the API (`cd server && pnpm dev`) with a reachable database. Playwright starts the client but not the API.
+>
+> **The admin tests need an admin login.** Set it in the same terminal before `pnpm test:e2e`, using the demo admin from [Test accounts](#test-accounts):
+>
+> ```powershell
+> # Windows PowerShell
+> $env:E2E_ADMIN_EMAIL = "demo.admin@lockedin.test"; $env:E2E_ADMIN_PASSWORD = "LockedIN-Admin-2026"
+> ```
+>
+> ```bash
+> # macOS / Linux / Git Bash
+> export E2E_ADMIN_EMAIL=demo.admin@lockedin.test E2E_ADMIN_PASSWORD=LockedIN-Admin-2026
+> ```
+>
+> Tests that need a normal login create a throwaway account through the API and delete it afterwards, together with anything it posted.
 
 Useful variations:
 
@@ -270,11 +325,14 @@ pnpm exec playwright show-report              # open the HTML report
 | # | Journey | End-to-end test |
 |---|---|---|
 | 1 | Register, log in, log out | `accounts.spec.js` (sign-up with preferences, password checks, duplicate email, wrong password, log in, log out) |
-| 2 | Browse the study space catalogue and open a place detail page | `reviews.spec.js` (home page lists places), `search.spec.js` (opens a place from a result) |
+| 2 | Browse the study space catalogue and open a place detail page | `reviews.spec.js` (home page lists places), `search.spec.js` (opens a place from a result), `carousel.spec.js` (photo carousel) |
 | 3 | Search and apply advanced filters | `search.spec.js`, `reviews.spec.js` (catalogue filters) |
 | 4 | Submit, edit and delete a review | `reviews.spec.js` |
 | 5 | Submit a crowd-level report | `crowd.spec.js` (check in, change it, undo it) |
 | 6 | Save and remove a favourite place | `saved.spec.js` (log-in prompt for visitors, save from Browse, Saved page, remove) |
+| 7 | Report incorrect information, and an admin handles it | `reports.spec.js` |
+| 8 | Admin creates, edits and deletes a study space | `admin-places.spec.js` |
+| 9 | Admin promotes, demotes and deletes users | `admin-users.spec.js` |
 
 > Each team member writes the tests for the feature they own. Use stable `data-test` attributes as selectors rather than CSS classes, so tests do not break when styling changes.
 
@@ -282,19 +340,82 @@ pnpm exec playwright show-report              # open the HTML report
 
 ## Test accounts
 
-> ⚠️ **TODO** — seeded demo credentials must be listed here before submission.
+These work on both the deployed site and a local copy connected to the shared database. Please don't change their passwords or delete them.
 
-| Role | Email | Password |
-|---|---|---|
-| Standard user | *TODO* | *TODO* |
+| Role | Email | Password | Can do |
+|---|---|---|---|
+| Standard user | `Rubert@gmail.com` | `12345678` | Everything a student can: reviews, crowd check-ins, saved places, "Planning to go", chat |
+| Admin | `demo.admin@lockedin.test` | `LockedIN-Admin-2026` | Everything above, plus the Manage, Users and Reports pages |
+
+Or sign up for a new account on the Sign up page.
 
 ---
 
 ## Deployment
 
-> ⚠️ **TODO — platform not yet selected.**
->
-> Required before Week 12: the hosting platform, the deployment steps, and the live URL. The project briefing states that if the instructional team cannot deploy the application by following these instructions, the final application is treated as not fully working — so this section must be written and verified by someone following it from scratch.
+The website (`client/`) is deployed on **Vercel** and the API (`server/`) on **Render**, both from this GitHub repository. Data lives in **MongoDB Atlas**.
+
+### 1. MongoDB Atlas
+
+1. In **Network Access**, add `0.0.0.0/0` (allow access from anywhere). Render's free plan has no fixed IP address, so the API can't be allowlisted by IP.
+2. Use a database user with a strong password. Its connection string becomes `DB` below.
+
+### 2. API on Render
+
+1. **New → Web Service**, connect the GitHub repository.
+2. Settings:
+
+| Setting | Value |
+|---|---|
+| Root Directory | `server` |
+| Runtime | Node |
+| Build Command | `npm install` |
+| Start Command | `npm start` |
+| Health Check Path | `/health` |
+
+3. Under **Environment**, add `DB`, `JWT_SECRET` (a new long random string, not the one used locally), `GEMINI_API_KEY`, `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`. Do not set `PORT`; Render sets it. The Google Places and NLB keys are not needed.
+4. Deploy, then open `https://<your-service>.onrender.com/health`. It should show `{"ok":true,"mode":"mongodb"}`. If it says `mock`, Atlas is refusing the connection (step 1).
+
+> Render's free plan sleeps after 15 minutes without visits, and the first request after that takes 30–60 seconds. The paid Starter plan stays awake.
+
+### 3. Website on Vercel
+
+1. **Add New → Project**, import the same GitHub repository.
+2. Settings:
+
+| Setting | Value |
+|---|---|
+| Root Directory | `client` |
+| Framework Preset | Vite |
+| Build Command | `npm run build` |
+| Output Directory | `dist` |
+
+3. Under **Environment Variables**, add `VITE_API_BASE_URL` = `https://<your-service>.onrender.com` (no trailing slash). It is built into the site, so redeploy after changing it.
+4. Deploy. `client/vercel.json` makes refreshing any page (e.g. `/places/12`) work instead of showing a 404.
+
+### 4. Check the live site
+
+On a phone and a laptop:
+
+1. Open the Vercel URL, then refresh a place page.
+2. Log in with the test accounts above.
+3. Post and delete a review, report the crowd, and save a place.
+4. Get directions and ask the assistant a question.
+5. Log in as the admin and open Manage, Users and Reports.
+
+Then put both URLs in [Links](#links).
+
+### Updating the live site
+
+Pushing to `main` redeploys both automatically. Do not push after submission.
+
+### Before submission
+
+- [ ] Both live URLs in [Links](#links), checked by someone who didn't deploy
+- [ ] Atlas password and `JWT_SECRET` changed from the ones shared during development
+- [ ] Account owners and spend caps filled in under [API cost controls](#api-cost-controls)
+- [ ] AI declaration below completed by every member
+- [ ] Copy this file to `README.txt` (the course asks for that file name)
 
 ---
 
@@ -308,11 +429,19 @@ Per IS216 Group Project FAQ 20.
 
 ### Declaration
 
-Parts of this project that rely **solely** on AI/LLM generation:
+Parts of this project written with AI/LLM tools. Each member completes their own rows.
 
-| Area / file | What was AI-generated | Member |
+| Member | Area / files | How AI was used |
 |---|---|---|
-| *TODO — complete as development progresses* | | |
+| Jeffrey Wen | Crowd check-ins and the "How busy is it?" card (`server/models/checkin-model.js`, `server/controllers/crowd-controller.js`, `server/routes/crowd-routes.js`, `client/src/components/CrowdHistogram.vue`, `client/src/utils/crowd.js`) | Written with an AI coding assistant (Claude Code), then reviewed and tested by Jeffrey |
+| Jeffrey Wen | Bug fixes from the team's code audit (20–21 Oct and 25 Oct), including `server/utils/place-summary.js` and fixes in reviews, places, users, search and the place page | Bugs found and fixed with Claude Code, then reviewed and tested by Jeffrey |
+| Jeffrey Wen | Tests: client unit and component tests (`suitability`, `searchFilters`, `crowd`, `StarRating`, `CrowdHistogram`), server tests (`crowd`, `place-summary`, `auth-middleware`) and end-to-end tests (`accounts`, `reviews`, `search`, `crowd`, `saved`) | Generated with Claude Code, then run and checked by Jeffrey |
+| Jeffrey Wen | Chat buttons closing on an outside click, their icons and labels (`AssistantBubble.vue`, `WorldChat.vue`); pnpm setup; README | Written with Claude Code |
+| Leong Yew Kai | *TODO* | *TODO* |
+| Khin Bhone Pyae | *TODO* | *TODO* |
+| Thet Htar Nwe | *TODO* | *TODO* |
+| Gerena Lim | *TODO* | *TODO* |
+| Liew Tian Le | *TODO* | *TODO* |
 
 > Note: the AI study assistant is a **product feature** that calls an LLM API at runtime. That is separate from this declaration, which covers AI assistance used while writing the code.
 
