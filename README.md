@@ -353,7 +353,7 @@ Or sign up for a new account on the Sign up page.
 
 ## Deployment
 
-The website (`client/`) is deployed on **Vercel** and the API (`server/`) on **Render**, both from this GitHub repository. Data lives in **MongoDB Atlas**.
+The website (`client/`) is deployed on **Vercel** and the API (`server/`) on **Render**. Data lives in **MongoDB Atlas**. Both hosts install dependencies with **pnpm** from the committed `pnpm-lock.yaml` files, so the live site runs exactly the library versions that were tested.
 
 ### 1. MongoDB Atlas
 
@@ -362,36 +362,39 @@ The website (`client/`) is deployed on **Vercel** and the API (`server/`) on **R
 
 ### 2. API on Render
 
-1. **New → Web Service**, connect the GitHub repository.
+1. **New → Web Service → Public Git Repository**, and paste `https://github.com/KhinBhonePyae/WAD2_Project`.
 2. Settings:
 
 | Setting | Value |
 |---|---|
+| Language | Node |
+| Branch | `main` |
+| Region | Singapore |
 | Root Directory | `server` |
-| Runtime | Node |
-| Build Command | `npm install` |
+| Build Command | `npx --yes pnpm@12.3.4 install --frozen-lockfile` |
 | Start Command | `npm start` |
-| Health Check Path | `/health` |
+| Health Check Path | `/health` (under Advanced) |
 
-3. Under **Environment**, add `DB`, `JWT_SECRET` (a new long random string, not the one used locally), `GEMINI_API_KEY`, `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`. Do not set `PORT`; Render sets it. The Google Places and NLB keys are not needed.
+3. Under **Environment Variables**, add `DB`, `JWT_SECRET` (a new long random string, not the one used locally), `GEMINI_API_KEY`, `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`. Do not set `PORT`; Render sets it. The Google Places and NLB keys are not needed.
 4. Deploy, then open `https://<your-service>.onrender.com/health`. It should show `{"ok":true,"mode":"mongodb"}`. If it says `mock`, Atlas is refusing the connection (step 1).
 
 > Render's free plan sleeps after 15 minutes without visits, and the first request after that takes 30–60 seconds. The paid Starter plan stays awake.
 
 ### 3. Website on Vercel
 
-1. **Add New → Project**, import the same GitHub repository.
-2. Settings:
+Deployed from a laptop with the Vercel CLI (no GitHub connection needed):
 
-| Setting | Value |
-|---|---|
-| Root Directory | `client` |
-| Framework Preset | Vite |
-| Build Command | `npm run build` |
-| Output Directory | `dist` |
+```bash
+cd client
+npx vercel login                 # first time only
+npx vercel link                  # first time only: create the project, keep the detected Vite settings
+npx vercel env add VITE_API_BASE_URL production    # paste https://<your-service>.onrender.com (no trailing slash)
+npx vercel --prod                # build and publish
+```
 
-3. Under **Environment Variables**, add `VITE_API_BASE_URL` = `https://<your-service>.onrender.com` (no trailing slash). It is built into the site, so redeploy after changing it.
-4. Deploy. `client/vercel.json` makes refreshing any page (e.g. `/places/12`) work instead of showing a 404.
+`client/vercel.json` sets the install command (pnpm, as on Render) and makes refreshing any page (e.g. `/places/12`) work instead of showing a 404. `VITE_API_BASE_URL` is built into the site, so run `npx vercel --prod` again after changing it.
+
+> You can also import the repository in the Vercel dashboard (**Add New → Project**, Root Directory `client`) and add `VITE_API_BASE_URL` there; `vercel.json` applies either way.
 
 ### 4. Check the live site
 
@@ -407,7 +410,12 @@ Then put both URLs in [Links](#links).
 
 ### Updating the live site
 
-Pushing to `main` redeploys both automatically. Do not push after submission.
+Deploys are manual, so nothing reaches the live site by accident:
+
+- **API:** in Render, **Manual Deploy → Deploy latest commit** (after pushing to `main`).
+- **Website:** `cd client` then `npx vercel --prod`.
+
+Do not redeploy after submission.
 
 ### Before submission
 
