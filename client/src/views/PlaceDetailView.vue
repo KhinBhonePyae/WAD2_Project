@@ -1,1114 +1,915 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { Carousel } from 'bootstrap'
+import { useRoute, RouterLink } from 'vue-router'
 import axios from 'axios'
-import { BASE_URL, authConfig } from '../utils/api.js'
+import { BASE_URL } from '../utils/api.js'
+import { suitabilityBreakdown, preferencesToWanted, FACILITY_LABELS, ENTRY_LABELS, closureStatusOf } from '../utils/suitability.js'
+import { fetchWeather } from '../utils/weather.js'
+import SuitabilityScore from '../components/SuitabilityScore.vue'
+import CrowdMeter from '../components/CrowdMeter.vue'
+import StarRating from '../components/StarRating.vue'
+import { gsap, reducedMotion } from '../utils/motion.js'
+import ReviewForm from '../components/ReviewForm.vue'
+import ReviewList from '../components/ReviewList.vue'
+import CrowdHistogram from '../components/CrowdHistogram.vue'
+import IntentPanel from '../components/IntentPanel.vue'
+import PlaceMap from '../components/PlaceMap.vue'
+import ReportIssue from '../components/ReportIssue.vue'
+import GoogleReviews from '../components/GoogleReviews.vue'
 
-const router = useRouter()
-
-const reports = ref([])
+const route = useRoute()
+const carouselRef = ref(null)
+const reviewsScrollRef = ref(null)
+const place = ref(null)
+const reviews = ref([])
+const crowdRef = ref(null)
+const summary = ref({ rating:0, reviewCount:0, crowdLevel:null })
+const weather = ref(null)
 const loading = ref(true)
-const search = ref('')
-const statusFilter = ref('pending')
-const busyId = ref(null)
-const errorMessage = ref('')
-const successMessage = ref('')
-const deleteTarget = ref(null)
+const busy = ref(false)
+const reviewError = ref('')
+const reviewFormKey = ref(0)
+const notFound = ref(false)
+let ctx = null
 
-const currentPage = ref(1)
-const perPage = 10
-
-const CATEGORY_LABELS = {
-  hours:'Opening hours',
-  facilities:'Facilities',
-  address:'Address / location',
-  photos:'Photos',
-  capacity:'Capacity / seats',
-  closure:'Open / closure status',
-  other:'Other information'
+function readStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user') || 'null')
+  } catch {
+    return null
+  }
 }
 
-const filteredReports = computed(() => {
-  const q = search.value.trim().toLowerCase()
+const currentUser = ref(readStoredUser())
+const profileWanted = computed(() => preferencesToWanted(currentUser.value?.preferences))
+const isPersonalized = computed(() => !!currentUser.value && profileWanted.value.length > 0)
+const closureStatus = computed(() => closureStatusOf(place.value || {}))
 
-  return reports.value.filter(report => {
-    const matchesStatus =
-      statusFilter.value === 'all' ||
-      report.status === statusFilter.value
+function syncUser() {
+  currentUser.value = readStoredUser()
+}
 
-    const haystack =
-      `${report.placeName} ${report.reporterName} ${report.reporterEmail} ` +
-      `${CATEGORY_LABELS[report.category] || report.category} ${report.message}`.toLowerCase()
+const scoreInfo = computed(() => {
+  if (!place.value || !currentUser.value) {
+    return { score:0, reasons:[] }
+  }
 
-    const matchesSearch =
-      !q || haystack.includes(q)
-
-    return matchesStatus && matchesSearch
-  })
+  return suitabilityBreakdown(place.value, profileWanted.value, weather.value)
 })
 
-const pendingCount = computed(() =>
-  reports.value.filter(
-    report => report.status === 'pending'
-  ).length
-)
+const score = computed(() => scoreInfo.value.score)
 
-const resolvedCount = computed(() =>
-  reports.value.filter(
-    report => report.status === 'resolved'
-  ).length
-)
+const preferenceMatches = computed(() => {
+  if (!place.value || !isPersonalized.value) return []
 
-const totalPages = computed(() =>
-  Math.ceil(
-    filteredReports.value.length / perPage
-  )
-)
-
-const startIndex = computed(() =>
-  (currentPage.value - 1) * perPage
-)
-
-const endIndex = computed(() =>
-  Math.min(
-    startIndex.value + perPage,
-    filteredReports.value.length
-  )
-)
-
-const paginatedReports = computed(() =>
-  filteredReports.value.slice(
-    startIndex.value,
-    endIndex.value
-  )
-)
-
-const visiblePages = computed(() => {
-  if (totalPages.value <= 3) {
-    return Array.from(
-      { length:totalPages.value },
-      (_, i) => i + 1
-    )
-  }
-
-  let start =
-    currentPage.value
-
-  if (
-    start >
-    totalPages.value - 2
-  ) {
-    start =
-      totalPages.value - 2
-  }
+  const facilities = place.value.facilities || []
 
   return [
-    start,
-    start + 1,
-    start + 2
-  ]
+    {
+      key:'wifi',
+      label:'Wi-Fi',
+      active:currentUser.value?.preferences?.wifiRequired,
+      matched:facilities.includes('wifi')
+    },
+    {
+      key:'sockets',
+      label:'Power sockets',
+      active:currentUser.value?.preferences?.socketsRequired,
+      matched:facilities.includes('sockets')
+    },
+    {
+      key:'quiet',
+      label:'Quiet environment',
+      active:currentUser.value?.preferences?.quietPreferred,
+      matched:facilities.includes('quiet')
+    },
+    {
+      key:'indoor',
+      label:'Indoor location',
+      active:currentUser.value?.preferences?.indoorPreferred,
+      matched:!!place.value.indoor
+    }
+  ].filter(item => item.active)
 })
 
-watch(
-  [search, statusFilter],
-  () => {
-    currentPage.value = 1
-  }
-)
+const art = computed(() => 'linear-gradient(135deg,#9DD1F6,#C4AAE9)')
 
-watch(
-  totalPages,
-  pages => {
-    if (
-      currentPage.value >
-      pages
-    ) {
-      currentPage.value =
-        Math.max(
-          pages,
-          1
-        )
+function availabilityLabel() {
+  if (closureStatus.value === 'temporary') return 'Temporarily closed'
+  if (closureStatus.value === 'permanent') return 'Permanently closed'
+
+  return place.value?.openNow ? '● Open now' : 'Closed now'
+}
+
+function authHeader() {
+  return {
+    headers:{
+      Authorization:`Bearer ${localStorage.getItem('token')}`
     }
   }
-)
+}
 
-function changePage(page) {
+async function refreshPlaceScoreData() {
+  if (!place.value) return
+
+  try {
+    const { data } = await axios.get(`${BASE_URL}/places/${route.params.id}`)
+    place.value = { ...place.value, ...data }
+  } catch (e) {
+    console.error('Could not refresh study-space data', e)
+  }
+}
+
+async function loadReviews(id) {
+  const { data } = await axios.get(`${BASE_URL}/reviews/place/${id}`)
+
+  reviews.value = data.reviews
+  summary.value = data.summary
+
+  // Review crowd level is also a crowd report
+  crowdRef.value?.reload()
+
+  if (place.value) {
+    place.value = {
+      ...place.value,
+      crowdLevel:data.summary.crowdLevel,
+      rating:data.summary.rating,
+      reviewCount:data.summary.reviewCount
+    }
+  }
+}
+
+// A check-in is the newest crowd report.
+// If undone, reload reviews so the newest remaining report is shown.
+function onCrowdReported(level) {
+  if (level) {
+    place.value = {
+      ...place.value,
+      crowdLevel:level
+    }
+  } else {
+    loadReviews(route.params.id)
+  }
+}
+
+function explainReviewError(e, action) {
+  if (e.response?.status === 401) {
+    return 'Your login has expired. Please log in again to ' + action + '.'
+  }
+
+  return e.response?.data?.error || 'Could not ' + action + '. Please try again.'
+}
+
+async function addReview(payload) {
+  busy.value = true
+  reviewError.value = ''
+
+  try {
+    await axios.post(
+      `${BASE_URL}/reviews`,
+      payload,
+      authHeader()
+    )
+
+    // Reset review form after successful submission
+    reviewFormKey.value++
+
+    await loadReviews(route.params.id)
+  } catch (e) {
+    console.error('Could not post review', e)
+    reviewError.value = explainReviewError(e, 'post your review')
+  } finally {
+    busy.value = false
+  }
+}
+
+async function editReview({ id, rating, comment, crowdLevel }) {
+  reviewError.value = ''
+
+  try {
+    await axios.put(
+      `${BASE_URL}/reviews/${id}`,
+      {
+        rating,
+        comment,
+        crowdLevel
+      },
+      authHeader()
+    )
+
+    await loadReviews(route.params.id)
+  } catch (e) {
+    console.error('Could not edit review', e)
+    reviewError.value = explainReviewError(e, 'save your changes')
+  }
+}
+
+async function deleteReview(id) {
+  reviewError.value = ''
+
+  try {
+    await axios.delete(
+      `${BASE_URL}/reviews/${id}`,
+      authHeader()
+    )
+
+    await loadReviews(route.params.id)
+  } catch (e) {
+    console.error('Could not delete review', e)
+    reviewError.value = explainReviewError(e, 'delete your review')
+  }
+}
+
+// Desktop mouse-wheel scrolling.
+// When the review box reaches the top or bottom,
+// normal page scrolling continues.
+function scrollReviews(event) {
+  const el = reviewsScrollRef.value
+  if (!el) return
+
+  const atTop = el.scrollTop <= 0
+  const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+
   if (
-    page < 1 ||
-    page > totalPages.value ||
-    page === currentPage.value
+    (event.deltaY < 0 && atTop) ||
+    (event.deltaY > 0 && atBottom)
   ) {
     return
   }
 
-  currentPage.value = page
+  event.preventDefault()
+  event.stopPropagation()
+
+  el.scrollTop += event.deltaY
 }
 
-function formatDate(date) {
-  if (!date) return '-'
+onMounted(async () => {
+  window.addEventListener('user-login', syncUser)
 
-  return new Date(date)
-    .toLocaleString(
-      'en-SG',
-      {
-        day:'numeric',
-        month:'short',
-        year:'numeric',
-        hour:'numeric',
-        minute:'2-digit'
-      }
-    )
-}
-
-function handleAuthError(error) {
-  if (
-    error.response?.status === 401
-  ) {
-    localStorage.removeItem(
-      'token'
-    )
-
-    localStorage.removeItem(
-      'user'
-    )
-
-    window.dispatchEvent(
-      new Event('user-login')
-    )
-
-    router.push('/login')
-
-    return true
-  }
-
-  if (
-    error.response?.status === 403
-  ) {
-    router.push('/places')
-
-    return true
-  }
-
-  return false
-}
-
-async function loadReports() {
-  loading.value = true
-  errorMessage.value = ''
+  const id = route.params.id
 
   try {
-    const { data } =
-      await axios.get(
-        `${BASE_URL}/reports/admin`,
-        authConfig()
-      )
+    const { data } = await axios.get(`${BASE_URL}/places/${id}`)
+    place.value = data
 
-    reports.value =
-      data.reports || []
-  } catch (error) {
-    if (
-      !handleAuthError(error)
-    ) {
-      errorMessage.value =
-        error.response?.data?.error ||
-        'Could not load reports.'
-    }
+    const [, w] = await Promise.all([
+      loadReviews(id),
+      fetchWeather().catch(() => null)
+    ])
+
+    weather.value = w
+  } catch (e) {
+    console.error('Could not load study space', e)
+    notFound.value = true
   } finally {
     loading.value = false
   }
-}
 
-async function setStatus(
-  report,
-  status
-) {
-  busyId.value =
-    report._id
+  await nextTick()
 
-  errorMessage.value = ''
-  successMessage.value = ''
+  if (carouselRef.value && place.value?.photos?.length > 1) {
+    const carousel = new Carousel(
+      carouselRef.value,
+      {
+        interval:4000,
+        pause:false,
+        wrap:true
+      }
+    )
 
-  try {
-    const { data } =
-      await axios.patch(
-        `${BASE_URL}/reports/admin/${report._id}/status`,
-        { status },
-        authConfig()
-      )
-
-    const index =
-      reports.value.findIndex(
-        item =>
-          item._id ===
-          report._id
-      )
-
-    if (index !== -1) {
-      reports.value[index] =
-        data.report
-    }
-
-    successMessage.value =
-      data.message
-  } catch (error) {
-    if (
-      !handleAuthError(error)
-    ) {
-      errorMessage.value =
-        error.response?.data?.error ||
-        'Could not update report.'
-    }
-  } finally {
-    busyId.value = null
-  }
-}
-
-function askDeleteReport(report) {
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  deleteTarget.value =
-    report
-}
-
-function closeDeleteModal() {
-  if (busyId.value) return
-
-  deleteTarget.value =
-    null
-}
-
-async function confirmDeleteReport() {
-  if (!deleteTarget.value) {
-    return
+    carousel.cycle()
   }
 
-  const report =
-    deleteTarget.value
+  if (!reducedMotion && place.value) {
+    ctx = gsap.context(() => {
+      gsap.from('.x-detail-title .x-char', {
+        yPercent:100,
+        rotation:() => gsap.utils.random(-12,12),
+        autoAlpha:0,
+        duration:.9,
+        ease:'expo.out',
+        stagger:.025
+      })
 
-  busyId.value =
-    report._id
+      gsap.from('.x-detail-head .ss-score, .x-detail-head .ss-badge', {
+        scale:0,
+        rotation:-30,
+        duration:.7,
+        ease:'back.out(2)',
+        stagger:.08,
+        delay:.3
+      })
 
-  errorMessage.value = ''
-  successMessage.value = ''
-
-  try {
-    const { data } =
-      await axios.delete(
-        `${BASE_URL}/reports/admin/${report._id}`,
-        authConfig()
-      )
-
-    reports.value =
-      reports.value.filter(
-        item =>
-          item._id !==
-          report._id
-      )
-
-    deleteTarget.value =
-      null
-
-    successMessage.value =
-      data.message ||
-      'Report deleted successfully.'
-  } catch (error) {
-    if (
-      !handleAuthError(error)
-    ) {
-      errorMessage.value =
-        error.response?.data?.error ||
-        'Could not delete report.'
-    }
-  } finally {
-    busyId.value = null
+      if (carouselRef.value) {
+        gsap.to(
+          carouselRef.value.querySelectorAll('img'),
+          {
+            yPercent:12,
+            ease:'none',
+            scrollTrigger:{
+              trigger:carouselRef.value,
+              start:'top top',
+              end:'bottom top',
+              scrub:true
+            }
+          }
+        )
+      }
+    })
   }
-}
+})
 
-onMounted(loadReports)
+onUnmounted(() => {
+  window.removeEventListener('user-login', syncUser)
+  ctx?.revert()
+})
 </script>
 
 <template>
-  <main class="container ss-section reports-page">
-
-    <!-- HEADER -->
-    <div class="reports-header">
-      <div>
-        <div class="reports-eyebrow">
-          ADMIN · COMMUNITY REPORTS
-        </div>
-
-        <h1 class="mb-2">
-          Reported Information
-        </h1>
-
-        <p class="ss-muted mb-0">
-          Review corrections submitted by LockedIN users and keep study-space information accurate.
-        </p>
-      </div>
-
-      <div class="reports-stats">
-        <span class="report-stat report-stat-pending">
-          {{ pendingCount }} pending
-        </span>
-
-        <span class="report-stat report-stat-resolved">
-          {{ resolvedCount }} resolved
-        </span>
-      </div>
-    </div>
-
-    <!-- MESSAGES -->
-    <div
-      v-if="successMessage"
-      class="alert alert-success"
-    >
-      {{ successMessage }}
-    </div>
-
-    <div
-      v-if="errorMessage"
-      class="alert alert-danger"
-    >
-      {{ errorMessage }}
-    </div>
-
-    <!-- SEARCH + FILTER -->
-    <div class="reports-controls">
-      <input
-        v-model="search"
-        type="search"
-        class="reports-search"
-        placeholder="Search place, reporter or issue..."
-      >
-
-      <select
-        v-model="statusFilter"
-        class="reports-filter"
-      >
-        <option value="pending">
-          Pending
-        </option>
-
-        <option value="resolved">
-          Resolved
-        </option>
-
-        <option value="all">
-          All reports
-        </option>
-      </select>
-    </div>
+  <main class="container ss-section">
 
     <!-- LOADING -->
     <div
       v-if="loading"
-      class="reports-loading"
+      class="ss-card"
+      style="height:320px"
+    ></div>
+
+    <!-- NOT FOUND -->
+    <div
+      v-else-if="notFound"
+      class="ss-empty"
     >
-      Loading reports...
+      <p class="mb-3">
+        We couldn't find that study space.
+      </p>
+
+      <RouterLink
+        to="/places"
+        class="btn btn-outline-primary btn-sm"
+      >
+        Back to all spots
+      </RouterLink>
     </div>
 
-    <!-- EMPTY -->
-    <div
-      v-else-if="!filteredReports.length"
-      class="ss-empty reports-empty"
-    >
-      <strong>
-        No reports here.
-      </strong>
+    <template v-else>
 
-      <span>
-        {{
-          statusFilter === 'pending'
-            ? 'All caught up — there are no pending corrections.'
-            : 'Try another filter or search.'
-        }}
-      </span>
-    </div>
+      <!-- BACK -->
+      <RouterLink
+        to="/places"
+        class="ss-meta text-decoration-none d-inline-block mb-3"
+      >
+        ← All spots
+      </RouterLink>
 
-    <!-- REPORT LIST -->
-    <div
-      v-else
-      class="reports-list"
-    >
-      <article
-        v-for="report in paginatedReports"
-        :key="report._id"
-        class="report-card"
+      <!-- IMAGE CAROUSEL -->
+      <div
+        v-if="place.photos?.length"
+        id="placeCarousel"
+        ref="carouselRef"
+        class="carousel slide ss-card mb-4 overflow-hidden"
       >
 
-        <div class="report-card-top">
-          <div>
-            <div class="report-meta-line">
+        <div
+          v-if="place.photos.length > 1"
+          class="carousel-indicators"
+        >
+          <button
+            v-for="(photo,index) in place.photos"
+            :key="'indicator-'+index"
+            type="button"
+            data-bs-target="#placeCarousel"
+            :data-bs-slide-to="index"
+            :class="{ active:index===0 }"
+            :aria-current="index===0 ? 'true' : undefined"
+            :aria-label="'Slide '+(index+1)"
+          ></button>
+        </div>
 
-              <span
-                class="report-status"
-                :class="`report-status-${report.status}`"
+        <div class="carousel-inner">
+          <div
+            v-for="(photo,index) in place.photos"
+            :key="photo"
+            class="carousel-item"
+            :class="{ active:index===0 }"
+          >
+            <img
+              :src="photo"
+              :alt="`${place.name} photo ${index+1}`"
+              class="d-block w-100 place-carousel-image"
+            >
+          </div>
+        </div>
+
+        <button
+          v-if="place.photos.length > 1"
+          class="carousel-control-prev"
+          type="button"
+          data-bs-target="#placeCarousel"
+          data-bs-slide="prev"
+        >
+          <span
+            class="carousel-control-prev-icon"
+            aria-hidden="true"
+          ></span>
+
+          <span class="visually-hidden">
+            Previous
+          </span>
+        </button>
+
+        <button
+          v-if="place.photos.length > 1"
+          class="carousel-control-next"
+          type="button"
+          data-bs-target="#placeCarousel"
+          data-bs-slide="next"
+        >
+          <span
+            class="carousel-control-next-icon"
+            aria-hidden="true"
+          ></span>
+
+          <span class="visually-hidden">
+            Next
+          </span>
+        </button>
+      </div>
+
+      <!-- FALLBACK IMAGE AREA -->
+      <div
+        v-else
+        class="ss-card mb-4"
+      >
+        <div
+          class="ss-card__media"
+          :style="{
+            background:art,
+            aspectRatio:'21/8'
+          }"
+        ></div>
+      </div>
+
+      <p
+        v-if="place.photoAttributions?.length"
+        class="ss-meta mt-n3 mb-4"
+      >
+        Photos:
+        {{ place.photoAttributions.join(', ') }}
+        via Google
+      </p>
+
+      <!-- PLACE INFORMATION -->
+      <div class="row g-4 x-detail-head">
+
+        <div
+          class="col-12"
+          :class="{
+            'col-lg-7':
+              isPersonalized &&
+              profileWanted.length
+          }"
+        >
+          <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+
+            <div>
+              <h1
+                class="mb-1 x-detail-title"
+                data-test="place-name"
+                :aria-label="place.name"
               >
-                {{ report.status }}
-              </span>
+                <template
+                  v-for="(w,wi) in place.name.split(' ')"
+                  :key="wi"
+                >
+                  <span
+                    class="x-wordbox"
+                    aria-hidden="true"
+                  >
+                    <span
+                      v-for="(c,ci) in w.split('')"
+                      :key="ci"
+                      class="x-char"
+                    >
+                      {{ c }}
+                    </span>
+                  </span>
 
-              <span class="report-category">
-                {{
-                  CATEGORY_LABELS[
-                    report.category
-                  ] ||
-                  report.category
-                }}
-              </span>
+                  {{
+                    wi < place.name.split(' ').length - 1
+                      ? ' '
+                      : ''
+                  }}
+                </template>
+              </h1>
+
+              <p class="ss-muted mb-2">
+                {{ place.address }}
+              </p>
+
+              <div class="d-flex align-items-center gap-3 flex-wrap">
+
+                <StarRating
+                  :value="place.rating"
+                  :count="place.reviewCount"
+                />
+
+                <span
+                  v-if="place.googleRating"
+                  class="ss-meta"
+                  data-test="google-rating"
+                >
+                  Google
+                  {{ place.googleRating.toFixed(1) }}
+                  ★
+                  ({{ place.googleRatingCount }})
+                </span>
+
+                <CrowdMeter
+                  :level="place.crowdLevel"
+                />
+
+              </div>
+            </div>
+
+          </div>
+
+          <p class="mt-3">
+            {{ place.description }}
+          </p>
+
+          <!-- BADGES -->
+          <div class="d-flex flex-wrap gap-2 mb-3">
+
+            <span
+              class="ss-badge"
+              :class="
+                place.openNow &&
+                closureStatus === 'normal'
+                  ? 'ss-badge--green'
+                  : 'ss-badge--pink'
+              "
+            >
+              {{ availabilityLabel() }}
+            </span>
+
+            <span class="ss-badge ss-badge--neutral">
+              {{ place.indoor ? 'Indoor' : 'Outdoor' }}
+            </span>
+
+            <span
+              v-if="
+                closureStatus === 'normal' &&
+                place.hours
+              "
+              class="ss-badge ss-badge--neutral"
+            >
+              {{ place.hours }}
+            </span>
+
+            <span
+              v-if="ENTRY_LABELS[place.entry]"
+              class="ss-badge"
+              :class="
+                place.entry === 'free'
+                  ? 'ss-badge--green'
+                  : 'ss-badge--neutral'
+              "
+              data-test="entry-badge"
+            >
+              {{ ENTRY_LABELS[place.entry] }}
+            </span>
+
+          </div>
+
+          <!-- WEEKLY HOURS -->
+          <details
+            v-if="place.weekdayHours?.length"
+            class="mb-3"
+          >
+            <summary class="ss-meta">
+              Opening hours this week
+            </summary>
+
+            <ul class="list-unstyled ss-meta mt-2 mb-0">
+              <li
+                v-for="line in place.weekdayHours"
+                :key="line"
+              >
+                {{ line }}
+              </li>
+            </ul>
+          </details>
+
+          <!-- EXTERNAL LINKS -->
+          <div
+            v-if="
+              place.googleMapsUri ||
+              place.website
+            "
+            class="d-flex gap-3 mb-3"
+          >
+            <a
+              v-if="place.googleMapsUri"
+              :href="place.googleMapsUri"
+              target="_blank"
+              rel="noopener"
+              class="ss-meta"
+            >
+              Open in Google Maps ↗
+            </a>
+
+            <a
+              v-if="place.website"
+              :href="place.website"
+              target="_blank"
+              rel="noopener"
+              class="ss-meta"
+            >
+              Website ↗
+            </a>
+          </div>
+
+          <!-- FACILITIES -->
+          <h2 class="h5 mt-4 mb-2">
+            Facilities
+          </h2>
+
+          <div class="d-flex flex-wrap gap-2">
+            <span
+              v-for="f in place.facilities"
+              :key="f"
+              class="ss-badge ss-badge--sky"
+            >
+              {{ FACILITY_LABELS[f] || f }}
+            </span>
+          </div>
+        </div>
+
+        <!-- PERSONALIZED SCORE -->
+        <div
+          v-if="
+            isPersonalized &&
+            profileWanted.length
+          "
+          class="col-12 col-lg-5"
+        >
+          <div class="ss-card h-auto p-4">
+
+            <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3">
+
+              <h2 class="h6 mb-0">
+                Why this matches you
+              </h2>
+
+              <div class="text-center ss-score--compact">
+                <SuitabilityScore
+                  :score="score"
+                />
+
+                <div class="ss-meta mt-1">
+                  Your match
+                </div>
+              </div>
 
             </div>
 
-            <h2>
-              {{ report.placeName }}
-            </h2>
+            <div class="mb-3">
 
-            <p class="report-date">
-              Reported
-              {{ formatDate(report.createdAt) }}
-            </p>
-          </div>
+              <div class="ss-meta fw-bold mb-2">
+                Your study preferences
+              </div>
 
-          <div class="report-links">
+              <div class="d-flex flex-wrap gap-2">
+
+                <span
+                  v-for="item in preferenceMatches"
+                  :key="item.key"
+                  class="ss-badge"
+                  :class="
+                    item.matched
+                      ? 'ss-badge--green'
+                      : 'ss-badge--pink'
+                  "
+                >
+                  {{ item.matched ? '✓' : '✕' }}
+                  {{ item.label }}
+                </span>
+
+              </div>
+            </div>
 
             <RouterLink
-              :to="`/places/${report.placeId}`"
-              class="btn btn-outline-primary btn-sm"
+              to="/profile?edit=1"
+              class="btn btn-outline-primary btn-sm mt-3"
             >
-              View place
-            </RouterLink>
-
-            <RouterLink
-              :to="`/admin/places/${report.placeId}/edit`"
-              class="btn btn-outline-primary btn-sm"
-            >
-              Edit place
+              Edit preferences
             </RouterLink>
 
           </div>
         </div>
 
-        <div class="report-message">
-          “{{ report.message }}”
-        </div>
-
-        <div class="report-footer">
-
-          <div class="report-reporter">
-            <span class="report-reporter-label">
-              Reported by
-            </span>
-
-            <strong>
-              {{ report.reporterName }}
-            </strong>
-
-            <span>
-              {{ report.reporterEmail }}
-            </span>
-          </div>
-
-          <div class="report-actions">
-
-            <button
-              v-if="report.status === 'pending'"
-              type="button"
-              class="btn btn-primary btn-sm"
-              :disabled="busyId === report._id"
-              @click="setStatus(report, 'resolved')"
-            >
-              {{
-                busyId === report._id
-                  ? 'Updating...'
-                  : 'Mark resolved'
-              }}
-            </button>
-
-            <button
-              v-else
-              type="button"
-              class="btn btn-outline-primary btn-sm"
-              :disabled="busyId === report._id"
-              @click="setStatus(report, 'pending')"
-            >
-              Reopen
-            </button>
-
-            <button
-              type="button"
-              class="report-delete"
-              :disabled="busyId === report._id"
-              @click="askDeleteReport(report)"
-            >
-              Delete
-            </button>
-
-          </div>
-        </div>
-
-      </article>
-    </div>
-
-    <!-- PAGINATION -->
-    <div
-      v-if="
-        !loading &&
-        filteredReports.length > 0
-      "
-      class="pagination-section"
-    >
-      <p>
-        Showing
-        {{ startIndex + 1 }}–{{ endIndex }}
-        of {{ filteredReports.length }}
-        reports
-      </p>
-
-      <div
-        v-if="totalPages > 1"
-        class="pagination-buttons"
-      >
-
-        <button
-          class="page-button arrow"
-          :disabled="currentPage === 1"
-          aria-label="Previous page"
-          @click="changePage(currentPage - 1)"
-        >
-          ‹
-        </button>
-
-        <button
-          v-for="page in visiblePages"
-          :key="page"
-          class="page-button"
-          :class="{
-            active:
-              currentPage === page
-          }"
-          @click="changePage(page)"
-        >
-          {{ page }}
-        </button>
-
-        <button
-          class="page-button arrow"
-          :disabled="
-            currentPage ===
-            totalPages
-          "
-          aria-label="Next page"
-          @click="changePage(currentPage + 1)"
-        >
-          ›
-        </button>
-
-      </div>
-    </div>
-
-    <!-- DELETE REPORT MODAL -->
-    <div
-      v-if="deleteTarget"
-      class="confirm-overlay"
-      @click.self="closeDeleteModal"
-    >
-      <div class="confirm-card">
-
-        <div class="confirm-heading">
-          <div>
-            <p class="confirm-eyebrow">
-              COMMUNITY REPORT
-            </p>
-
-            <h2>
-              Delete report
-            </h2>
-
-            <p class="confirm-subtitle">
-              {{ deleteTarget.placeName }}
-            </p>
-          </div>
-
-          <button
-            class="confirm-close"
-            type="button"
-            :disabled="
-              busyId ===
-              deleteTarget._id
-            "
-            @click="closeDeleteModal"
-          >
-            ×
-          </button>
-        </div>
-
-        <div class="confirm-warning">
-
-          <strong>
-            Delete this report?
-          </strong>
-
-          <p>
-            This report will be permanently removed.
-            This action cannot be undone.
-          </p>
-
-          <div class="confirm-actions">
-
-            <button
-              type="button"
-              class="confirm-cancel"
-              :disabled="
-                busyId ===
-                deleteTarget._id
-              "
-              @click="closeDeleteModal"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="button"
-              class="confirm-delete"
-              :disabled="
-                busyId ===
-                deleteTarget._id
-              "
-              @click="confirmDeleteReport"
-            >
-              {{
-                busyId ===
-                deleteTarget._id
-                  ? 'Deleting...'
-                  : 'Delete report'
-              }}
-            </button>
-
-          </div>
+        <!-- REPORT INCORRECT INFO -->
+        <div class="col-12 report-right">
+          <ReportIssue
+            :place="place"
+          />
         </div>
 
       </div>
-    </div>
 
+      <!-- INTENT TO GO -->
+      <IntentPanel
+        :place="place"
+        class="mt-4"
+        @changed="refreshPlaceScoreData"
+      />
+
+      <!-- REVIEWS -->
+      <section class="mt-5 reviews-section">
+
+        <h2 class="mb-3">
+          Reviews &amp; crowd reports
+        </h2>
+
+        <CrowdHistogram
+          ref="crowdRef"
+          :place="place"
+          class="mb-4"
+          @reported="onCrowdReported"
+        />
+
+        <div class="row g-4 align-items-stretch review-row">
+
+          <!-- REVIEW FORM -->
+          <div class="col-12 col-lg-5">
+
+            <div class="review-form-wrap">
+
+              <div
+                v-if="reviewError"
+                class="alert alert-danger py-2 mb-3"
+                role="alert"
+                data-test="review-error"
+              >
+                {{ reviewError }}
+              </div>
+
+              <!-- Any logged-in user, including admin -->
+              <ReviewForm
+                v-if="currentUser"
+                :key="reviewFormKey"
+                class="review-form-box"
+                :place-id="Number(place.id)"
+                :busy="busy"
+                :author-name="currentUser.name"
+                @submit-review="addReview"
+              />
+
+              <div
+                v-else
+                class="ss-card p-4 h-100"
+                data-test="review-login"
+              >
+                <h3 class="ss-card__title mb-2">
+                  Leave a review
+                </h3>
+
+                <p class="ss-meta mb-3">
+                  Log in to rate this spot and report how busy it is.
+                </p>
+
+                <RouterLink
+                  to="/login"
+                  class="btn btn-primary"
+                >
+                  Log in
+                </RouterLink>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- REVIEW LIST -->
+          <div class="col-12 col-lg-7">
+
+            <div
+              ref="reviewsScrollRef"
+              class="reviews-scroll"
+              @wheel="scrollReviews"
+            >
+              <ReviewList
+                :reviews="reviews"
+                :current-user-id="currentUser?._id"
+                @edit-review="editReview"
+                @delete-review="deleteReview"
+              />
+            </div>
+
+          </div>
+        </div>
+
+        <!-- GOOGLE REVIEWS -->
+        <GoogleReviews
+          :place="place"
+        />
+
+      </section>
+
+      <!-- MAP -->
+      <div class="map-section">
+        <PlaceMap
+          :place="place"
+        />
+      </div>
+
+    </template>
   </main>
 </template>
 
 <style scoped>
-.reports-page {
-  max-width:1180px;
+.reviews-section {
+  margin-bottom:3rem;
 }
 
-.reports-header {
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-end;
-  gap:1.5rem;
-  margin-bottom:1.5rem;
-  padding:1.5rem;
-  border:2px solid var(--x-ink);
-  border-radius:22px;
+.review-form-wrap,
+.reviews-scroll {
+  height:430px;
+}
+
+.review-form-box {
+  height:100%;
+}
+
+.reviews-scroll {
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:.7rem;
+  padding-bottom:.25rem;
+  scrollbar-gutter:stable;
+  overscroll-behavior-y:contain;
+  touch-action:pan-y;
+}
+
+.reviews-scroll::-webkit-scrollbar {
+  width:8px;
+}
+
+.reviews-scroll::-webkit-scrollbar-track {
+  background:transparent;
+}
+
+.reviews-scroll::-webkit-scrollbar-thumb {
   background:var(--x-lilac);
-  box-shadow:8px 8px 0 var(--x-ink);
-}
-
-.reports-eyebrow {
-  font-family:var(--x-mono);
-  font-size:.72rem;
-  font-weight:800;
-  letter-spacing:.08em;
-}
-
-.reports-stats {
-  display:flex;
-  gap:.6rem;
-  flex-wrap:wrap;
-}
-
-.report-stat {
-  padding:.42rem .75rem;
-  border:1.5px solid var(--x-ink);
-  border-radius:999px;
-  font-size:.75rem;
-  font-weight:800;
-}
-
-.report-stat-pending {
-  background:var(--x-butter);
-}
-
-.report-stat-resolved {
-  background:var(--x-lime);
-}
-
-.reports-controls {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) 190px;
-  gap:1rem;
-  margin:1.5rem 0;
-}
-
-.reports-search,
-.reports-filter {
-  min-height:50px;
-  padding:.7rem 1rem;
-  border:2px solid var(--x-ink);
-  border-radius:999px;
-  background:white;
-  color:var(--x-ink);
-  box-shadow:4px 4px 0 var(--x-ink);
-  outline:none;
-}
-
-.reports-list {
-  display:grid;
-  gap:1rem;
-}
-
-.report-card {
-  padding:1.25rem;
-  border:2px solid var(--x-ink);
-  border-radius:20px;
-  background:white;
-  box-shadow:6px 6px 0 var(--x-ink);
-}
-
-.report-card-top,
-.report-footer {
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:1rem;
-}
-
-.report-card h2 {
-  margin:.4rem 0 .15rem;
-  font-size:1.35rem;
-}
-
-.report-meta-line {
-  display:flex;
-  gap:.45rem;
-  align-items:center;
-  flex-wrap:wrap;
-}
-
-.report-status,
-.report-category {
-  padding:.25rem .55rem;
   border:1px solid var(--x-ink);
   border-radius:999px;
-  font-size:.66rem;
-  font-weight:800;
-  text-transform:uppercase;
 }
 
-.report-status-pending {
-  background:var(--x-butter);
-}
-
-.report-status-resolved {
-  background:var(--x-lime);
-}
-
-.report-category {
-  background:var(--x-paper-2);
-}
-
-.report-date {
-  margin:0;
-  color:var(--x-muted);
-  font-size:.75rem;
-}
-
-.report-links,
-.report-actions {
+.report-right {
   display:flex;
-  gap:.55rem;
-  flex-wrap:wrap;
+  justify-content:flex-end;
+  width:100%;
 }
 
-.report-message {
-  margin:1rem 0;
-  padding:1rem;
-  border:1px dashed rgba(0,0,0,.38);
-  border-radius:12px;
-  background:var(--x-paper-2);
-  line-height:1.55;
+.map-section {
+  width:100%;
+  margin-top:2rem;
 }
 
-.report-reporter {
-  display:grid;
-  gap:.1rem;
-  font-size:.76rem;
-}
-
-.report-reporter-label {
-  color:var(--x-muted);
-  font-size:.66rem;
-  font-weight:800;
-  text-transform:uppercase;
-}
-
-.report-delete {
-  padding:.5rem .8rem;
-  border:1.5px solid var(--x-ink);
-  border-radius:999px;
-  background:#ffc9b8;
-  color:var(--x-ink);
-  font-size:.75rem;
-  font-weight:800;
-  box-shadow:3px 3px 0 var(--x-ink);
-}
-
-.reports-loading,
-.reports-empty {
-  min-height:220px;
-  display:grid;
-  place-items:center;
-}
-
-.reports-empty span {
-  color:var(--x-muted);
-}
-
-/* PAGINATION */
-
-.pagination-section {
-  margin-top:3rem;
-  text-align:center;
-}
-
-.pagination-section p {
-  margin-bottom:1.2rem;
-  color:var(--x-muted);
-  font-size:1rem;
-  font-weight:700;
-}
-
-.pagination-buttons {
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:.8rem;
-  flex-wrap:wrap;
-}
-
-.page-button {
-  width:56px;
-  height:56px;
-  border:2px solid var(--x-ink);
-  border-radius:50%;
-  background:white;
-  color:var(--x-ink);
-  font-size:1.1rem;
-  font-weight:800;
-  box-shadow:5px 5px 0 var(--x-ink);
-  transition:.15s ease;
-}
-
-.page-button:hover:not(:disabled) {
-  transform:translateY(-2px);
-}
-
-.page-button.active {
-  background:var(--x-orange);
-}
-
-.page-button.arrow {
-  font-size:1.8rem;
-}
-
-.page-button:disabled {
-  opacity:.3;
-  cursor:not-allowed;
-  box-shadow:none;
-}
-
-/* CONFIRM DELETE MODAL */
-
-.confirm-overlay {
-  position:fixed;
-  inset:0;
-  z-index:3000;
-  padding:1rem;
-  display:grid;
-  place-items:center;
-  background:rgba(20,18,15,.48);
-  backdrop-filter:blur(5px);
-}
-
-.confirm-card {
-  width:min(700px,100%);
-  padding:1.7rem;
-  border:2px solid var(--x-ink);
-  border-radius:26px;
-  background:var(--x-card);
-  box-shadow:12px 12px 0 var(--x-ink);
-}
-
-.confirm-heading {
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:1rem;
-  margin-bottom:1.25rem;
-}
-
-.confirm-eyebrow {
-  margin:0 0 .3rem;
-  color:var(--x-ink);
-  font-family:var(--x-mono);
-  font-size:.75rem;
-  font-weight:800;
-  letter-spacing:.08em;
-}
-
-.confirm-heading h2 {
-  margin:0;
-  color:var(--x-ink);
-  font-size:clamp(1.8rem,5vw,2.4rem);
-  font-weight:800;
-}
-
-.confirm-subtitle {
-  margin:.25rem 0 0;
-  color:var(--x-muted);
-}
-
-.confirm-close {
-  width:48px;
-  height:48px;
-  flex-shrink:0;
-  border:1.5px solid var(--x-ink);
-  border-radius:50%;
-  background:white;
-  color:var(--x-ink);
-  font-size:1.45rem;
-  font-weight:800;
-}
-
-.confirm-warning {
-  padding:1.35rem;
-  border:1.5px solid var(--x-ink);
-  border-radius:18px;
-  background:#ffc9b8;
-}
-
-.confirm-warning strong {
-  display:block;
-  margin-bottom:.45rem;
-  color:var(--x-ink);
-  font-size:1.15rem;
-}
-
-.confirm-warning p {
-  margin:0;
-  color:var(--x-ink);
-  line-height:1.55;
-}
-
-.confirm-actions {
-  margin-top:1.2rem;
-  display:flex;
-  gap:.75rem;
-  flex-wrap:wrap;
-}
-
-.confirm-cancel,
-.confirm-delete {
-  padding:.65rem 1.1rem;
-  border:2px solid var(--x-ink);
-  border-radius:999px;
-  color:var(--x-ink);
-  font-weight:800;
-  box-shadow:4px 4px 0 var(--x-ink);
-}
-
-.confirm-cancel {
-  background:white;
-}
-
-.confirm-delete {
-  background:var(--x-orange);
-}
-
-.confirm-cancel:disabled,
-.confirm-delete:disabled,
-.confirm-close:disabled {
-  opacity:.55;
-  cursor:not-allowed;
-}
-
-/* TABLET */
-
-@media(max-width:767.98px) {
-  .reports-header,
-  .report-card-top,
-  .report-footer {
-    align-items:stretch;
-    flex-direction:column;
+/*
+ * MOBILE / TABLET
+ *
+ * Review FORM can grow normally,
+ * but review LIST remains a 430px scrollable box.
+ */
+@media(max-width:991.98px) {
+  .review-form-wrap {
+    height:auto;
   }
 
-  .reports-controls {
-    grid-template-columns:minmax(0,1fr) 170px;
-    gap:.75rem;
+  .review-form-box {
+    height:auto;
   }
 
-  .report-links,
-  .report-actions {
-    width:100%;
+  .reviews-scroll {
+    height:430px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    padding-right:.7rem;
+    padding-bottom:.25rem;
+    scrollbar-gutter:stable;
+    overscroll-behavior-y:contain;
+    touch-action:pan-y;
+    -webkit-overflow-scrolling:touch;
   }
 
-  .report-links .btn,
-  .report-actions .btn,
-  .report-delete {
-    flex:1;
-  }
-}
-
-/* MOBILE */
-
-@media(max-width:575.98px) {
-  .confirm-card {
-    padding:1.25rem;
+  .reviews-section {
+    margin-bottom:2rem;
   }
 
-  .confirm-actions {
-    display:grid;
-    grid-template-columns:1fr;
-  }
-
-  .confirm-cancel,
-  .confirm-delete {
-    width:100%;
-  }
-
-  .reports-controls {
-    grid-template-columns:minmax(0,1fr) 140px;
-    gap:.6rem;
-  }
-
-  .reports-search,
-  .reports-filter {
-    padding:.65rem .8rem;
-    font-size:.9rem;
-  }
-
-  .page-button {
-    width:46px;
-    height:46px;
-  }
-}
-
-@media(max-width:420px) {
-  .reports-controls {
-    grid-template-columns:1fr;
-  }
-
-  .report-links,
-  .report-actions {
-    display:grid;
-    grid-template-columns:1fr;
+  .map-section {
+    margin-top:1rem;
   }
 }
 </style>
