@@ -60,7 +60,7 @@ async function register() {
     localStorage.setItem('token', response.data.token)
     localStorage.setItem('user', JSON.stringify(response.data.user))
     window.dispatchEvent(new Event('user-login'))
-    router.push('/places')
+    router.push('/')
   } catch (error) {
     errorMessage.value = error.response?.data?.error || 'Unable to create account. Please try again.'
   } finally {
