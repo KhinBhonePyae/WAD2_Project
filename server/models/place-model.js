@@ -30,19 +30,11 @@ const placeSchema = new mongoose.Schema({
   // Set by import-google-places.js. Google's rating is kept apart from ours:
   // rating/reviewCount above are always rebuilt from in-app reviews.
   googlePlaceId: { type: String, unique: true, sparse: true },
-  googleLinked: { type: Boolean, default: false }, // our own place (e.g. NLB) with Google reviews attached
+  googleLinked: { type: Boolean, default: false }, // our own place (e.g. NLB) linked to Google Places
   googleLookupFailedAt: { type: Date, default: null }, // no Google match found; not retried unless --force
   placeType: { type: String, default: '' }, // Google primaryType, e.g. 'cafe', 'library', 'coworking_space'
   googleRating: { type: Number, default: null },
   googleRatingCount: { type: Number, default: 0 },
-  googleReviews: {
-    type: [{
-      _id: false,
-      author: String, authorUri: String, authorPhoto: String,
-      rating: Number, text: String, relativeTime: String, publishTime: Date,
-    }],
-    default: [],
-  },
   // Google's weekly hours, day 0 = Sunday. Close may fall on the next day (past midnight).
   openingPeriods: {
     type: [{ _id: false, open: { day: Number, hour: Number, minute: Number }, close: { day: Number, hour: Number, minute: Number } }],
