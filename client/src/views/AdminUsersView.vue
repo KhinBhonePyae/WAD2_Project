@@ -79,6 +79,20 @@ const paginatedUsers = computed(() =>
   filteredUsers.value.slice(startIndex.value, endIndex.value)
 )
 
+const visiblePages = computed(() => {
+  if (totalPages.value <= 3) {
+    return Array.from({ length: totalPages.value }, (_, i) => i + 1)
+  }
+
+  let start = currentPage.value
+
+  if (start > totalPages.value - 2) {
+    start = totalPages.value - 2
+  }
+
+  return [start, start + 1, start + 2]
+})
+
 watch([search, roleFilter], () => {
   currentPage.value = 1
 })
@@ -315,7 +329,7 @@ onUnmounted(() => {
 
           <div v-if="totalPages > 1" class="pagination-buttons">
             <button class="page-button arrow" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">‹</button>
-            <button v-for="page in totalPages" :key="page" class="page-button" :class="{ active: currentPage === page }" @click="changePage(page)">{{ page }}</button>
+            <button v-for="page in visiblePages" :key="page" class="page-button" :class="{ active: currentPage === page }" @click="changePage(page)">{{ page }}</button>
             <button class="page-button arrow" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">›</button>
           </div>
         </div>

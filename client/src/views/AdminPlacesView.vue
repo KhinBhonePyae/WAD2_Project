@@ -39,6 +39,19 @@ const paginatedPlaces = computed(() => {
 
 const pageStart = computed(() => filteredPlaces.value.length ? (currentPage.value - 1) * perPage + 1 : 0)
 const pageEnd = computed(() => Math.min(currentPage.value * perPage, filteredPlaces.value.length))
+const visiblePages = computed(() => {
+  if (totalPages.value <= 3) {
+    return Array.from({ length: totalPages.value }, (_, i) => i + 1)
+  }
+
+  let start = currentPage.value
+
+  if (start > totalPages.value - 2) {
+    start = totalPages.value - 2
+  }
+
+  return [start, start + 1, start + 2]
+})
 
 watch([search, sortOrder], () => {
   currentPage.value = 1
@@ -51,7 +64,6 @@ watch(totalPages, pages => {
 function goToPage(page) {
   if (page < 1 || page > totalPages.value || page === currentPage.value) return
   currentPage.value = page
-  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 function getPlacePhoto(place) {
@@ -187,14 +199,11 @@ onMounted(loadPlaces)
         </div>
 
         <div v-if="totalPages > 1" class="admin-pagination">
-          <button class="pagination-btn pagination-arrow" :disabled="currentPage === 1" aria-label="Previous page"
-            @click="goToPage(currentPage - 1)">‹</button>
+          <button class="pagination-btn pagination-arrow" :disabled="currentPage === 1" aria-label="Previous page" @click="goToPage(currentPage - 1)">‹</button>
 
-          <button v-for="page in totalPages" :key="page" class="pagination-btn"
-            :class="{ active: currentPage === page }" @click="goToPage(page)">{{ page }}</button>
+          <button v-for="page in visiblePages" :key="page" class="pagination-btn" :class="{ active: currentPage === page }" @click="goToPage(page)">{{ page }}</button>
 
-          <button class="pagination-btn pagination-arrow" :disabled="currentPage === totalPages" aria-label="Next page"
-            @click="goToPage(currentPage + 1)">›</button>
+          <button class="pagination-btn pagination-arrow" :disabled="currentPage === totalPages" aria-label="Next page" @click="goToPage(currentPage + 1)">›</button>
         </div>
       </div>
     </template>
@@ -566,7 +575,25 @@ onMounted(loadPlaces)
   }
 
   .admin-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .55rem;
+  }
+
+  .admin-stat {
+    min-width: 0;
+    padding: .8rem .65rem;
+    border-radius: 14px;
+    box-shadow: 3px 3px 0 var(--x-ink);
+  }
+
+  .admin-stat-number {
+    font-size: 1.55rem;
+  }
+
+  .admin-stat-label {
+    margin-top: .3rem;
+    font-size: .68rem;
+    line-height: 1.15;
   }
 
   .admin-toolbar {

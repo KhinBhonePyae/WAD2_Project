@@ -19,6 +19,7 @@ function getStoredUser() {
 const user = ref(getStoredUser())
 const navHidden = ref(false)
 const progress = ref(0)
+const mobileMenuOpen = ref(false)
 let lastY = 0
 let syncingUser = false
 
@@ -68,6 +69,7 @@ function onScroll() {
 const removeAfterEach = router.afterEach(() => {
   scrollToTop()
   navHidden.value = false
+  mobileMenuOpen.value = false
   nextTick(() => setTimeout(() => ScrollTrigger.refresh(), 450))
 })
 
@@ -94,6 +96,7 @@ onUnmounted(() => {
   <WorldChat :user="user" />
   <AssistantBubble />
   <div class="x-progress" :style="{ transform: `scaleX(${progress})` }" aria-hidden="true"></div>
+  <div v-if="mobileMenuOpen" class="x-nav__backdrop" @click="mobileMenuOpen = false"></div>
 
   <nav class="x-nav" :class="{ 'x-nav--hidden': navHidden }">
     <RouterLink to="/" class="x-nav__brand" data-cursor="home">
@@ -101,6 +104,7 @@ onUnmounted(() => {
       <span class="x-nav__name">LockedIN</span>
     </RouterLink>
 
+    <!-- DESKTOP NAV -->
     <div class="x-nav__links">
       <RouterLink to="/places" class="x-nav__link" data-test="nav-browse">Browse</RouterLink>
 
@@ -110,20 +114,43 @@ onUnmounted(() => {
       </template>
 
       <template v-else>
-        <RouterLink v-if="user.role === 'admin'" to="/admin/places" class="x-nav__link" data-test="nav-manage">Manage
-        </RouterLink>
+        <RouterLink v-if="user.role === 'admin'" to="/admin/places" class="x-nav__link" data-test="nav-manage">Manage</RouterLink>
         <RouterLink v-if="user.role === 'admin'" to="/admin/users" class="x-nav__link">Users</RouterLink>
         <RouterLink v-if="user.role === 'admin'" to="/admin/reports" class="x-nav__link">Reports</RouterLink>
         <RouterLink to="/profile" class="x-nav__link x-nav__user" data-test="nav-user">{{ user.name }}</RouterLink>
       </template>
 
-      <RouterLink to="/saved" class="x-nav__saved" aria-label="Saved places" title="Saved places" data-test="nav-saved"
-        data-cursor="saved">
+      <RouterLink to="/saved" class="x-nav__saved" aria-label="Saved places" title="Saved places" data-test="nav-saved" data-cursor="saved">
         <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <path d="M6.5 3.5h11v17l-5.5-4.6-5.5 4.6z" fill="none" stroke="currentColor" stroke-width="2.2"
-            stroke-linejoin="round" />
+          <path d="M6.5 3.5h11v17l-5.5-4.6-5.5 4.6z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
         </svg>
       </RouterLink>
+    </div>
+
+    <!-- MOBILE MENU BUTTON -->
+    <button type="button" class="x-nav__menu-btn" aria-label="Open navigation menu" @click="mobileMenuOpen = !mobileMenuOpen">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+
+    <!-- MOBILE MENU -->
+    <div v-if="mobileMenuOpen" class="x-nav__mobile-menu">
+      <RouterLink to="/places" class="x-nav__mobile-link">Browse</RouterLink>
+
+      <template v-if="!user">
+        <RouterLink to="/signup" class="x-nav__mobile-link">Sign up</RouterLink>
+        <RouterLink to="/login" class="x-nav__mobile-link">Log in</RouterLink>
+      </template>
+
+      <template v-else>
+        <RouterLink v-if="user.role === 'admin'" to="/admin/places" class="x-nav__mobile-link">Manage</RouterLink>
+        <RouterLink v-if="user.role === 'admin'" to="/admin/users" class="x-nav__mobile-link">Users</RouterLink>
+        <RouterLink v-if="user.role === 'admin'" to="/admin/reports" class="x-nav__mobile-link">Reports</RouterLink>
+        <RouterLink to="/profile" class="x-nav__mobile-link">{{ user.name }}</RouterLink>
+      </template>
+
+      <RouterLink to="/saved" class="x-nav__mobile-link">Saved Places</RouterLink>
     </div>
   </nav>
 
@@ -300,16 +327,40 @@ onUnmounted(() => {
   color: rgba(243, 238, 227, .75);
 }
 
+.x-nav__menu-btn {
+  display: none;
+  width: 40px;
+  height: 40px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--x-ink);
+  cursor: pointer;
+}
+
+.x-nav__menu-btn span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  margin: 4px auto;
+  border-radius: 999px;
+  background: var(--x-paper);
+}
+
+.x-nav__mobile-menu {
+  display: none;
+}
+
 @keyframes x-marquee {
   to {
     transform: translateX(-50%);
   }
 }
 
-@media (max-width: 575.98px) {
+@media (max-width: 700px) {
   .x-nav {
-    gap: 6px;
-    padding: 6px 6px 6px 12px;
+    padding: 7px 7px 7px 13px;
   }
 
   .x-nav__brand {
@@ -317,27 +368,60 @@ onUnmounted(() => {
   }
 
   .x-nav__logo {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
   }
 
-  .x-nav__link {
-    padding: 5px 7px;
-    font-size: .85rem;
+  .x-nav__links {
+    display: none;
   }
 
-  .x-nav__user {
-    max-width: 4.5rem;
+  .x-nav__menu-btn {
+    display: block;
   }
+
+  .x-nav__mobile-menu {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 12px;
+    border: var(--x-line);
+    border-radius: 22px;
+    background: rgba(255, 253, 248, .97);
+    backdrop-filter: blur(12px);
+    box-shadow: var(--x-pop);
+  }
+
+  .x-nav__mobile-link {
+    display: block;
+    padding: 10px 13px;
+    border-radius: 14px;
+    color: var(--x-ink);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .x-nav__mobile-link:hover,
+  .x-nav__mobile-link.router-link-active {
+    background: var(--x-ink);
+    color: var(--x-paper);
+  }
+}
+
+.x-nav__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  background: rgba(20, 18, 15, .18);
 }
 
 @media (max-width: 420px) {
   .x-nav__name {
-    display: none;
-  }
-
-  .x-nav .btn-sm {
-    --bs-btn-padding-x: .7rem;
+    display: inline;
   }
 }
 
