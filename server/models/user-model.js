@@ -8,6 +8,9 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, trim: true, lowercase: true, unique: true },
   password: { type: String, required: true },
 
+  resetPasswordToken: { type: String, default: null },
+  resetPasswordExpires: { type: Date, default: null },
+
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
 
   preferences: {
@@ -58,10 +61,26 @@ exports.findByEmail = async (email) => {
   return User.findOne({ email: email.toLowerCase() })
 }
 
+// Find user by valid password reset token
+exports.findByResetToken = async (token) => {
+  if (global.MOCK_MODE) {
+    return mem.find(user =>
+      user.resetPasswordToken === token &&
+      user.resetPasswordExpires &&
+      new Date(user.resetPasswordExpires) > new Date()
+    ) || null
+  }
+
+  return User.findOne({
+    resetPasswordToken: token,
+    resetPasswordExpires: { $gt: new Date() }
+  })
+}
+
 // Find user by ID
 exports.findByID = async (id) => {
   if (global.MOCK_MODE) return mem.find(user => String(user._id) === String(id)) || null
-  if (!mongoose.Types.ObjectId.isValid(id)) return null // e.g. /users/admin/abc -> 404, not a crash
+  if (!mongoose.Types.ObjectId.isValid(id)) return null
   return User.findById(id)
 }
 

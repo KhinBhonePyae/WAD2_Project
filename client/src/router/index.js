@@ -6,6 +6,8 @@ import CatalogueView from '../views/CatalogueView.vue'
 import PlaceDetailView from '../views/PlaceDetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import SignUpView from '../views/SignUpView.vue'
+import ForgotPasswordView from '../views/ForgotPasswordView.vue'
+import ResetPasswordView from '../views/ResetPasswordView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import PlaceFormView from '../views/PlaceFormView.vue'
 import AdminPlacesView from '../views/AdminPlacesView.vue'
@@ -23,6 +25,8 @@ const router = createRouter({
     { path: '/places/:id', component: PlaceDetailView },
     { path: '/login', component: LoginView },
     { path: '/signup', component: SignUpView },
+    { path: '/forgot-password', component: ForgotPasswordView },
+    { path: '/reset-password/:token', component: ResetPasswordView },
     { path: '/profile', component: ProfileView },
     { path: '/saved', component: SavedView },
     { path: '/search', component: SearchView },
