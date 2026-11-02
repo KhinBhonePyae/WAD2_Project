@@ -340,7 +340,7 @@ const words = text => text.split(' ')
           </h1>
 
           <p class="x-hero__line">
-            Find the best study spot for you to <span class="x-hl">focus</span> and LOCK IN!
+            Find the best study spot for you to <span class="x-hl">focus!</span>
           </p>
 
           <div class="x-hero__search">
