@@ -173,6 +173,7 @@ async function register() {
   position: relative;
   overflow: hidden;
   background: var(--x-card);
+  margin-bottom: -4rem;
 }
 
 .auth-container {

@@ -84,6 +84,12 @@ async function login() {
                 placeholder="Enter your password" autocomplete="current-password">
             </div>
 
+            <div class="forgot-row">
+              <RouterLink to="/forgot-password" class="forgot-link">
+                Forgot password?
+              </RouterLink>
+            </div>
+
             <button type="submit" class="btn auth-button" :disabled="loading" data-test="login-submit">
               <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
 
@@ -115,6 +121,7 @@ async function login() {
   position: relative;
   overflow: hidden;
   background: var(--x-card);
+  margin-bottom: -4rem;
 }
 
 .auth-container {
@@ -274,6 +281,22 @@ async function login() {
   border-color: var(--x-ink);
   background: white;
   box-shadow: 0 0 0 3px var(--x-lime);
+}
+
+.forgot-row {
+  margin: -.7rem 0 1.2rem;
+  text-align: right;
+}
+
+.forgot-link {
+  color: var(--x-ink);
+  font-size: .9rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
 }
 
 .auth-button {
