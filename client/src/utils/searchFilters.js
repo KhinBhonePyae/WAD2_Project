@@ -14,22 +14,20 @@ export const DEFAULT_PREFS = {
   userLocation: null,
 }
 
+// UPDATED: Removed 5 km and 10 km
 export const RADIUS_OPTIONS = [
   { value: 0.5, label: '500 m' },
   { value: 1,   label: '1 km' },
   { value: 2,   label: '2 km' },
-  { value: 5,   label: '5 km' },
-  { value: 10,  label: '10 km' },
 ]
 
 const CROWD_RANK = { quiet: 1, moderate: 2, packed: 3 }
 const EARTH_RADIUS_KM = 6371
 
-// FIXED: Now checks for `lon` as well!
 function coords(loc) {
   if (!loc) return null
   const lat = Number(loc.lat ?? loc.latitude)
-  const lng = Number(loc.lng ?? loc.lon ?? loc.longitude) // <-- Added loc.lon
+  const lng = Number(loc.lng ?? loc.lon ?? loc.longitude)
   if (isNaN(lat) || isNaN(lng)) return null
   return { lat, lng }
 }
@@ -54,7 +52,7 @@ export function placeCoords(place) {
     const [lng, lat] = place.location.coordinates
     return coords({ lat, lng })
   }
-  return coords(place) // <-- Cleanly passes the whole object (with lat/lon) to coords()
+  return coords(place)
 }
 
 export function isWithinRadius(place, userLocation, radiusKm) {

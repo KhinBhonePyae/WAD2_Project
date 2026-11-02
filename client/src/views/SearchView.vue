@@ -1,17 +1,16 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import axios from 'axios'
 import { useRoute, useRouter } from 'vue-router'
 import HomeSearchBox from '../components/HomeSearchBox.vue'
 import SearchFilters from '../components/SearchFilters.vue'
 import PlaceCard from '../components/PlaceCard.vue'
-import WeatherStrip from '../components/WeatherStrip.vue'
+import WeatherScene from '../components/WeatherScene.vue'
 import CustomSelect from '../components/CustomSelect.vue'
 import { suitabilityBreakdown } from '../utils/suitability'
-import { DEFAULT_PREFS, filterPlaces, prefsFromUserPreferences } from '../utils/searchFilters'
+import { DEFAULT_PREFS, filterPlaces, prefsFromUserPreferences, sortByDistance } from '../utils/searchFilters'
 import { BASE_URL } from '../utils/api'
 import { fetchWeather } from '../utils/weather'
-// IMPORT SAVED UTILITIES
 import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved'
 
 const MANUAL_KEY = 'studyspot_search_prefs_manual'
@@ -30,12 +29,11 @@ const areaOptions = ref([])
 const loading = ref(false)
 const error = ref('')
 const weather = ref(null)
-
-// ADDED: Saved places state
 const saved = ref([])
 
 const ITEMS_PER_PAGE = 12
-const visibleCount = ref(ITEMS_PER_PAGE)
+const currentPage = ref(1)
+const resultsContainer = ref(null)
 
 const sortOptions = [
   { value: 'score', label: 'Best match' },
@@ -66,7 +64,7 @@ const hasUserPreferences = computed(() => {
 })
 
 async function fetchResults() {
-  visibleCount.value = ITEMS_PER_PAGE
+  currentPage.value = 1
   loading.value = true
   error.value = ''
   try {
@@ -100,13 +98,16 @@ function search(searchTerm) {
   }
   
   fetchResults()
+
+  nextTick(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  })
 }
 
 function goToPlace(place) {
   router.push(`/places/${place.id}`)
 }
 
-// ADDED: Toggle Save function
 async function toggleSave(id) {
   if (!isLoggedIn()) { 
     router.push('/login'); 
@@ -124,35 +125,73 @@ const results = computed(() => {
     ...s,
     ...suitabilityBreakdown(s, prefs.value.facilities, weather.value),
   }))
-  const list = filterPlaces(scored, prefs.value)
+  
+  let list = filterPlaces(scored, prefs.value)
 
-  if (sortBy.value === 'score') list.sort((a, b) => b.score - a.score)
-  else if (sortBy.value === 'rating') list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-  else if (sortBy.value === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
+  if (prefs.value.nearbyOnly && prefs.value.userLocation) {
+    list = sortByDistance(list, prefs.value.userLocation)
+  } else {
+    if (sortBy.value === 'score') list.sort((a, b) => b.score - a.score)
+    else if (sortBy.value === 'rating') list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+    else if (sortBy.value === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
+  }
+  
   return list
 })
 
-const visibleResults = computed(() => {
-  return results.value.slice(0, visibleCount.value)
+const totalPages = computed(() => Math.ceil(results.value.length / ITEMS_PER_PAGE) || 1)
+
+const paginatedResults = computed(() => {
+  const start = (currentPage.value - 1) * ITEMS_PER_PAGE
+  return results.value.slice(start, start + ITEMS_PER_PAGE)
 })
 
-function loadMore() {
-  visibleCount.value += ITEMS_PER_PAGE
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, '...', total]
+  }
+  if (current >= total - 2) {
+    return [1, '...', total - 3, total - 2, total - 1, total]
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total]
+})
+
+async function changePage(page) {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    await nextTick()
+    
+    if (resultsContainer.value) {
+      setTimeout(() => {
+        resultsContainer.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 50)
+    }
+  }
 }
 
-function onApply(newPrefs) {
+async function onApply(newPrefs) {
   prefs.value = newPrefs
   localStorage.setItem(MANUAL_KEY, '1')
-  fetchResults()
+  await fetchResults()
+  await nextTick()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function onReset() {
+async function onReset() {
   prefs.value = { ...DEFAULT_PREFS, facilities: [] }
   localStorage.setItem(MANUAL_KEY, '1')
-  fetchResults()
+  await fetchResults()
+  await nextTick()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function onResetToPreferences() {
+async function onResetToPreferences() {
   const user = readStoredUser()
   prefs.value = {
     ...DEFAULT_PREFS,
@@ -160,7 +199,9 @@ function onResetToPreferences() {
     ...prefsFromUserPreferences(user?.preferences),
   }
   localStorage.removeItem(MANUAL_KEY)
-  fetchResults()
+  await fetchResults()
+  await nextTick()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 watch(prefs, (v) => {
@@ -173,17 +214,18 @@ watch(() => route.query.q, (newQ) => {
   if (val !== query.value) {
     query.value = val
     fetchResults()
+    nextTick(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    })
   }
 })
 
-// ADDED: Fetch saved IDs on mount
 onMounted(async () => {
   prefs.value = initialPrefs()
   fetchWeather()
     .then((w) => (weather.value = w))
     .catch((e) => console.log('Weather unavailable: ' + e.message))
   
-  // Fetch saved places
   try {
     saved.value = await fetchSavedIds()
   } catch (e) {
@@ -198,12 +240,15 @@ onMounted(async () => {
   <div class="container py-4 x-page">
     <h2 class="mb-3">Find a study spot</h2>
 
-    <WeatherStrip :weather="weather" area="Singapore" class="mb-3" />
-    
     <div class="x-hero__search mb-4">
       <div class="ss-search x-search">
         <HomeSearchBox v-model="query" :places="spaces" @search="search" @select="goToPlace" />
       </div>
+    </div>
+
+    <!-- Wrapper that forces the mockup layout -->
+    <div class="mb-4">
+  <WeatherScene :weather="weather" area="Singapore" :compact="true" />
     </div>
 
     <div class="row">
@@ -213,7 +258,7 @@ onMounted(async () => {
           @reset-to-preferences="onResetToPreferences" />
       </div>
 
-      <div class="col-lg-9">
+      <div class="col-lg-9" ref="resultsContainer" style="scroll-margin-top: 100px;">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <span data-test="result-count">{{ results.length }} result(s)</span>
           
@@ -231,9 +276,8 @@ onMounted(async () => {
         </div>
 
         <template v-else>
-          <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
-            <!-- UPDATED: Now uses dynamic saved state and toggle event -->
-            <div class="col" v-for="space in visibleResults" :key="space.id">
+          <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5">
+            <div class="col" v-for="space in paginatedResults" :key="space.id">
               <PlaceCard 
                 :place="space" 
                 :score="space.score" 
@@ -243,9 +287,25 @@ onMounted(async () => {
             </div>
           </div>
           
-          <div v-if="visibleResults.length < results.length" class="text-center mt-5 mb-4">
-            <button class="btn btn-outline-primary x-load-more" @click="loadMore">
-              Load more places ({{ results.length - visibleResults.length }} remaining)
+          <div v-if="totalPages > 1" class="x-pagination mt-4 mb-5">
+            <button class="x-page-btn" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+              ◀ Prev
+            </button>
+
+            <template v-for="(page, index) in visiblePages" :key="index">
+              <span v-if="page === '...'" class="x-page-ellipsis">...</span>
+              <button 
+                v-else
+                class="x-page-btn" 
+                :class="{ 'is-active': currentPage === page }"
+                @click="changePage(page)"
+              >
+                {{ page }}
+              </button>
+            </template>
+
+            <button class="x-page-btn" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+              Next ▶
             </button>
           </div>
         </template>
@@ -271,21 +331,141 @@ onMounted(async () => {
   max-width: 180px;
 }
 
-.x-load-more {
-  font-weight: 800;
-  padding: 0.8rem 2rem;
-  border-width: 2px;
-  border-radius: 12px;
-  box-shadow: 2px 2px 0 var(--x-ink, #111);
-  transition: all 0.2s ease;
+/* =========================================
+   WEATHER SCENE MOCKUP OVERRIDES
+   ========================================= */
+
+/* --- Sun/Moon (Top Left) --- */
+.weather-wrapper :deep(.ws-sun) {
+  left: 10% !important;
+  right: auto !important;
+  top: 10% !important;
+  width: 100px !important;
+  height: 100px !important;
 }
 
-.x-load-more:hover {
+/* --- Temperature Card (Bottom Left - Matches screenshot exactly) --- */
+.weather-wrapper :deep(.ws-card) {
+  left: 20px !important;
+  right: auto !important;
+  bottom: 20px !important;
+  padding: 12px 20px 12px 16px !important;
+  border: 2px solid var(--x-ink, #111) !important;
+  box-shadow: 3px 3px 0 var(--x-ink, #111) !important; /* Thicker shadow */
+  background: var(--x-card, #fff) !important;
+  border-radius: 14px !important; /* Tighter corners matching screenshot */
+  max-width: calc(100% - 160px) !important; 
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.weather-wrapper :deep(.ws-card__temp) {
+  font-size: 2.8rem !important;
+  line-height: 0.9 !important;
+  letter-spacing: -0.04em !important;
+}
+.weather-wrapper :deep(.ws-card__temp sup) {
+  font-size: 1rem !important;
+  top: -1.5em !important;
+}
+.weather-wrapper :deep(.ws-card__label) {
+  font-size: 1rem !important;
+  font-weight: 800 !important; /* Thick bold text */
+}
+.weather-wrapper :deep(.ws-card__advice) {
+  font-size: 0.85rem !important;
+  margin-top: 2px !important;
+}
+
+/* --- Interactive Dial (Bottom Right) --- */
+.weather-wrapper :deep(.ws-dial-wrap) {
+  right: 20px !important;
+  left: auto !important;
+  bottom: 20px !important;
+  top: auto !important;
+  transform: scale(0.85) !important;
+  transform-origin: bottom right !important;
+}
+
+/* =========================================
+   OVERRIDE THE COMPONENT'S INTERNAL MOBILE MEDIA QUERIES
+   ========================================= */
+@media (max-width: 575.98px) {
+  .weather-wrapper {
+    height: 240px !important;
+  }
+  .weather-wrapper :deep(.ws-card) {
+    left: 16px !important;
+    right: auto !important;
+    bottom: 16px !important;
+    max-width: calc(100% - 130px) !important;
+    padding: 10px 14px !important;
+  }
+  .weather-wrapper :deep(.ws-card__temp) {
+    font-size: 2.2rem !important;
+  }
+  .weather-wrapper :deep(.ws-dial-wrap) {
+    right: 16px !important;
+    left: auto !important;
+    bottom: 16px !important;
+    top: auto !important;
+    transform: translateX(0) scale(0.75) !important; 
+    transform-origin: bottom right !important;
+  }
+}
+
+/* =========================================
+   PAGINATION STYLES
+   ========================================= */
+.x-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.x-page-btn {
+  background: var(--x-card, #fff);
+  border: 2px solid var(--x-ink, #111);
+  border-radius: 10px;
+  padding: 0.4rem 0.8rem;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--x-ink, #111);
+  box-shadow: 2px 2px 0 var(--x-ink, #111);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-width: 38px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.x-page-btn:not(:disabled):hover {
   transform: translate(-2px, -2px);
   box-shadow: 4px 4px 0 var(--x-ink, #111);
+  background-color: var(--x-paper, #f5f5f5);
+}
+
+.x-page-btn.is-active {
   background-color: var(--x-lime, #d1f529);
+}
+
+.x-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: 1px 1px 0 var(--x-ink, #111);
+  transform: none;
+  background-color: #e0e0e0;
+}
+
+.x-page-ellipsis {
+  font-weight: 800;
   color: var(--x-ink, #111);
-  border-color: var(--x-ink, #111);
+  padding: 0 4px;
+  user-select: none;
 }
 
 @media (max-width: 576px) {
