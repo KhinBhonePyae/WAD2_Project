@@ -20,9 +20,8 @@ const saved = ref([])
 const loading = ref(true)
 const q = ref('')
 const root = ref(null)
-const loggedIn = ref(isLoggedIn())   // decides where the area carousel sits
+const loggedIn = ref(isLoggedIn())
 
-/* ---------- notebook intro: once per browser tab ---------- */
 const INTRO_KEY = 'lk-notebook-opened'
 function introSeen() {
   try { return sessionStorage.getItem(INTRO_KEY) === '1' } catch { return false }
@@ -31,11 +30,10 @@ const showIntro = ref(!introSeen() && !reducedMotion)
 function introRevealed() { playHero() }
 function introOpened() {
   showIntro.value = false
-  try { sessionStorage.setItem(INTRO_KEY, '1') } catch { /* private mode: plays again next time */ }
+  try { sessionStorage.setItem(INTRO_KEY, '1') } catch { /* private mode */ }
   ScrollTrigger.refresh()
 }
 
-/* ---------- vibe picker: changes what "top picks" means ---------- */
 const VIBES = [
   { key: 'focus', label: 'Deep focus', note: 'quiet + sockets', colour: 'var(--x-lilac)', facilities: ['quiet', 'sockets'] },
   { key: 'group', label: 'Group grind', note: 'room to talk, food nearby', colour: 'var(--x-butter)', facilities: ['fnb', 'wifi', 'toilets'] },
@@ -58,15 +56,13 @@ const topPicks = computed(() => places.value
   .slice(0, 6))
 
 let switching = false
-let pendingVibe = null   // clicked while a switch was still running
-const selectedKey = ref(VIBES[0].key)   // highlight follows the click straight away
+let pendingVibe = null
+const selectedKey = ref(VIBES[0].key)
 async function pickVibe(v) {
   selectedKey.value = v.key
   if (switching) { pendingVibe = v; return }
   if (v.key === vibe.value.key) return
   if (reducedMotion) { vibe.value = v; return }
-  // crossfade: current cards fade down, the list changes, the new six fade up in turn.
-  // (Moving cards between grid slots made them jump around in the responsive grid.)
   switching = true
   gsap.killTweensOf('.x-pick')
   await gsap.to('.x-pick', { autoAlpha: 0, y: 12, duration: 0.18, ease: 'power2.in' })
@@ -75,11 +71,9 @@ async function pickVibe(v) {
   await gsap.fromTo('.x-pick', { autoAlpha: 0, y: 16 },
     { autoAlpha: 1, y: 0, duration: 0.4, ease: 'power3.out', stagger: 0.05 })
   switching = false
-  // honour the most recent click once this switch has finished
   if (pendingVibe) { const next = pendingVibe; pendingVibe = null; pickVibe(next) }
 }
 
-/* ---------- data for the other sections ---------- */
 const marqueeNames = computed(() => places.value.map(p => p.name))
 const openCount = computed(() => places.value.filter(p => p.openNow).length)
 const planningCount = computed(() => places.value.reduce((t, p) => t + (p.intent?.count || 0), 0))
@@ -98,13 +92,11 @@ const areas = computed(() => {
 
 const stats = ref({ places: 0, open: 0, planning: 0, temp: 0 })
 
-/* ---------- actions ---------- */
 function search() {
-  router.push({ path: '/places', query: q.value ? { q: q.value } : {} })
+  router.push({ path: '/search', query: q.value ? { q: q.value } : {} })
 }
-// "Ready to lock in?" -> new visitors sign up, logged-in users go straight to browsing
 function answerYes() {
-  router.push(isLoggedIn() ? '/places' : '/signup')
+  router.push(isLoggedIn() ? '/search' : '/signup')
 }
 function goToPlace(place) {
   router.push(`/places/${place.id}`)
@@ -118,7 +110,6 @@ async function toggleSave(id) {
   }
 }
 
-/* ---------- animation ---------- */
 let ctx = null
 let mm = null
 let heroPlayed = false
@@ -136,7 +127,6 @@ function playHero() {
   })
 }
 
-// letters wobble when the cursor passes over them
 function wobble(e) {
   if (reducedMotion) return
   gsap.fromTo(e.currentTarget, { rotation: 0, y: 0 },
@@ -146,9 +136,6 @@ function wobble(e) {
 function setupScrollAnimations() {
   if (reducedMotion || !ctx) return
   ctx.add(() => {
-    // the pinned area ride adds scroll space that every trigger below it must account
-    // for; ScrollTrigger.sort() in onMounted keeps them in page order wherever it sits
-    // explore by area: vertical scroll drives a horizontal ride (desktop only)
     mm = gsap.matchMedia()
     mm.add('(min-width: 768px)', () => {
       const track = document.querySelector('.x-areas__track')
@@ -156,7 +143,6 @@ function setupScrollAnimations() {
       const distance = () => track.scrollWidth - window.innerWidth + 48
       const ride = gsap.to(track, {
         x: () => -distance(), ease: 'none',
-        // end is 40% of the travel distance, so it takes much less scrolling to get past
         scrollTrigger: { trigger: '.x-areas', start: 'top top', end: () => '+=' + distance() * 0.4, pin: true, scrub: 0.8, invalidateOnRefresh: true }
       })
       gsap.utils.toArray('.x-area__photo').forEach((photo, i) => {
@@ -168,14 +154,10 @@ function setupScrollAnimations() {
       })
     })
 
-    // marquees: drift forever, and run faster/backwards with scroll speed
     const rows = gsap.utils.toArray('.x-marquee__track')
-    // the text is duplicated, so sliding exactly half its width loops seamlessly;
-    // the second row runs the other way (from -50% back to 0)
     const loops = rows.map((row, i) => i % 2
       ? gsap.fromTo(row, { xPercent: -50 }, { xPercent: 0, duration: 40, ease: 'none', repeat: -1 })
       : gsap.fromTo(row, { xPercent: 0 }, { xPercent: -50, duration: 40, ease: 'none', repeat: -1 }))
-    // (logged-in users don't get the marquee or the closing line)
     if (rows.length) ScrollTrigger.create({
       trigger: '.x-marquee', start: 'top bottom', end: 'bottom top',
       onUpdate: self => {
@@ -185,7 +167,6 @@ function setupScrollAnimations() {
       },
     })
 
-    // section headings slide up word by word
     gsap.utils.toArray('.x-reveal').forEach(el => {
       gsap.from(el.querySelectorAll('.x-word'), {
         yPercent: 110, rotation: 4, duration: 0.9, ease: 'expo.out', stagger: 0.06,
@@ -193,13 +174,11 @@ function setupScrollAnimations() {
       })
     })
 
-    // vibe buttons pop in
     gsap.fromTo('.x-vibe', { y: 24, autoAlpha: 0 }, {
       y: 0, autoAlpha: 1, duration: 0.6,
       ease: 'power3.out', stagger: 0.06, scrollTrigger: { trigger: '.x-vibes', start: 'top 90%' }
     })
 
-    // stats are in the hero now, so they count up as soon as the data is in
     const target = { places: places.value.length, open: openCount.value, planning: planningCount.value, temp: weather.value?.temp ?? 0 }
     const obj = { places: 0, open: 0, planning: 0, temp: 0 }
     gsap.to(obj, {
@@ -214,13 +193,11 @@ function setupScrollAnimations() {
     gsap.fromTo('.x-stat', { y: 30, autoAlpha: 0 },
       { y: 0, autoAlpha: 1, duration: 0.7, ease: 'back.out(1.7)', stagger: 0.08 })
 
-    // big closing line fills in letter by letter
     if (!loggedIn.value) gsap.from('.x-final .x-char', {
       yPercent: 100, opacity: 0, stagger: 0.03, ease: 'expo.out', duration: 0.9,
       scrollTrigger: { trigger: '.x-final', start: 'top 90%' }
     })
 
-    // magnetic buttons pull towards the cursor
     if (finePointer) {
       gsap.utils.toArray('[data-magnetic]').forEach(el => {
         const mx = gsap.quickTo(el, 'x', { duration: 0.6, ease: 'elastic.out(1, .4)' })
@@ -235,13 +212,11 @@ function setupScrollAnimations() {
   })
 }
 
-// top picks rise in whenever the list renders
 function animatePicks() {
   if (reducedMotion || !ctx) return
   ctx.add(() => {
     ScrollTrigger.batch('.x-pick', {
       start: 'top 90%', once: true,
-      // fromTo ends at fully visible, so a vibe switch mid-animation can't leave a card half-faded
       onEnter: els => gsap.fromTo(els, { y: 40, autoAlpha: 0 },
         { y: 0, autoAlpha: 1, duration: 0.7, ease: 'power3.out', stagger: 0.08 }),
     })
@@ -273,8 +248,6 @@ onMounted(async () => {
   }
   setupScrollAnimations()
   animatePicks()
-  // the area ride can sit above or below the cards, so put every trigger
-  // back into page order before measuring
   ScrollTrigger.sort()
   ScrollTrigger.refresh()
 })
@@ -286,20 +259,16 @@ onUnmounted(() => {
   ctx?.revert()
 })
 
-// helpers for the template
 const chars = text => text.split('')
 const words = text => text.split(' ')
 </script>
 
 <template>
   <div ref="root" class="x-home">
-    <!-- Teleported to <body>: the page-transition wrapper uses transform, which would
-         otherwise trap this fixed overlay inside the (very tall) page -->
     <Teleport to="body">
       <NotebookIntro v-if="showIntro" @reveal="introRevealed" @opened="introOpened" />
     </Teleport>
 
-    <!-- ===== HERO ===== -->
     <header class="x-hero">
       <div class="container x-hero__grid">
         <div class="x-hero__main">
@@ -328,7 +297,6 @@ const words = text => text.split(' ')
           </div>
         </div>
 
-        <!-- numbers sit beside the intro so the key facts are visible without scrolling -->
         <div class="x-stats" aria-label="LockedIN in numbers">
           <div class="x-stat x-stat--a"><b>{{ stats.places }}</b><span>study spots mapped</span></div>
           <div class="x-stat x-stat--b"><b>{{ stats.open }}</b><span>open right now</span></div>
@@ -338,12 +306,8 @@ const words = text => text.split(' ')
       </div>
     </header>
 
-    <!-- first-time visitors explore by area first; logged-in users get it below the cards -->
     <AreaCarousel v-if="!loggedIn" :areas="areas" />
 
-
-
-    <!-- ===== VIBE + TOP PICKS ===== -->
     <section class="x-section container">
       <div class="x-head">
         <h2 class="x-reveal"><span v-for="(w, i) in words('What\'s the vibe today?')" :key="i" class="x-mask"><span
@@ -374,14 +338,13 @@ const words = text => text.split(' ')
       </div>
 
       <div class="text-center mt-5">
-        <RouterLink to="/places" class="btn btn-primary btn-lg x-big-btn" data-magnetic data-cursor="go">Browse all {{
+        <RouterLink to="/search" class="btn btn-primary btn-lg x-big-btn" data-magnetic data-cursor="go">Browse all {{
           places.length }} spots →</RouterLink>
       </div>
     </section>
 
     <AreaCarousel v-if="loggedIn" :areas="areas" />
 
-    <!-- ===== MARQUEE ===== (first-time visitors only) -->
     <div v-if="!loggedIn" class="x-marquee" aria-hidden="true">
       <div class="x-marquee__row">
         <div class="x-marquee__track">
@@ -395,8 +358,6 @@ const words = text => text.split(' ')
       </div>
     </div>
 
-
-    <!-- ===== FINAL CTA ===== (first-time visitors only) -->
     <section v-if="!loggedIn" class="x-final container">
       <p class="x-final__line" aria-label="Ready to lock in?">
         <template v-for="(w, wi) in words('Ready to lock in?')" :key="wi"><span class="x-wordbox"
@@ -414,7 +375,6 @@ const words = text => text.split(' ')
   overflow-x: clip;
 }
 
-/* ---------- hero ---------- */
 .x-hero {
   padding-top: 120px;
   padding-bottom: 2rem;
@@ -432,7 +392,6 @@ const words = text => text.split(' ')
   margin-bottom: 1rem;
 }
 
-/* one third of the original giant size */
 .x-hero__title {
   margin: 0;
   font-size: clamp(1.85rem, 7vw, 5.7rem);
@@ -487,7 +446,6 @@ const words = text => text.split(' ')
   color: var(--x-ink);
 }
 
-/* a third of the old size would be unreadable on phones, so it bottoms out at body size */
 .x-hero__line {
   max-width: 560px;
   margin: 1.2rem 0 1.4rem;
@@ -515,7 +473,6 @@ const words = text => text.split(' ')
   padding: 4px 4px 4px 14px;
 }
 
-/* ---------- marquee ---------- */
 .x-marquee {
   margin: 3rem 0;
   transform-origin: center;
@@ -558,7 +515,6 @@ const words = text => text.split(' ')
   padding-left: 1rem;
 }
 
-/* ---------- sections ---------- */
 .x-section {
   padding-top: 5rem;
   padding-bottom: 5rem;
@@ -622,7 +578,6 @@ const words = text => text.split(' ')
   box-shadow: 6px 6px 0 var(--x-ink);
 }
 
-/* Bootstrap's .row pulls itself up by the gutter; cancel that so cards never ride up into the tiles */
 .x-vibes+.row {
   margin-top: 0;
 }
@@ -653,7 +608,6 @@ const words = text => text.split(' ')
   padding: .85rem 2.4rem;
 }
 
-/* ---------- stats ---------- */
 .x-stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -702,7 +656,6 @@ const words = text => text.split(' ')
   transform: rotate(2deg);
 }
 
-/* ---------- final ---------- */
 .x-final {
   text-align: center;
   padding-block: 4rem 3rem;

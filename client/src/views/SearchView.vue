@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import axios from 'axios'
-import SearchQueryBar from '../components/SearchQueryBar.vue'
+import { useRoute, useRouter } from 'vue-router'
+import HomeSearchBox from '../components/HomeSearchBox.vue'
 import SearchFilters from '../components/SearchFilters.vue'
 import PlaceCard from '../components/PlaceCard.vue'
 import WeatherStrip from '../components/WeatherStrip.vue'
+import CustomSelect from '../components/CustomSelect.vue'
 import { suitabilityBreakdown } from '../utils/suitability'
 import { DEFAULT_PREFS, filterPlaces, prefsFromUserPreferences } from '../utils/searchFilters'
 import { BASE_URL } from '../utils/api'
@@ -12,8 +14,12 @@ import { fetchWeather } from '../utils/weather'
 
 const MANUAL_KEY = 'studyspot_search_prefs_manual'
 const STORAGE_KEY = 'studyspot_search_prefs'
+const USER_KEY = 'user'
 
-const query = ref('')
+const route = useRoute()
+const router = useRouter()
+
+const query = ref(route.query.q || '')
 const prefs = ref({ ...DEFAULT_PREFS, facilities: [] })
 const sortBy = ref('score')
 const spaces = ref([])
@@ -23,7 +29,11 @@ const loading = ref(false)
 const error = ref('')
 const weather = ref(null)
 
-const USER_KEY = 'user' // matches the key CatalogueView reads
+const sortOptions = [
+  { value: 'score', label: 'Best match' },
+  { value: 'rating', label: 'Highest rated' },
+  { value: 'name', label: 'Name (A–Z)' }
+]
 
 function readStoredUser() {
   try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null') }
@@ -31,7 +41,6 @@ function readStoredUser() {
 }
 
 function initialPrefs() {
-  // A manual filter choice always wins — the user set it deliberately.
   if (localStorage.getItem(MANUAL_KEY) === '1') {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
@@ -39,20 +48,16 @@ function initialPrefs() {
       catch { /* corrupt entry — fall through to preferences */ }
     }
   }
-
-  // No manual state yet → seed from profile preferences.
   const user = readStoredUser()
   return { ...DEFAULT_PREFS, facilities: [], ...prefsFromUserPreferences(user?.preferences) }
 }
 
-// True when the current user has anything we can auto-select from.
-// Drives the visibility of "Reset to my preferences".
 const hasUserPreferences = computed(() => {
   const p = readStoredUser()?.preferences
   return !!p && !!(p.wifiRequired || p.socketsRequired || p.quietPreferred || p.indoorPreferred)
 })
 
-async function search() {
+async function fetchResults() {
   loading.value = true
   error.value = ''
   try {
@@ -76,8 +81,22 @@ async function search() {
   }
 }
 
-// Score with the shared formula, apply client-side filters, then sort.
-// Recomputes automatically when the weather arrives or the prefs change.
+function search(searchTerm) {
+  if (typeof searchTerm === 'string') {
+    query.value = searchTerm
+  }
+  
+  if (query.value !== (route.query.q || '')) {
+    router.replace({ query: { ...route.query, q: query.value || undefined } })
+  }
+  
+  fetchResults()
+}
+
+function goToPlace(place) {
+  router.push(`/places/${place.id}`)
+}
+
 const results = computed(() => {
   const scored = spaces.value.map((s) => ({
     ...s,
@@ -94,13 +113,13 @@ const results = computed(() => {
 function onApply(newPrefs) {
   prefs.value = newPrefs
   localStorage.setItem(MANUAL_KEY, '1')
-  search()
+  fetchResults()
 }
 
 function onReset() {
   prefs.value = { ...DEFAULT_PREFS, facilities: [] }
   localStorage.setItem(MANUAL_KEY, '1')
-  search()
+  fetchResults()
 }
 
 function onResetToPreferences() {
@@ -111,20 +130,29 @@ function onResetToPreferences() {
     ...prefsFromUserPreferences(user?.preferences),
   }
   localStorage.removeItem(MANUAL_KEY)
-  search()
+  fetchResults()
 }
 
-// Persist preferences (Week 6: localStorage + JSON)
-watch(prefs, (v) => localStorage.setItem(STORAGE_KEY, JSON.stringify(v)), { deep: true })
+watch(prefs, (v) => {
+  const { userLocation, ...toSave } = v
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave))
+}, { deep: true })
+
+watch(() => route.query.q, (newQ) => {
+  const val = newQ || ''
+  if (val !== query.value) {
+    query.value = val
+    fetchResults()
+  }
+})
 
 onMounted(() => {
   prefs.value = initialPrefs()
   fetchWeather()
     .then((w) => (weather.value = w))
     .catch((e) => console.log('Weather unavailable: ' + e.message))
-  search()
+  fetchResults()
 })
-
 </script>
 
 <template>
@@ -132,7 +160,12 @@ onMounted(() => {
     <h2 class="mb-3">Find a study spot</h2>
 
     <WeatherStrip :weather="weather" area="Singapore" class="mb-3" />
-    <SearchQueryBar v-model="query" @search="search" />
+    
+    <div class="x-hero__search mb-4">
+      <div class="ss-search x-search">
+        <HomeSearchBox v-model="query" :places="spaces" @search="search" @select="goToPlace" />
+      </div>
+    </div>
 
     <div class="row">
       <div class="col-lg-3">
@@ -142,13 +175,12 @@ onMounted(() => {
       </div>
 
       <div class="col-lg-9">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <span data-test="result-count">{{ results.length }} result(s)</span>
-          <select class="form-select w-auto" v-model="sortBy" data-test="sort-select">
-            <option value="score">Best match</option>
-            <option value="rating">Highest rated</option>
-            <option value="name">Name (A–Z)</option>
-          </select>
+          
+          <div class="sort-select-wrapper">
+            <CustomSelect v-model="sortBy" :options="sortOptions" data-test="sort-select" />
+          </div>
         </div>
 
         <div v-if="loading" class="text-center py-5">
@@ -162,12 +194,33 @@ onMounted(() => {
         <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
           <div class="col" v-for="space in results" :key="space.id">
             <PlaceCard :place="space" :score="space.score" :saved="false" />
-            <ul class="list-unstyled ss-meta mt-2 mb-0" data-test="score-reasons">
-              <li v-for="r in space.reasons" :key="r">• {{ r }}</li>
-            </ul>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.x-hero__search {
+  width: 100%;
+  position: relative;
+  z-index: 5;
+}
+
+.x-search {
+  padding: 4px 4px 4px 14px;
+  width: 100%;
+}
+
+.sort-select-wrapper {
+  width: 100%;
+  max-width: 180px;
+}
+
+@media (max-width: 576px) {
+  .sort-select-wrapper {
+    max-width: 100%;
+  }
+}
+</style>

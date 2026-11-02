@@ -1,6 +1,4 @@
 <script setup>
-// Hero search bar with an animated dropdown of matching places.
-// Data comes from the `places` prop (HomeView already fetches them), so no extra API call.
 import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
@@ -11,12 +9,11 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'search', 'select'])
 
 const open = ref(false)
-const active = ref(-1) // highlighted row (keyboard / hover); -1 = none
+const active = ref(-1) 
 const listId = 'hero-suggest-list'
 
 const term = computed(() => props.modelValue.trim().toLowerCase())
 
-// Rank: name starts with > name contains > area/address/tags contain; ties broken by rating
 const suggestions = computed(() => {
     const t = term.value
     if (!t) return []
@@ -35,10 +32,8 @@ const suggestions = computed(() => {
 
 const showList = computed(() => open.value && term.value.length > 0)
 
-// Re-open and reset the highlight whenever the text changes
 watch(() => props.modelValue, () => { active.value = -1; open.value = true })
 
-// Split a name into plain / matching parts so the match can be bolded without v-html
 function parts(name) {
     const t = term.value
     const i = name.toLowerCase().indexOf(t)
@@ -57,11 +52,13 @@ function move(step) {
     active.value = active.value === -1 ? (step > 0 ? 0 : n - 1) : (active.value + step + n) % n
 }
 function choose(place) { open.value = false; emit('select', place) }
+
 function onEnter() {
     if (showList.value && active.value >= 0) choose(suggestions.value[active.value])
-    else { open.value = false; emit('search') }
+    else { open.value = false; emit('search', props.modelValue) } 
 }
-function searchAll() { open.value = false; emit('search') }
+
+function searchAll() { open.value = false; emit('search', props.modelValue) } 
 </script>
 
 <template>
@@ -74,13 +71,12 @@ function searchAll() { open.value = false; emit('search') }
                 :aria-activedescendant="active >= 0 && suggestions[active] ? `suggest-${suggestions[active].id}` : undefined"
                 @input="emit('update:modelValue', $event.target.value)" @focus="open = true" @blur="open = false"
                 @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" @keydown.esc="open = false"
-                @keydown.enter="onEnter">
-            <button class="btn btn-primary" @click="searchAll" data-test="hero-search-btn">Search</button>
+                @keydown.enter.prevent="onEnter">
+            <button type="button" class="btn btn-primary" @click="searchAll" data-test="hero-search-btn">Search</button>
         </div>
 
         <Transition name="suggest">
-            <!-- mousedown.prevent keeps focus in the input so clicking a row doesn't close the list first -->
-            <ul v-if="showList" :id="listId" class="suggest" role="listbox" data-test="suggest-list" @mousedown.prevent>
+            <ul v-if="showList" :id="listId" class="suggest" role="listbox" data-test="suggest-list" @mousedown.prevent @wheel.stop>
                 <li v-for="(p, i) in suggestions" :key="p.id" :id="`suggest-${p.id}`" class="suggest__item"
                     :class="{ 'is-active': i === active }" :style="{ animationDelay: i * 45 + 'ms' }" role="option"
                     :aria-selected="i === active" data-test="suggest-item" @mouseenter="active = i" @click="choose(p)">
@@ -136,40 +132,48 @@ function searchAll() { open.value = false; emit('search') }
     left: 0;
     right: 0;
     z-index: 1000;
-
     margin: 0;
     padding: 6px;
     list-style: none;
     text-align: left;
-
     color: var(--ss-text, var(--x-ink));
     background: var(--ss-surface, var(--x-card));
     border: 1px solid var(--ss-border, var(--x-ink));
     border-radius: 18px;
     box-shadow: var(--x-pop);
-
     max-height: min(60vh, 380px);
     overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
-.ss-hero {
-    position: relative;
-    z-index: 1;
+.suggest::-webkit-scrollbar {
+    width: 10px !important;
+    -webkit-appearance: none;
+}
+.suggest::-webkit-scrollbar-track {
+    background: transparent !important;
+    margin-block: 10px;
+}
+.suggest::-webkit-scrollbar-thumb {
+    background-color: var(--x-ink, #111) !important;
+    border-radius: 10px !important;
+    border: 3px solid transparent !important;
+    background-clip: content-box !important;
+}
+.suggest::-webkit-scrollbar-thumb:hover {
+    background-color: var(--x-orange, #ff5500) !important;
 }
 
-/* Whole panel: fade + slide down */
 .suggest-enter-active,
 .suggest-leave-active {
     transition: opacity 0.18s ease, transform 0.18s ease;
 }
-
 .suggest-enter-from,
 .suggest-leave-to {
     opacity: 0;
     transform: translateY(-8px) scale(0.98);
 }
 
-/* Rows: staggered rise (delay set inline per row) */
 .suggest__item {
     display: flex;
     align-items: center;
@@ -180,21 +184,12 @@ function searchAll() { open.value = false; emit('search') }
     cursor: pointer;
     animation: suggest-in 0.22s ease both;
 }
-
 .suggest__item.is-active {
     background: var(--ss-purple-100, var(--x-paper));
 }
-
 @keyframes suggest-in {
-    from {
-        opacity: 0;
-        transform: translateY(-6px);
-    }
-
-    to {
-        opacity: 1;
-        transform: none;
-    }
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: none; }
 }
 
 .suggest__main {
@@ -227,14 +222,8 @@ function searchAll() { open.value = false; emit('search') }
     font-weight: 600;
     white-space: nowrap;
 }
-
-.suggest__status.is-open {
-    color: var(--ss-success);
-}
-
-.suggest__status.is-closed {
-    color: var(--ss-danger);
-}
+.suggest__status.is-open { color: var(--ss-success); }
+.suggest__status.is-closed { color: var(--ss-danger); }
 
 .suggest__empty {
     padding: 12px 14px;
@@ -249,18 +238,15 @@ function searchAll() { open.value = false; emit('search') }
     cursor: pointer;
     border-radius: 0 0 12px 12px;
 }
-
 .suggest__all:hover {
     background: var(--ss-purple-100, var(--x-paper));
 }
 
 @media (prefers-reduced-motion: reduce) {
-
     .suggest-enter-active,
     .suggest-leave-active {
         transition: none;
     }
-
     .suggest__item {
         animation: none;
     }
