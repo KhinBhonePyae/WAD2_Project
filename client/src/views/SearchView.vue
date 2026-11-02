@@ -11,6 +11,8 @@ import { suitabilityBreakdown } from '../utils/suitability'
 import { DEFAULT_PREFS, filterPlaces, prefsFromUserPreferences } from '../utils/searchFilters'
 import { BASE_URL } from '../utils/api'
 import { fetchWeather } from '../utils/weather'
+// IMPORT SAVED UTILITIES
+import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved'
 
 const MANUAL_KEY = 'studyspot_search_prefs_manual'
 const STORAGE_KEY = 'studyspot_search_prefs'
@@ -28,6 +30,12 @@ const areaOptions = ref([])
 const loading = ref(false)
 const error = ref('')
 const weather = ref(null)
+
+// ADDED: Saved places state
+const saved = ref([])
+
+const ITEMS_PER_PAGE = 12
+const visibleCount = ref(ITEMS_PER_PAGE)
 
 const sortOptions = [
   { value: 'score', label: 'Best match' },
@@ -58,6 +66,7 @@ const hasUserPreferences = computed(() => {
 })
 
 async function fetchResults() {
+  visibleCount.value = ITEMS_PER_PAGE
   loading.value = true
   error.value = ''
   try {
@@ -97,6 +106,19 @@ function goToPlace(place) {
   router.push(`/places/${place.id}`)
 }
 
+// ADDED: Toggle Save function
+async function toggleSave(id) {
+  if (!isLoggedIn()) { 
+    router.push('/login'); 
+    return 
+  }
+  try {
+    saved.value = await toggleSavedId(saved.value, id)
+  } catch (e) {
+    console.error('Could not update saved place', e)
+  }
+}
+
 const results = computed(() => {
   const scored = spaces.value.map((s) => ({
     ...s,
@@ -109,6 +131,14 @@ const results = computed(() => {
   else if (sortBy.value === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
   return list
 })
+
+const visibleResults = computed(() => {
+  return results.value.slice(0, visibleCount.value)
+})
+
+function loadMore() {
+  visibleCount.value += ITEMS_PER_PAGE
+}
 
 function onApply(newPrefs) {
   prefs.value = newPrefs
@@ -146,11 +176,20 @@ watch(() => route.query.q, (newQ) => {
   }
 })
 
-onMounted(() => {
+// ADDED: Fetch saved IDs on mount
+onMounted(async () => {
   prefs.value = initialPrefs()
   fetchWeather()
     .then((w) => (weather.value = w))
     .catch((e) => console.log('Weather unavailable: ' + e.message))
+  
+  // Fetch saved places
+  try {
+    saved.value = await fetchSavedIds()
+  } catch (e) {
+    console.error('Could not load saved places', e)
+  }
+
   fetchResults()
 })
 </script>
@@ -191,11 +230,25 @@ onMounted(() => {
           No study spaces match. Try removing some filters.
         </div>
 
-        <div v-else class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
-          <div class="col" v-for="space in results" :key="space.id">
-            <PlaceCard :place="space" :score="space.score" :saved="false" />
+        <template v-else>
+          <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+            <!-- UPDATED: Now uses dynamic saved state and toggle event -->
+            <div class="col" v-for="space in visibleResults" :key="space.id">
+              <PlaceCard 
+                :place="space" 
+                :score="space.score" 
+                :saved="saved.includes(space.id)" 
+                @toggle-save="toggleSave" 
+              />
+            </div>
           </div>
-        </div>
+          
+          <div v-if="visibleResults.length < results.length" class="text-center mt-5 mb-4">
+            <button class="btn btn-outline-primary x-load-more" @click="loadMore">
+              Load more places ({{ results.length - visibleResults.length }} remaining)
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -216,6 +269,23 @@ onMounted(() => {
 .sort-select-wrapper {
   width: 100%;
   max-width: 180px;
+}
+
+.x-load-more {
+  font-weight: 800;
+  padding: 0.8rem 2rem;
+  border-width: 2px;
+  border-radius: 12px;
+  box-shadow: 2px 2px 0 var(--x-ink, #111);
+  transition: all 0.2s ease;
+}
+
+.x-load-more:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--x-ink, #111);
+  background-color: var(--x-lime, #d1f529);
+  color: var(--x-ink, #111);
+  border-color: var(--x-ink, #111);
 }
 
 @media (max-width: 576px) {
