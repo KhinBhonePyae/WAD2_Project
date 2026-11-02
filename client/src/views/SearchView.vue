@@ -100,6 +100,7 @@ function search(searchTerm) {
   fetchResults()
 
   nextTick(() => {
+    // When searching from the search bar, still scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' })
   })
 }
@@ -175,12 +176,19 @@ async function changePage(page) {
   }
 }
 
+// --- UPDATED SCROLL FUNCTIONS ---
 async function onApply(newPrefs) {
   prefs.value = newPrefs
   localStorage.setItem(MANUAL_KEY, '1')
   await fetchResults()
   await nextTick()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  
+  // Scroll directly to the results container instead of the very top
+  if (resultsContainer.value) {
+    setTimeout(() => {
+      resultsContainer.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+  }
 }
 
 async function onReset() {
@@ -188,7 +196,12 @@ async function onReset() {
   localStorage.setItem(MANUAL_KEY, '1')
   await fetchResults()
   await nextTick()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  
+  if (resultsContainer.value) {
+    setTimeout(() => {
+      resultsContainer.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+  }
 }
 
 async function onResetToPreferences() {
@@ -201,7 +214,12 @@ async function onResetToPreferences() {
   localStorage.removeItem(MANUAL_KEY)
   await fetchResults()
   await nextTick()
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  
+  if (resultsContainer.value) {
+    setTimeout(() => {
+      resultsContainer.value.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 50)
+  }
 }
 
 watch(prefs, (v) => {
@@ -246,9 +264,8 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Wrapper that forces the mockup layout -->
-    <div class="mb-4">
-  <WeatherScene :weather="weather" area="Singapore" :compact="true" />
+    <div class="weather-wrapper mb-4">
+      <WeatherScene :weather="weather" area="Singapore" :compact="true" />
     </div>
 
     <div class="row">
@@ -258,6 +275,7 @@ onMounted(async () => {
           @reset-to-preferences="onResetToPreferences" />
       </div>
 
+      <!-- This ref is crucial for the scrolling logic -->
       <div class="col-lg-9" ref="resultsContainer" style="scroll-margin-top: 100px;">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
           <span data-test="result-count">{{ results.length }} result(s)</span>
@@ -331,93 +349,7 @@ onMounted(async () => {
   max-width: 180px;
 }
 
-/* =========================================
-   WEATHER SCENE MOCKUP OVERRIDES
-   ========================================= */
-
-/* --- Sun/Moon (Top Left) --- */
-.weather-wrapper :deep(.ws-sun) {
-  left: 10% !important;
-  right: auto !important;
-  top: 10% !important;
-  width: 100px !important;
-  height: 100px !important;
-}
-
-/* --- Temperature Card (Bottom Left - Matches screenshot exactly) --- */
-.weather-wrapper :deep(.ws-card) {
-  left: 20px !important;
-  right: auto !important;
-  bottom: 20px !important;
-  padding: 12px 20px 12px 16px !important;
-  border: 2px solid var(--x-ink, #111) !important;
-  box-shadow: 3px 3px 0 var(--x-ink, #111) !important; /* Thicker shadow */
-  background: var(--x-card, #fff) !important;
-  border-radius: 14px !important; /* Tighter corners matching screenshot */
-  max-width: calc(100% - 160px) !important; 
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
-}
-
-.weather-wrapper :deep(.ws-card__temp) {
-  font-size: 2.8rem !important;
-  line-height: 0.9 !important;
-  letter-spacing: -0.04em !important;
-}
-.weather-wrapper :deep(.ws-card__temp sup) {
-  font-size: 1rem !important;
-  top: -1.5em !important;
-}
-.weather-wrapper :deep(.ws-card__label) {
-  font-size: 1rem !important;
-  font-weight: 800 !important; /* Thick bold text */
-}
-.weather-wrapper :deep(.ws-card__advice) {
-  font-size: 0.85rem !important;
-  margin-top: 2px !important;
-}
-
-/* --- Interactive Dial (Bottom Right) --- */
-.weather-wrapper :deep(.ws-dial-wrap) {
-  right: 20px !important;
-  left: auto !important;
-  bottom: 20px !important;
-  top: auto !important;
-  transform: scale(0.85) !important;
-  transform-origin: bottom right !important;
-}
-
-/* =========================================
-   OVERRIDE THE COMPONENT'S INTERNAL MOBILE MEDIA QUERIES
-   ========================================= */
-@media (max-width: 575.98px) {
-  .weather-wrapper {
-    height: 240px !important;
-  }
-  .weather-wrapper :deep(.ws-card) {
-    left: 16px !important;
-    right: auto !important;
-    bottom: 16px !important;
-    max-width: calc(100% - 130px) !important;
-    padding: 10px 14px !important;
-  }
-  .weather-wrapper :deep(.ws-card__temp) {
-    font-size: 2.2rem !important;
-  }
-  .weather-wrapper :deep(.ws-dial-wrap) {
-    right: 16px !important;
-    left: auto !important;
-    bottom: 16px !important;
-    top: auto !important;
-    transform: translateX(0) scale(0.75) !important; 
-    transform-origin: bottom right !important;
-  }
-}
-
-/* =========================================
-   PAGINATION STYLES
-   ========================================= */
+/* --- Pagination Styles --- */
 .x-pagination {
   display: flex;
   justify-content: center;

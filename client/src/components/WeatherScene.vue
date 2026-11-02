@@ -336,47 +336,94 @@ onUnmounted(() => {
   container-type: inline-size;
 }
 
+/* =========================================
+   SHORTER COMPACT MOCKUP (220px Height)
+   ========================================= */
 .ws--compact {
-  height: 280px;
+  height: 220px; /* SHORTER HEIGHT */
   border: 2px solid var(--x-ink, #111);
   box-shadow: 4px 4px 0 var(--x-ink, #111);
   border-radius: 20px;
 }
 
+/* Sun on the Top Right */
 .ws--compact .ws-sun {
   left: auto;
-  right: 15%;
+  right: 10%;
   top: 10%;
-  width: 90px;
-  height: 90px;
+  width: 70px; /* Shrunk */
+  height: 70px; /* Shrunk */
   z-index: 0;
 }
 
+/* Temperature Card on Bottom Left */
 .ws--compact .ws-card {
-  left: 24px;
+  left: 16px;
   right: auto;
-  bottom: 24px;
-  padding: 12px 20px 12px 16px;
+  bottom: 16px;
+  padding: 8px 14px; /* Tighter padding */
   border: 2px solid var(--x-ink, #111);
   box-shadow: 3px 3px 0 var(--x-ink, #111);
-  border-radius: 14px;
-  max-width: calc(100% - 180px);
+  border-radius: 12px;
+  max-width: calc(100% - 130px);
 }
 
-.ws--compact .ws-card__temp { font-size: 2.8rem; line-height: 0.9; letter-spacing: -0.04em; }
-.ws--compact .ws-card__temp sup { font-size: 1rem; top: -1.5em; }
-.ws--compact .ws-card__label { font-size: 1rem; font-weight: 800; }
-.ws--compact .ws-card__advice { font-size: 0.85rem; margin-top: 2px; }
+.ws--compact .ws-card__temp { 
+  font-size: 2.2rem; /* Smaller font */
+  line-height: 0.9; 
+  letter-spacing: -0.04em; 
+}
+.ws--compact .ws-card__temp sup { 
+  font-size: 0.9rem; 
+  top: -1.2em; 
+}
+.ws--compact .ws-card__label { 
+  font-size: 0.85rem; 
+  font-weight: 800; 
+}
+.ws--compact .ws-card__advice { 
+  font-size: 0.75rem; 
+  margin-top: 2px; 
+}
 
+/* Dial on Bottom Right */
 .ws--compact .ws-dial-wrap {
-  right: 24px;
+  right: 16px;
   left: auto;
-  bottom: 24px;
+  bottom: 12px; /* Tucked slightly lower */
   top: auto;
-  transform: scale(0.85);
+  transform: scale(0.65); /* Scaled down to fit the shorter height */
   transform-origin: bottom right;
 }
 
+/* Mobile Adjustments for the shorter banner */
+@media (max-width: 575.98px) {
+  .ws--compact {
+    height: 200px; /* Even shorter on mobile */
+  }
+  .ws--compact .ws-card {
+    left: 12px;
+    bottom: 12px;
+    padding: 8px 12px;
+  }
+  .ws--compact .ws-card__temp {
+    font-size: 2rem;
+  }
+  .ws--compact .ws-dial-wrap {
+    right: 12px;
+    bottom: 8px;
+    transform: scale(0.6);
+  }
+  .ws--compact .ws-sun {
+    width: 60px;
+    height: 60px;
+    right: 8%;
+  }
+}
+
+/* =========================================
+   BASE STYLES (DO NOT CHANGE)
+   ========================================= */
 .ws-sky { position: absolute; inset: 0; opacity: 0; transition: opacity 1s ease; z-index: -3; }
 .ws-sky--clear { background: linear-gradient(180deg, #7FC8FF 0%, #BFE6FF 55%, #FFF0C2 100%); }
 .ws-sky--cloudy { background: linear-gradient(180deg, #A9B8C6 0%, #D7DEE4 60%, #EEF0EE 100%); }
