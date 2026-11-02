@@ -36,7 +36,7 @@ test.describe('reviews', () => {
   test('logged-out visitors can read reviews but get a log-in prompt instead of the form', async ({ page }) => {
     await page.goto('/places/1')
     await expect(page.locator('[data-test="place-name"]')).toBeVisible({ timeout: LOAD })
-    await expect(page.locator('[data-test="review-login"]')).toBeVisible()
+    await expect(page.getByRole('link', { name:'Log in to review' })).toBeVisible()
     await expect(page.locator('[data-test="review-form"]')).toHaveCount(0)
   })
 

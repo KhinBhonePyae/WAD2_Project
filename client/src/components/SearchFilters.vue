@@ -170,7 +170,7 @@ function reset() {
           <button class="btn btn-outline-secondary flex-fill" @click="reset" data-test="reset-filters">Reset</button>
         </div>
 
-        <button v-if="hasPreferences" class="btn btn-link btn-sm w-100 mt-2 p-0" @click="emit('reset-to-preferences')"
+        <button v-if="hasPreferences" class="profile-pref-link mt-2" @click="emit('reset-to-preferences')"
           data-test="reset-to-preferences">
           Use my profile preferences
         </button>
@@ -190,6 +190,16 @@ function reset() {
 .filter-collapse-wrapper.is-open {
   max-height: 1200px; 
   opacity: 1;
+}
+
+.profile-pref-link {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 @media (min-width: 992px) {

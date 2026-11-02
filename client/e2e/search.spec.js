@@ -6,6 +6,11 @@ const LOAD = 15000
 test.describe('Search and filters', () => {
   test.beforeEach(async ({ page }) => { await page.goto('/search') })
 
+  test('shows search results', async ({ page }) => {
+    await expect(page.locator('[data-test="place-card"]').first()).toBeVisible({ timeout: LOAD })
+    await expect(page.locator('[data-test="result-count"]')).toBeVisible()
+  })
+
   test('shows 12 places per page and pages through the rest', async ({ page }) => {
     const cards = page.locator('[data-test="place-card"]')
     await expect(cards.first()).toBeVisible({ timeout: LOAD })

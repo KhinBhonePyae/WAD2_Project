@@ -99,7 +99,7 @@ test.describe('Report Issue E2E', () => {
 
     await page.goto('/admin/reports')
 
-    await expect(page).toHaveURL(/\/search$/)   // Browse moved to /search
+    await expect(page).toHaveURL(/\/search$/)
   })
 
   test('admin can resolve, reopen and delete the submitted report', async ({ page }) => {
