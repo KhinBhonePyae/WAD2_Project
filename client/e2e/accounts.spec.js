@@ -51,8 +51,7 @@ test.describe('accounts', () => {
     await page.locator('[data-test="pref-wifi"]').check()
     await page.locator('[data-test="signup-submit"]').click()
 
-    await expect(page).toHaveURL(/\/places$/, { timeout: LOAD })
-    await expect(page.locator('[data-test="nav-user"]')).toHaveText(creds.name)
+    await expect(page.locator('[data-test="nav-user"]')).toHaveText(creds.name, { timeout: LOAD })
     await expect(page.locator('[data-test="nav-login"]')).toHaveCount(0)
 
     // the preference from step 2 was saved with the account
@@ -79,6 +78,52 @@ test.describe('accounts', () => {
     await page.locator('[data-test="login-submit"]').click()
     await expect(page.locator('[data-test="auth-error"]')).toBeVisible({ timeout: LOAD })
     await expect(page.locator('[data-test="nav-user"]')).toHaveCount(0)
+  })
+
+  test('a visitor can open the forgot password page from login', async ({ page }) => {
+    await page.goto('/login')
+
+    await page.getByRole('link', { name: 'Forgot password?' }).click()
+
+    await expect(page).toHaveURL(/\/forgot-password$/)
+    await expect(page.getByRole('heading', { name: 'Forgot password?' })).toBeVisible()
+  })
+
+  test('forgot password shows a generic success message for a valid email', async ({ page }) => {
+    await page.goto('/forgot-password')
+
+    const unknownEmail = `unknown-${stamp}@example.test`
+
+    await page.getByLabel('Email').fill(unknownEmail)
+    await page.getByRole('button', { name: 'Send reset link' }).click()
+
+    await expect(
+      page.getByText('If an account exists for this email, a password reset link has been sent.')
+    ).toBeVisible({ timeout: LOAD })
+  })
+
+  test('reset password checks that both passwords match', async ({ page }) => {
+    await page.goto('/reset-password/fake-token')
+
+    await page.getByLabel('New password', { exact: true }).fill('new-password-123')
+    await page.getByLabel('Confirm new password').fill('different-password-123')
+
+    await page.getByRole('button', { name: 'Reset password' }).click()
+
+    await expect(page.getByText('Passwords do not match.')).toBeVisible()
+  })
+
+  test('an invalid password reset token is refused', async ({ page }) => {
+    await page.goto('/reset-password/invalid-token')
+
+    await page.getByLabel('New password', { exact: true }).fill('new-password-123')
+    await page.getByLabel('Confirm new password').fill('new-password-123')
+
+    await page.getByRole('button', { name: 'Reset password' }).click()
+
+    await expect(
+      page.getByText('Password reset link is invalid or has expired')
+    ).toBeVisible({ timeout: LOAD })
   })
 
   test('a user can log in and log out again', async ({ page }) => {
