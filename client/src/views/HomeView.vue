@@ -57,9 +57,9 @@ function closingMinutes(p) {
 
 const VIBES = [
   { key: 'focus', label: 'Deep focus', note: 'Quiet and Conducive...', colour: 'var(--x-lilac)', rank: p => [has(p, 'quiet'), has(p, 'sockets')] },
-  { key: 'group', label: 'Group grind', note: 'With Space to Chit Chat!', colour: 'var(--x-butter)', rank: p => [has(p, 'fnb'), p.capacity || 0] },
+  { key: 'group', label: 'Group grind', note: 'With Space to Chit Chat!', colour: 'var(--x-butter)', rank: p => [p.capacity || 0] },
   { key: 'cafe', label: 'Coffee & cram', note: 'Cafe Power!', colour: 'var(--x-orange)', rank: p => [CAFE_TYPES.includes(p.placeType)] },
-  { key: 'night', label: 'Night owl', note: 'Open till 9pm or later...', colour: 'var(--x-sky)', rank: p => [open24h(p), closingMinutes(p)] },
+  { key: 'night', label: 'Night owl', note: 'Open 24hrs...', colour: 'var(--x-sky)', rank: p => [open24h(p), closingMinutes(p)] },
 ]
 const vibe = ref(VIBES[0])
 
