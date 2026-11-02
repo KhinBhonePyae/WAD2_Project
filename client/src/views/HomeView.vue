@@ -3,7 +3,6 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
-import { suitabilityScore } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'
 import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'
 import { gsap, ScrollTrigger, reducedMotion, finePointer } from '../utils/motion.js'
@@ -35,26 +34,49 @@ function introOpened() {
   ScrollTrigger.refresh()
 }
 
-/* ---------- vibe picker: changes what "top picks" means ---------- */
+/* ---------- vibe picker: changes what "top picks" means ----------
+ * rank(p) lists what the vibe cares about, most important first. Places are
+ * sorted by those, then by our in-app rating, so the same vibe always shows
+ * the same six. Weaker matches fill the rest when too few places fit. */
+const CAFE_TYPES = ['cafe', 'coffee_shop', 'coffee_roastery', 'coffee_stand', 'tea_house']
+const has = (p, facility) => (p.facilities || []).includes(facility)
+
+// Open 24 hours on at least one day of the week
+function open24h(p) {
+  if (p.hours === '00:00 - 23:59') return true
+  if ((p.weekdayHours || []).some(day => day.includes('Open 24 hours'))) return true
+  const periods = p.openingPeriods || []
+  return periods.length === 1 && !periods[0].close   // Google's way of saying 24/7
+}
+
+// Closing time from 'HH:MM - HH:MM' in minutes, so later closers rank higher
+function closingMinutes(p) {
+  const m = /- (\d{2}):(\d{2})$/.exec(p.hours || '')
+  return m ? Number(m[1]) * 60 + Number(m[2]) : 0
+}
+
 const VIBES = [
-  { key: 'focus', label: 'Deep focus', note: 'quiet + sockets', colour: 'var(--x-lilac)', facilities: ['quiet', 'sockets'] },
-  { key: 'group', label: 'Group grind', note: 'room to talk, food nearby', colour: 'var(--x-butter)', facilities: ['fnb', 'wifi', 'toilets'] },
-  { key: 'cafe', label: 'Coffee & cram', note: 'Wi-Fi + caffeine', colour: 'var(--x-orange)', facilities: ['fnb', 'wifi'] },
-  { key: 'night', label: 'Night owl', note: 'open till 9pm or later', colour: 'var(--x-sky)', facilities: ['wifi', 'sockets'], late: true },
+  { key: 'focus', label: 'Deep focus', note: 'Quiet and Conducive...', colour: 'var(--x-lilac)', rank: p => [has(p, 'quiet'), has(p, 'sockets')] },
+  { key: 'group', label: 'Group grind', note: 'With Space to Chit Chat!', colour: 'var(--x-butter)', rank: p => [has(p, 'fnb'), p.capacity || 0] },
+  { key: 'cafe', label: 'Coffee & cram', note: 'Cafe Power!', colour: 'var(--x-orange)', rank: p => [CAFE_TYPES.includes(p.placeType)] },
+  { key: 'night', label: 'Night owl', note: 'Open till 9pm or later...', colour: 'var(--x-sky)', rank: p => [open24h(p), closingMinutes(p)] },
 ]
 const vibe = ref(VIBES[0])
 
-function closesLate(p) {
-  const m = /- (\d{2}):/.exec(p.hours || '')
-  return m ? Number(m[1]) >= 21 : false
+function byVibe(a, b) {
+  const ra = vibe.value.rank(a)
+  const rb = vibe.value.rank(b)
+  for (let i = 0; i < ra.length; i++) {
+    if (ra[i] !== rb[i]) return rb[i] - ra[i]
+  }
+  return (b.rating || 0) - (a.rating || 0) ||
+    (b.reviewCount || 0) - (a.reviewCount || 0) ||
+    a.name.localeCompare(b.name)   // final tie-break keeps the order fixed
 }
 
 const topPicks = computed(() => places.value
-  .map(p => ({
-    place: p,
-    score: Math.min(100, suitabilityScore(p, vibe.value.facilities, weather.value) + (vibe.value.late && closesLate(p) ? 12 : 0)),
-  }))
-  .sort((a, b) => b.score - a.score)
+  .filter(p => (p.closureStatus || 'normal') === 'normal')
+  .sort(byVibe)
   .slice(0, 6))
 
 let switching = false
@@ -318,7 +340,7 @@ const words = text => text.split(' ')
           </h1>
 
           <p class="x-hero__line">
-            Find the spot where you <span class="x-hl">focus</span> — libraries, cafés and campus corners, ranked live.
+            Find the best study spot for you to <span class="x-hl">focus</span> and LOCK IN!
           </p>
 
           <div class="x-hero__search">
@@ -333,7 +355,7 @@ const words = text => text.split(' ')
           <div class="x-stat x-stat--a"><b>{{ stats.places }}</b><span>study spots mapped</span></div>
           <div class="x-stat x-stat--b"><b>{{ stats.open }}</b><span>open right now</span></div>
           <div class="x-stat x-stat--c"><b>{{ stats.planning }}</b><span>people heading out next</span></div>
-          <div class="x-stat x-stat--d"><b>{{ stats.temp }}°</b><span>outside, live</span></div>
+          <div class="x-stat x-stat--d"><b>{{ stats.temp }}°</b><span>outside</span></div>
         </div>
       </div>
     </header>
@@ -346,9 +368,8 @@ const words = text => text.split(' ')
     <!-- ===== VIBE + TOP PICKS ===== -->
     <section class="x-section container">
       <div class="x-head">
-        <h2 class="x-reveal"><span v-for="(w, i) in words('What\'s the vibe today?')" :key="i" class="x-mask"><span
-              class="x-word">{{ w }}</span></span></h2>
-        <p class="ss-meta">Pick one and your top six reshuffle, live.</p>
+        <h2 class="x-reveal"><span v-for="(w, i) in words('What\'s the vibe today?')" :key="i" class="x-mask">
+        <span class="x-word">{{ w }}</span></span></h2>
       </div>
 
       <div class="x-vibes" role="radiogroup" aria-label="Study vibe">
@@ -366,9 +387,9 @@ const words = text => text.split(' ')
         </div>
       </div>
       <div v-else class="row g-4 x-picks">
-        <div v-for="item in topPicks" :key="item.place.id" class="col-12 col-md-6 col-lg-4 x-pick"
-          :data-flip-id="item.place.id">
-          <PlaceCard :place="item.place" :score="item.score" :saved="saved.includes(item.place.id)"
+        <div v-for="place in topPicks" :key="place.id" class="col-12 col-md-6 col-lg-4 x-pick"
+          :data-flip-id="place.id">
+          <PlaceCard :place="place" :saved="saved.includes(place.id)"
             @toggle-save="toggleSave" />
         </div>
       </div>
@@ -581,8 +602,9 @@ const words = text => text.split(' ')
   display: inline-block;
   overflow: hidden;
   vertical-align: top;
-  padding-bottom: .08em;
-  margin-right: .22em;
+  /* right padding stops negative letter-spacing clipping the last glyph */
+  padding: 0 .08em .08em 0;
+  margin-right: .14em;
 }
 
 .x-word {
