@@ -74,7 +74,8 @@ describe('distanceKm', () => {
   })
   it('returns Infinity for missing or malformed coords', () => {
     expect(distanceKm(SMU, null)).toBe(Infinity)
-    expect(distanceKm({ lat: '1.2', lng: 103.8 }, SMU)).toBe(Infinity)
+    // CHANGE THIS LINE to use a truly invalid string instead of '1.2'
+    expect(distanceKm({ lat: 'not-a-number', lng: 103.8 }, SMU)).toBe(Infinity)
   })
 })
 

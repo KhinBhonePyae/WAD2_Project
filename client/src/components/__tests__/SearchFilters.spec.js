@@ -50,16 +50,21 @@ describe('SearchFilters — nearby', () => {
     await radiusSelect.get('button').trigger('click')
     await flushPromises()
 
+    // 1. Look for the options (which are now 500m, 1km, 2km)
     const options = radiusSelect.findAll('li')
-    const option5 = options.find(o => o.text().includes('5 km'))
-    await option5.trigger('click')
+
+    // 2. CHANGE THIS to find "2 km" instead of "5 km"
+    const option2 = options.find(o => o.text().includes('2 km'))
+    await option2.trigger('click')
     await flushPromises()
 
     await wrapper.get('[data-test="apply-filters"]').trigger('click')
 
     const emitted = wrapper.emitted('apply')
     expect(emitted).toBeTruthy()
-    expect(emitted[0][0].radiusKm).toBe(5)
+
+    // 3. CHANGE THIS to expect 2 instead of 5
+    expect(emitted[0][0].radiusKm).toBe(2)
   })
 
   it('shows an error when permission is denied', async () => {
