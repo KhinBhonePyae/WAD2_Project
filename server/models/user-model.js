@@ -17,7 +17,8 @@ const userSchema = new mongoose.Schema({
     wifiRequired: { type: Boolean, default: false },
     socketsRequired: { type: Boolean, default: false },
     quietPreferred: { type: Boolean, default: false },
-    indoorPreferred: { type: Boolean, default: false }
+    indoorPreferred: { type: Boolean, default: false },
+    studySpots: { type: [String], default: [] }   // 'indoor' | 'outdoor' | 'cafe' | 'library'
   },
 
   createdAt: { type: Date, default: Date.now, immutable: true },
@@ -42,7 +43,8 @@ exports.createUser = async (data) => {
         wifiRequired: false,
         socketsRequired: false,
         quietPreferred: false,
-        indoorPreferred: false
+        indoorPreferred: false,
+        studySpots: []
       },
       createdAt: new Date(),
       updatedAt: new Date()

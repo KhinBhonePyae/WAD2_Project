@@ -1,4 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import axios from 'axios'
+import { BASE_URL, authConfig } from '../utils/api.js'
 import HomeView from '../views/HomeView.vue'
 import SearchView from '../views/SearchView.vue'
 import PlaceDetailView from '../views/PlaceDetailView.vue'
@@ -45,6 +47,43 @@ const router = createRouter({
   scrollBehavior() {
     return { top: 0 }
   }
+})
+
+// Admin pages: check the role with the server, not just what is stored in the browser
+async function getFreshUser() {
+  const token = localStorage.getItem('token')
+  if (!token) return null
+
+  try {
+    const { data } = await axios.get(`${BASE_URL}/users/profile`, authConfig())
+    localStorage.setItem('user', JSON.stringify(data))
+    window.dispatchEvent(new Event('user-login'))
+    return data
+  } catch (error) {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      window.dispatchEvent(new Event('user-login'))
+      return null
+    }
+
+    console.error('Could not verify current user role', error)
+    try { return JSON.parse(localStorage.getItem('user')) }
+    catch { return null }
+  }
+}
+
+router.beforeEach(async (to) => {
+  if (!to.meta.requiresAdmin) return true
+
+  const token = localStorage.getItem('token')
+  if (!token) return { path: '/login', query: { redirect: to.fullPath } }
+
+  const currentUser = await getFreshUser()
+  if (!currentUser) return { path: '/login', query: { redirect: to.fullPath } }
+  if (currentUser.role !== 'admin') return { path: '/search' }
+
+  return true
 })
 
 export default router

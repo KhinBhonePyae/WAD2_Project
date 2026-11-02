@@ -1,6 +1,7 @@
 <script setup>
 /* Owner: Jeffrey Wen - ratings, reviews and crowd reporting. */
 import { ref } from 'vue'
+import StarPicker from './StarPicker.vue'
 
 const props = defineProps({ placeId: Number, busy: Boolean, authorName: String })
 const emit = defineEmits(['submit-review'])
@@ -25,21 +26,13 @@ function submit() {
 
 <template>
   <form class="ss-card p-4" @submit.prevent="submit" data-test="review-form">
-    <h3 class="ss-card__title mb-3">Leave a review</h3>
-
     <div class="row g-3">
       <div class="col-12 ss-meta" data-test="rv-author">Posting as <strong>{{ authorName }}</strong></div>
-      <div class="col-6">
-        <label class="form-label ss-meta" for="rv-rating">Rating</label>
-        <select id="rv-rating" v-model.number="rating" class="form-select" data-test="rv-rating">
-          <option :value="5">5 ★</option>
-          <option :value="4">4 ★</option>
-          <option :value="3">3 ★</option>
-          <option :value="2">2 ★</option>
-          <option :value="1">1 ★</option>
-        </select>
+      <div class="col-12">
+        <div class="form-label ss-meta mb-1" id="rv-rating-label">Your rating</div>
+        <StarPicker v-model="rating" label="Your rating" data-test="rv-rating" />
       </div>
-      <div class="col-6">
+      <div class="col-12">
         <label class="form-label ss-meta" for="rv-crowd">Busy now?</label>
         <select id="rv-crowd" v-model="crowdLevel" class="form-select" data-test="rv-crowd">
           <option value="quiet">Quiet</option>

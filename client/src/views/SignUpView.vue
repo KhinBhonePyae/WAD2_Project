@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
+import { STUDY_SPOTS } from '../utils/studySpots.js'
 
 const router = useRouter()
 const step = ref(1)
@@ -17,8 +18,16 @@ const preferences = ref({
   wifiRequired: false,
   socketsRequired: false,
   quietPreferred: false,
-  indoorPreferred: false
+  indoorPreferred: false,
+  studySpots: []
 })
+
+// Which kinds of spot come first in listings; tap again to remove
+function toggleSpot(key) {
+  const spots = preferences.value.studySpots
+  preferences.value.studySpots = spots.includes(key) ? spots.filter(s => s !== key) : [...spots, key]
+  preferences.value.indoorPreferred = preferences.value.studySpots.includes('indoor')
+}
 
 function goToPreferences() {
   errorMessage.value = ''
@@ -119,6 +128,20 @@ async function register() {
           </form>
 
           <form v-else @submit.prevent="register">
+            <p class="pref-heading">Where do you like to study?</p>
+            <p class="pref-hint">Pick any. These come first when you browse; nothing gets hidden.</p>
+            <div class="spot-grid" role="group" aria-label="Kinds of study spot">
+              <button v-for="spot in STUDY_SPOTS" :key="spot.key" type="button" class="spot-tile"
+                :class="{ active: preferences.studySpots.includes(spot.key) }"
+                :aria-pressed="preferences.studySpots.includes(spot.key)" :data-test="'spot-' + spot.key"
+                @click="toggleSpot(spot.key)">
+                <span class="spot-emoji" aria-hidden="true">{{ spot.emoji }}</span>
+                <span class="spot-label">{{ spot.label }}</span>
+                <span class="spot-note">{{ spot.note }}</span>
+              </button>
+            </div>
+
+            <p class="pref-heading">Must-haves</p>
             <div class="preference-list">
               <label class="preference-item">
                 <span>Wi-Fi</span>
@@ -135,10 +158,6 @@ async function register() {
                 <input v-model="preferences.quietPreferred" class="form-check-input" type="checkbox">
               </label>
 
-              <label class="preference-item">
-                <span>Indoor Seating</span>
-                <input v-model="preferences.indoorPreferred" class="form-check-input" type="checkbox">
-              </label>
             </div>
 
             <div class="step-actions">
@@ -348,6 +367,50 @@ async function register() {
   color: var(--x-ink);
   background: var(--x-paper);
 }
+
+.pref-heading {
+  margin: 0 0 .25rem;
+  font-weight: 800;
+  color: var(--x-ink);
+}
+
+.pref-hint {
+  margin: 0 0 .8rem;
+  font-size: .85rem;
+  color: rgba(21, 19, 15, .7);
+}
+
+.spot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .65rem;
+  margin-bottom: 1.4rem;
+}
+
+.spot-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .1rem;
+  padding: .8rem .9rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 14px;
+  background: var(--x-card);
+  color: var(--x-ink);
+  text-align: left;
+  transition: .2s ease;
+}
+
+.spot-tile:hover { transform: translateY(-2px); }
+
+.spot-tile.active {
+  background: var(--x-lime);
+  box-shadow: 3px 3px 0 var(--x-ink);
+}
+
+.spot-emoji { font-size: 1.4rem; line-height: 1.2; }
+.spot-label { font-weight: 800; }
+.spot-note { font-size: .78rem; opacity: .75; }
 
 .preference-list {
   display: flex;

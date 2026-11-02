@@ -33,13 +33,17 @@ function checkPassword(password) {
   return null
 }
 
-// Only the four known yes/no preferences are stored
+const STUDY_SPOTS = ['indoor', 'outdoor', 'cafe', 'library']
+
+// Only the known yes/no preferences and the known kinds of study spot are stored
 function cleanPreferences(preferences) {
+  const spots = Array.isArray(preferences?.studySpots) ? preferences.studySpots : []
   return {
     wifiRequired: preferences?.wifiRequired === true,
     socketsRequired: preferences?.socketsRequired === true,
     quietPreferred: preferences?.quietPreferred === true,
-    indoorPreferred: preferences?.indoorPreferred === true
+    indoorPreferred: preferences?.indoorPreferred === true,
+    studySpots: STUDY_SPOTS.filter(spot => spots.includes(spot))
   }
 }
 

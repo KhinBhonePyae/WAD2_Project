@@ -49,6 +49,9 @@ test.describe('accounts', () => {
 
     // step 2: study preferences
     await page.locator('[data-test="pref-wifi"]').check()
+    await page.locator('[data-test="spot-cafe"]').click()
+    await page.locator('[data-test="spot-library"]').click()
+    await expect(page.locator('[data-test="spot-cafe"]')).toHaveAttribute('aria-pressed', 'true')
     await page.locator('[data-test="signup-submit"]').click()
 
     await expect(page.locator('[data-test="nav-user"]')).toHaveText(creds.name, { timeout: LOAD })
@@ -56,7 +59,9 @@ test.describe('accounts', () => {
 
     // the preference from step 2 was saved with the account
     const login = await request.post(`${API}/users/login`, { data: { email: creds.email, password: creds.password } })
-    expect((await login.json()).user.preferences.wifiRequired).toBe(true)
+    const saved = (await login.json()).user.preferences
+    expect(saved.wifiRequired).toBe(true)
+    expect(saved.studySpots).toEqual(['cafe', 'library'])
   })
 
   test('the same email cannot sign up twice', async ({ page }) => {

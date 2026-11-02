@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
+import { STUDY_SPOTS, spotLabels } from '../utils/studySpots.js'
 import { fetchSavedIds } from '../utils/saved.js'
 
 const router = useRouter()
@@ -28,6 +29,7 @@ const wifiRequired = ref(false)
 const socketsRequired = ref(false)
 const quietPreferred = ref(false)
 const indoorPreferred = ref(false)
+const studySpots = ref([])
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
@@ -68,6 +70,7 @@ function setFormValues() {
   socketsRequired.value = user.value.preferences?.socketsRequired || false
   quietPreferred.value = user.value.preferences?.quietPreferred || false
   indoorPreferred.value = user.value.preferences?.indoorPreferred || false
+  studySpots.value = [...(user.value.preferences?.studySpots || [])]
 }
 
 function editProfile() {
@@ -102,7 +105,8 @@ async function saveProfile() {
         wifiRequired: wifiRequired.value,
         socketsRequired: socketsRequired.value,
         quietPreferred: quietPreferred.value,
-        indoorPreferred: indoorPreferred.value
+        indoorPreferred: studySpots.value.includes('indoor'),
+        studySpots: studySpots.value
       }
     }, { headers: { Authorization: `Bearer ${token}` } })
 
@@ -325,9 +329,9 @@ onMounted(async () => {
               </div>
 
               <div class="preference-row">
-                <div><strong>Indoor Location</strong><span>Preference for indoor spaces</span></div>
-                <span class="status" :class="{ active: user.preferences?.indoorPreferred }">
-                  {{ user.preferences?.indoorPreferred ? 'Preferred' : 'No preference' }}
+                <div><strong>Favourite spots</strong><span>Shown first when you browse</span></div>
+                <span class="status" :class="{ active: user.preferences?.studySpots?.length }" data-test="profile-spots">
+                  {{ spotLabels(user.preferences?.studySpots).join(', ') || 'No preference' }}
                 </span>
               </div>
             </div>
@@ -413,10 +417,11 @@ onMounted(async () => {
                 </div>
               </label>
 
-              <label class="edit-preference">
-                <div><strong>Indoor Location</strong><span>Prefer indoor study spaces</span></div>
+              <label v-for="spot in STUDY_SPOTS" :key="spot.key" class="edit-preference">
+                <div><strong>{{ spot.emoji }} {{ spot.label }}</strong><span>{{ spot.note }}. Shown first when you browse</span></div>
                 <div class="form-check form-switch">
-                  <input v-model="indoorPreferred" class="form-check-input" type="checkbox">
+                  <input v-model="studySpots" :value="spot.key" class="form-check-input" type="checkbox"
+                    :data-test="'edit-spot-' + spot.key">
                 </div>
               </label>
             </div>

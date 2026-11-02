@@ -9,7 +9,8 @@ import { LEVEL_LABELS } from '../utils/intents.js'
 import { ENTRY_LABELS } from '../utils/suitability.js'
 import { gsap, finePointer, reducedMotion } from '../utils/motion.js'
 
-const props = defineProps({ place: Object, score: Number, saved: Boolean })
+// tags: short extras from the page, e.g. '📍 350 m away' or '★ Your pick: Café'
+const props = defineProps({ place: Object, score: Number, saved: Boolean, tags: Array })
 const emit = defineEmits(['toggle-save'])
 
 const card = ref(null)
@@ -91,6 +92,9 @@ onUnmounted(() => ctx?.revert())
           </h3>
         </div>
         <div class="xc-meta">{{ place.area }} · {{ place.hours }}<template v-if="ENTRY_LABELS[place.entry]"> · {{ ENTRY_LABELS[place.entry] }}</template></div>
+        <div v-if="tags?.length" class="xc-tags">
+          <span v-for="tag in tags" :key="tag" class="xc-tag" data-test="card-tag">{{ tag }}</span>
+        </div>
         <div v-if="place.intent" class="xc-intent" data-test="card-intent">
           <b>{{ place.intent.count }}</b> heading here
           {{ place.intent.day === 'Today' ? 'this' : 'tomorrow' }} {{ place.intent.label.toLowerCase() }}
@@ -144,6 +148,9 @@ onUnmounted(() => ctx?.revert())
 .xc-body { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 18px; flex: 1; }
 .xc-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; margin: 0; }
 .xc-meta { font-family: var(--x-mono); font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; color: var(--x-muted); }
+.xc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.xc-tag { padding: 2px 9px; border: 1px solid var(--x-ink); border-radius: 999px; background: var(--x-paper);
+  font-family: var(--x-mono); font-size: .7rem; font-weight: 700; }
 .xc-intent { align-self: flex-start; padding: 3px 10px; border-radius: 999px; background: var(--accent);
              border: 1.5px solid var(--x-ink); font-size: .8rem; color: var(--x-ink); }
 .xc-foot { margin-top: auto; padding-top: 10px; border-top: 2px dashed rgba(21, 19, 15, .18); }

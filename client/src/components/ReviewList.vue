@@ -1,13 +1,31 @@
 <script setup>
 /* Owner: Jeffrey Wen. Edit + delete complete the CRUD. */
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import StarRating from './StarRating.vue'
+import StarPicker from './StarPicker.vue'
 import CrowdMeter from './CrowdMeter.vue'
 
-defineProps({
+const props = defineProps({
   reviews: { type:Array, default:() => [] },
   currentUserId:String
 })
+
+// 6 reviews per page, newest first (the order the API sends)
+const PER_PAGE = 6
+const page = ref(1)
+const pageCount = computed(() => Math.max(1, Math.ceil(props.reviews.length / PER_PAGE)))
+const pageReviews = computed(() => props.reviews.slice((page.value - 1) * PER_PAGE, page.value * PER_PAGE))
+
+// a new review lands on page 1; after a delete, stay on a page that still exists
+watch(() => props.reviews.length, (now, before) => {
+  if (now > before) page.value = 1
+  else if (page.value > pageCount.value) page.value = pageCount.value
+})
+
+function goTo(n) {
+  page.value = Math.min(pageCount.value, Math.max(1, n))
+  editingId.value = null
+}
 
 const emit = defineEmits(['edit-review','delete-review'])
 
@@ -48,7 +66,7 @@ function fmt(d) {
       <p class="mb-0">No reviews yet. Be the first to tell people what this spot is like.</p>
     </div>
 
-    <article v-for="r in reviews" :key="r._id" class="ss-card p-4 mb-3 review-card" data-test="review-item">
+    <article v-for="r in pageReviews" :key="r._id" class="ss-card p-4 mb-3 review-card" data-test="review-item">
       <div class="review-head">
         <div>
           <strong>{{ r.author }}</strong>
@@ -63,17 +81,11 @@ function fmt(d) {
 
       <template v-if="editingId === r._id">
         <div class="row g-2 mt-2">
-          <div class="col-6 col-md-2">
-            <select v-model.number="draftRating" class="form-select" aria-label="Rating" data-test="edit-rating">
-              <option :value="5">5</option>
-              <option :value="4">4</option>
-              <option :value="3">3</option>
-              <option :value="2">2</option>
-              <option :value="1">1</option>
-            </select>
+          <div class="col-12">
+            <StarPicker v-model="draftRating" label="Edit rating" data-test="edit-rating" />
           </div>
 
-          <div class="col-6 col-md-3">
+          <div class="col-12 col-md-5">
             <select v-model="draftCrowd" class="form-select" aria-label="How busy was it" data-test="edit-crowd">
               <option value="quiet">Quiet</option>
               <option value="moderate">Moderate</option>
@@ -102,6 +114,13 @@ function fmt(d) {
         </div>
       </template>
     </article>
+
+    <nav v-if="pageCount > 1" class="review-pager" aria-label="Review pages" data-test="review-pager">
+      <button type="button" class="x-page-btn" :disabled="page === 1" data-test="review-prev" @click="goTo(page - 1)">◀ Prev</button>
+      <button v-for="n in pageCount" :key="n" type="button" class="x-page-btn" :class="{ 'is-active': n === page }"
+        :aria-current="n === page ? 'page' : null" :data-test="'review-page-' + n" @click="goTo(n)">{{ n }}</button>
+      <button type="button" class="x-page-btn" :disabled="page === pageCount" data-test="review-next" @click="goTo(page + 1)">Next ▶</button>
+    </nav>
   </div>
 </template>
 
@@ -124,6 +143,24 @@ function fmt(d) {
 }
 
 .review-comment { margin:.85rem 0; }
+
+/* same look as the Browse page buttons */
+.review-pager { display:flex; justify-content:center; flex-wrap:wrap; gap:.4rem; margin-top:1rem; }
+.x-page-btn {
+  min-width:38px;
+  padding:.4rem .8rem;
+  border:2px solid var(--x-ink);
+  border-radius:10px;
+  background:var(--x-card);
+  color:var(--x-ink);
+  font-weight:800;
+  font-size:.9rem;
+  box-shadow:2px 2px 0 var(--x-ink);
+  transition:all .2s ease;
+}
+.x-page-btn:not(:disabled):hover { transform:translate(-2px, -2px); box-shadow:4px 4px 0 var(--x-ink); }
+.x-page-btn.is-active { background:var(--x-lime); }
+.x-page-btn:disabled { opacity:.4; box-shadow:1px 1px 0 var(--x-ink); }
 
 @media(max-width:575.98px) {
   .review-head { flex-direction:column; }

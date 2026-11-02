@@ -72,6 +72,7 @@ async function summarisePlaces(stored, now = new Date()) {
   const aggs = await reviewModel.aggregateAll();
 
   for (const place of list) {
+    delete place.googleReviews;   // no page shows them, and they made every list about 1 MB
     place.closureStatus = closureStatusOf(place);
     place.markedOpen = place.closureStatus === 'normal' && place.openNow !== false;
     place.openNow = isOpenNow(place, now);

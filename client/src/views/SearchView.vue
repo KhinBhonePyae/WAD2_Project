@@ -5,10 +5,11 @@ import { useRoute, useRouter } from 'vue-router'
 import HomeSearchBox from '../components/HomeSearchBox.vue'
 import SearchFilters from '../components/SearchFilters.vue'
 import PlaceCard from '../components/PlaceCard.vue'
-import WeatherScene from '../components/WeatherScene.vue'
+import WeatherBackdrop from '../components/WeatherBackdrop.vue'
 import CustomSelect from '../components/CustomSelect.vue'
-import { suitabilityBreakdown } from '../utils/suitability'
-import { DEFAULT_PREFS, filterPlaces, prefsFromUserPreferences, sortByDistance } from '../utils/searchFilters'
+import { suitabilityBreakdown, preferencesToWanted } from '../utils/suitability'
+import { DEFAULT_PREFS, filterPlaces, prefsFromUserPreferences, sortByDistance, distanceKm, placeCoords } from '../utils/searchFilters'
+import { orderBySpots, spotMatches, spotLabels } from '../utils/studySpots'
 import { BASE_URL } from '../utils/api'
 import { fetchWeather } from '../utils/weather'
 import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved'
@@ -46,17 +47,21 @@ function readStoredUser() {
   catch { return null }
 }
 
+// Filters the user set by hand last time; otherwise none. Profile preferences
+// only change the order (see results), so no place is hidden by default.
 function initialPrefs() {
   if (localStorage.getItem(MANUAL_KEY) === '1') {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) {
       try { return { ...DEFAULT_PREFS, facilities: [], ...JSON.parse(saved) } }
-      catch { /* corrupt entry — fall through to preferences */ }
+      catch { /* corrupt entry — fall back to no filters */ }
     }
   }
-  const user = readStoredUser()
-  return { ...DEFAULT_PREFS, facilities: [], ...prefsFromUserPreferences(user?.preferences) }
+  return { ...DEFAULT_PREFS, facilities: [] }
 }
+
+const myPrefs = readStoredUser()?.preferences || {}
+const mySpots = myPrefs.studySpots || []
 
 const hasUserPreferences = computed(() => {
   const p = readStoredUser()?.preferences
@@ -121,10 +126,13 @@ async function toggleSave(id) {
   }
 }
 
+// Score against the facilities picked in the filters, or else the user's must-haves
+const scoreWanted = computed(() => prefs.value.facilities.length ? prefs.value.facilities : preferencesToWanted(myPrefs))
+
 const results = computed(() => {
   const scored = spaces.value.map((s) => ({
     ...s,
-    ...suitabilityBreakdown(s, prefs.value.facilities, weather.value),
+    ...suitabilityBreakdown(s, scoreWanted.value, weather.value),
   }))
   
   let list = filterPlaces(scored, prefs.value)
@@ -132,12 +140,36 @@ const results = computed(() => {
   if (prefs.value.nearbyOnly && prefs.value.userLocation) {
     list = sortByDistance(list, prefs.value.userLocation)
   } else {
-    if (sortBy.value === 'score') list.sort((a, b) => b.score - a.score)
+    if (sortBy.value === 'score') list = orderBySpots(list.sort((a, b) => b.score - a.score), mySpots)
     else if (sortBy.value === 'rating') list.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     else if (sortBy.value === 'name') list.sort((a, b) => a.name.localeCompare(b.name))
   }
   
   return list
+})
+
+// Small extras on each card: distance when we know where the user is, and a
+// marker when the place is one of their favourite kinds of spot
+function cardTags(space) {
+  const tags = []
+  const here = prefs.value.userLocation
+  const there = placeCoords(space)
+  if (here && there) {
+    const km = distanceKm(here, there)
+    if (km <= (Number(prefs.value.radiusKm) || DEFAULT_PREFS.radiusKm)) {
+      tags.push('📍 Nearby · ' + (km < 1 ? Math.round(km * 1000 / 10) * 10 + ' m' : km.toFixed(1) + ' km'))
+    }
+  }
+  const matches = spotMatches(space, mySpots)
+  if (matches.length) tags.push('★ Your pick: ' + spotLabels(matches).join(', '))
+  return tags
+}
+
+const weatherLine = computed(() => {
+  const w = weather.value
+  if (!w) return ''
+  const advice = w.raining ? 'indoor spots rank higher' : !w.isDay ? 'check closing times' : 'good for outdoor spots too'
+  return `${w.icon} ${w.temp}° · ${w.label} · ${advice}`
 })
 
 const totalPages = computed(() => Math.ceil(results.value.length / ITEMS_PER_PAGE) || 1)
@@ -255,8 +287,11 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="container py-4 x-page">
-    <h2 class="mb-3">Find a study spot</h2>
+  <div class="x-browse">
+  <WeatherBackdrop :weather="weather" />
+  <div class="container py-4 x-page x-browse__content">
+    <h2 class="mb-1">Find a study spot</h2>
+    <p v-if="weatherLine" class="x-weather-line x-mono mb-3" data-test="weather-line">{{ weatherLine }}</p>
 
     <div class="x-hero__search mb-4">
       <div class="ss-search x-search">
@@ -264,9 +299,8 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div class="weather-wrapper mb-4">
-      <WeatherScene :weather="weather" area="Singapore" :compact="true" />
-    </div>
+    <!-- The weather is the page background now (WeatherBackdrop). To bring the
+         card back, restore: <WeatherScene :weather="weather" area="Singapore" :compact="true" /> -->
 
     <div class="row">
       <div class="col-lg-3">
@@ -300,13 +334,14 @@ onMounted(async () => {
                 :place="space" 
                 :score="space.score" 
                 :saved="saved.includes(space.id)" 
+                :tags="cardTags(space)"
                 @toggle-save="toggleSave" 
               />
             </div>
           </div>
           
           <div v-if="totalPages > 1" class="x-pagination mt-4 mb-5">
-            <button class="x-page-btn" :disabled="currentPage === 1" @click="changePage(currentPage - 1)">
+            <button class="x-page-btn" :disabled="currentPage === 1" data-test="page-prev" @click="changePage(currentPage - 1)">
               ◀ Prev
             </button>
 
@@ -322,7 +357,7 @@ onMounted(async () => {
               </button>
             </template>
 
-            <button class="x-page-btn" :disabled="currentPage === totalPages" @click="changePage(currentPage + 1)">
+            <button class="x-page-btn" :disabled="currentPage === totalPages" data-test="page-next" @click="changePage(currentPage + 1)">
               Next ▶
             </button>
           </div>
@@ -330,9 +365,14 @@ onMounted(async () => {
       </div>
     </div>
   </div>
+  </div>
 </template>
 
 <style scoped>
+.x-browse { position: relative; }
+.x-browse__content { position: relative; z-index: 1; }
+.x-weather-line { font-size: .85rem; color: var(--x-muted); }
+
 .x-hero__search {
   width: 100%;
   position: relative;

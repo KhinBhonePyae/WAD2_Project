@@ -286,10 +286,14 @@ exports.getMapRoute = async (req, res) => {
       return res.status(404).json({ error: `OneMap could not find a ${mode} route to this place.` });
     }
 
+    // OneMap step: [turn, road, metres, "lat,lon", seconds, "141m", heading, ...].
+    // Walking paths usually have no road name, so the heading and time carry the detail.
     const instructions = (data.route_instructions || []).map(step => ({
       action: String(step[0] || 'Continue'),
       road: String(step[1] || ''),
-      distance: Number(step[2]) || 0
+      distance: Number(step[2]) || 0,
+      duration: Number(step[4]) || 0,
+      heading: String(step[6] || '')
     }));
 
     res.json({

@@ -69,7 +69,7 @@ test.describe('Admin Study Space Management E2E', () => {
 
     await page.goto('/admin/places')
 
-    await expect(page).toHaveURL(/\/places$/)
+    await expect(page).toHaveURL(/\/search$/)   // Browse moved to /search
   })
 
   test('admin can create a new study space', async ({ page }) => {

@@ -7,6 +7,7 @@ import { fetchWeather } from '../utils/weather.js'
 import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'
 import { gsap, ScrollTrigger, reducedMotion, finePointer } from '../utils/motion.js'
 import PlaceCard from '../components/PlaceCard.vue'
+import { orderBySpots, spotLabels } from '../utils/studySpots.js'
 import HomeSearchBox from '../components/HomeSearchBox.vue'
 import NotebookIntro from '../components/NotebookIntro.vue'
 import AreaCarousel from '../components/AreaCarousel.vue'
@@ -73,9 +74,16 @@ function byVibe(a, b) {
     a.name.localeCompare(b.name)   // final tie-break keeps the order fixed
 }
 
-const topPicks = computed(() => places.value
+// The user's favourite kinds of spot (set at sign-up) come first, in vibe order
+function storedSpots() {
+  try { return JSON.parse(localStorage.getItem('user') || 'null')?.preferences?.studySpots || [] }
+  catch { return [] }
+}
+const mySpots = ref(storedSpots())
+
+const topPicks = computed(() => orderBySpots(places.value
   .filter(p => (p.closureStatus || 'normal') === 'normal')
-  .sort(byVibe)
+  .sort(byVibe), mySpots.value)
   .slice(0, 6))
 
 let switching = false
@@ -345,6 +353,10 @@ const words = text => text.split(' ')
           <span class="x-vibe__note x-mono">{{ v.note }}</span>
         </button>
       </div>
+      <p v-if="loggedIn && mySpots.length" class="x-spots-note x-mono" data-test="spots-note">
+        Your favourite spots come first: {{ spotLabels(mySpots).join(', ') }} ·
+        <RouterLink to="/profile">change</RouterLink>
+      </p>
 
       <div v-if="loading" class="row g-4">
         <div v-for="n in 3" :key="n" class="col-12 col-md-6 col-lg-4">
@@ -567,6 +579,13 @@ const words = text => text.split(' ')
 .x-word {
   display: inline-block;
 }
+
+.x-spots-note {
+  margin: -0.5rem 0 1.5rem;
+  font-size: .85rem;
+}
+
+.x-spots-note a { color: var(--x-ink); font-weight: 700; }
 
 .x-vibes {
   display: grid;

@@ -17,8 +17,8 @@ SET UP ACCOUNT:
 
 Alternatively, log in with one of our accounts: 
 
-Standard User - Email: Rubert@gmai.com , Password: 12345678
-Admin User - Email: demo.admin@lockedin.test , Password: LockedIn-Admin-2026
+Standard User - Email: Rubert@gmail.com , Password: 12345678
+Admin User - Email: demo.admin@lockedin.test , Password: LockedIN-Admin-2026
 
 2. Enter your details including your study preferences and create an account. 
 3. Website will automatically bring user to home page.

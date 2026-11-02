@@ -56,7 +56,7 @@ test.describe('Admin User Management E2E', () => {
 
     await page.goto('/admin/users')
 
-    await expect(page).toHaveURL(/\/places$/)
+    await expect(page).toHaveURL(/\/search$/)   // Browse moved to /search
   })
 
   test('admin account is protected from changing itself', async ({ page }) => {

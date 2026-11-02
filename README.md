@@ -35,11 +35,11 @@ Users can also save places, write reviews, report how busy a place is right now,
 
 ## Features
 
-1. **Accounts and profiles:** sign-up with study preferences, log in and out, edit profile, change password, delete account
-2. **Study space catalogue:** browse places, detail pages with a photo carousel, facilities, opening hours and a live "Open now" status in Singapore time
-3. **Search, filters and suitability scoring:** filter by facilities, area, crowd level, rating, open now, free entry and indoor or outdoor; each place gets a score and plain-language reasons based on your preferences and the weather
-4. **Map and directions:** OneMap map, location search, and walking, driving and public-transport routes
-5. **Ratings, reviews and crowd reporting:** star ratings and reviews from real users only; a "How busy is it?" card with one-tap crowd check-ins (change or undo within the hour)
+1. **Accounts and profiles:** sign-up with study preferences (favourite kinds of spot: indoor, outdoor, café, library; and must-haves: Wi-Fi, sockets, quiet), log in and out, forgot/reset password by email, edit profile, change password, delete account
+2. **Study space catalogue:** browse places 12 per page, ordered so your favourite kinds of spot come first (nothing is hidden); detail pages with a photo carousel, facilities, opening hours and a live "Open now" status in Singapore time
+3. **Search, filters and suitability scoring:** filter by facilities, area, crowd level, rating, open now, free entry, indoor or outdoor, and distance from your current location (cards show "📍 Nearby" with the distance); each place gets a score based on your preferences and the weather, and the live weather shows as a soft page background
+4. **Map and directions:** OneMap map, location search, and walking (step by step, with compass directions), driving and public-transport routes
+5. **Ratings, reviews and crowd reporting:** reviews written in a popup with tap-to-rate stars, 6 per page; a "How busy is it?" card with one-tap crowd check-ins (change or undo within the hour)
 6. **"Planning to go":** say which time slot you'll visit, and see how busy a slot is likely to be
 7. **Saved places**
 8. **Weather integration:** current Singapore weather feeds into the suitability score
@@ -214,7 +214,10 @@ pnpm seed                    # copies data/places.json into MongoDB (safe to re-
 pnpm import:google:preview   # shows what the Google Places import would add, without calling the API
 pnpm import:google           # imports study spaces near SMU (needs GOOGLE_PLACES_API_KEY)
 node import-libraries.js     # imports NLB library branches (needs NLB_API_KEY and NLB_API_CODE)
+node seed-reviews.js         # adds demo reviews to every place (see the note below)
 ```
+
+> **Demo reviews:** most reviews in the shared database are demo data from `server/seed-reviews.js`, written under the team's own accounts from a fixed list of comments, so every place has ratings and crowd levels to show during grading. Reviews posted on the live site after that are real.
 
 ---
 
@@ -252,10 +255,10 @@ There are three layers of automated tests: client unit and component tests (Vite
 
 | Layer | Where | Tests | Needs the API / database? |
 |---|---|---|---|
-| Unit tests | `client/src/utils/__tests__/` | 33 | No |
-| Component tests | `client/src/components/__tests__/`, `client/src/views/__tests__/` | 27 | No (API calls are faked) |
-| Server tests | `server/tests/` | 47 | No (runs in mock mode) |
-| End-to-end tests | `client/e2e/` | 33 | Yes |
+| Unit tests | `client/src/utils/__tests__/` | 47 | No |
+| Component tests | `client/src/components/__tests__/`, `client/src/views/__tests__/` | 42 | No (API calls are faked) |
+| Server tests | `server/tests/` | 55 | No (runs in mock mode) |
+| End-to-end tests | `client/e2e/` | 37 | Yes |
 
 ### Unit and component tests (Vitest)
 
@@ -264,11 +267,14 @@ cd client
 pnpm test:unit            # watch mode; add -- --run to run once
 ```
 
-Unit tests check pure functions with fixed inputs, e.g. the suitability score (`suitability.spec.js`), the Browse filters (`searchFilters.spec.js`) and the crowd "time ago" wording (`crowd.spec.js`).
+Unit tests check pure functions with fixed inputs, e.g. the suitability score (`suitability.spec.js`), the Browse and distance filters (`searchFilters.spec.js`), ordering places by favourite kind of spot (`studySpots.spec.js`) and the crowd "time ago" wording (`crowd.spec.js`).
 
 Component tests mount a single Vue component in a simulated browser (jsdom) with `@vue/test-utils` and check what it renders and emits:
 
 - `StarRating.spec.js`: stars, average and count, and "No reviews yet" for a place without reviews
+- `StarPicker.spec.js`: tap-to-rate stars, including the arrow keys
+- `SearchFilters.spec.js`: the "near me" filter, the distance options and a denied location permission
+- `ForgotPasswordView.spec.js` and `ResetPasswordView.spec.js`: the password reset pages
 - `CrowdHistogram.spec.js`: the "How busy is it?" card, including the empty state, "right now" vs "last reported", the report split, "planning to go" counts, hiding check-ins while closed, the login redirect, checking in, and undo
 - `ReportIssue.spec.js`: the report form's login redirect, validation and success message
 - `AdminReportsView.spec.js`: the admin reports page, including filters, resolving, deleting and the non-admin redirect
@@ -285,6 +291,7 @@ These run in mock mode (`data/places.json`, in-memory data), so they never touch
 - `crowd.test.js`: crowd reports and check-ins, including validation (bad level, unknown place, or a place that is closed right now), one report per user per hour, undo, and the place's crowd level following the newest report
 - `place-summary.test.js`: "Open now" in Singapore time, including Google weekly hours, past-midnight hours, 24/7 places and admin closures
 - `auth-middleware.test.js`: the login guard rejects missing, malformed and forged tokens and deleted accounts
+- `password-reset.test.js`: reset links, expiry and the new password
 - `report-model.test.js` and `reports-integration.test.js`: incorrect-information reports, from submitting to an admin resolving, reopening and deleting them, through the real routes
 
 ### End-to-end tests (Playwright)
@@ -295,7 +302,7 @@ pnpm exec playwright install chromium   # first run only, downloads the test bro
 pnpm test:e2e
 ```
 
-Playwright starts the client dev server by itself and runs the specs in `client/e2e/` against Chromium. Configuration is in `client/playwright.config.js`.
+Playwright starts the client dev server by itself and runs the specs in `client/e2e/` against Chromium, 3 browsers at a time (more makes the tests wait too long on the shared database). Configuration is in `client/playwright.config.js`.
 
 > **Before running:** start the API (`cd server && pnpm dev`) with a reachable database. Playwright starts the client but not the API.
 >
@@ -324,10 +331,10 @@ pnpm exec playwright show-report              # open the HTML report
 
 | # | Journey | End-to-end test |
 |---|---|---|
-| 1 | Register, log in, log out | `accounts.spec.js` (sign-up with preferences, password checks, duplicate email, wrong password, log in, log out) |
+| 1 | Register, log in, log out | `accounts.spec.js` (sign-up with favourite spots and must-haves, password checks, duplicate email, wrong password, forgot password, log in, log out) |
 | 2 | Browse the study space catalogue and open a place detail page | `reviews.spec.js` (home page lists places), `search.spec.js` (opens a place from a result), `carousel.spec.js` (photo carousel) |
-| 3 | Search and apply advanced filters | `search.spec.js`, `reviews.spec.js` (catalogue filters) |
-| 4 | Submit, edit and delete a review | `reviews.spec.js` |
+| 3 | Search and apply advanced filters | `search.spec.js` (12 per page, paging, empty search, facility chips), `reviews.spec.js` (Browse filters) |
+| 4 | Submit, edit and delete a review | `reviews.spec.js` (review popup with star rating) |
 | 5 | Submit a crowd-level report | `crowd.spec.js` (check in, change it, undo it) |
 | 6 | Save and remove a favourite place | `saved.spec.js` (log-in prompt for visitors, save from Browse, Saved page, remove) |
 | 7 | Report incorrect information, and an admin handles it | `reports.spec.js` |
@@ -445,6 +452,7 @@ Parts of this project written with AI/LLM tools. Each member completes their own
 | Jeffrey Wen | Bug fixes from the team's code audit (20–21 Oct and 25 Oct), including `server/utils/place-summary.js` and fixes in reviews, places, users, search and the place page | Bugs found and fixed with Claude Code, then reviewed and tested by Jeffrey |
 | Jeffrey Wen | Tests: client unit and component tests (`suitability`, `searchFilters`, `crowd`, `StarRating`, `CrowdHistogram`), server tests (`crowd`, `place-summary`, `auth-middleware`) and end-to-end tests (`accounts`, `reviews`, `search`, `crowd`, `saved`) | Generated with Claude Code, then run and checked by Jeffrey |
 | Jeffrey Wen | Chat buttons closing on an outside click, their icons and labels (`AssistantBubble.vue`, `WorldChat.vue`); pnpm setup; README | Written with Claude Code |
+| Jeffrey Wen | Favourite kinds of spot and preference ordering (`client/src/utils/studySpots.js`, sign-up, profile, home and Browse), star rating picker (`StarPicker.vue`), review pagination, weather background (`WeatherBackdrop.vue`), "Nearby" card tags, walking-route steps, the restored admin route guard, and the matching tests | Written with Claude Code, then reviewed and tested by Jeffrey |
 | Leong Yew Kai | *TODO* | *TODO* |
 | Khin Bhone Pyae | *TODO* | *TODO* |
 | Thet Htar Nwe | *TODO* | *TODO* |

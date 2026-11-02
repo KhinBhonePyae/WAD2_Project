@@ -7,3 +7,9 @@ CLAUDE.md
 
 # Build output
 dist/
+
+.vercel
+.env*
+
+# macOS folder metadata
+.DS_Store

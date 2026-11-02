@@ -227,6 +227,30 @@ function modeLabel(mode) {
   return routeModes.find(item => item.id === mode)?.label || 'Walking'
 }
 
+/* One walking step as a sentence. OneMap gives the turn ("Left", "Slight Right"),
+ * the compass heading after it and usually no road name on footpaths, so the
+ * heading is what tells people which way to go. */
+function stepText(step) {
+  const action = step.action.toLowerCase()
+  const heading = step.heading ? step.heading.toLowerCase() : ''
+  const road = step.road ? ` on ${step.road}` : ''
+  if (action === 'destination') return `Arrive at ${props.place.name}`
+  if (action === 'head' || action === 'continue' || action === 'straight') {
+    return `${action === 'head' ? 'Head' : 'Continue'}${heading ? ' ' + heading : ''}${road}`
+  }
+  const turn = action.startsWith('slight') ? `Bear ${action.replace('slight ', '')}`
+    : action.startsWith('sharp') ? `Turn sharp ${action.replace('sharp ', '')}`
+      : action.includes('u-turn') || action.includes('uturn') ? 'Make a U-turn'
+        : `Turn ${action}`
+  return `${turn}${road}${heading ? `, then head ${heading}` : ''}`
+}
+
+function stepDetail(step) {
+  if (!step.distance) return ''
+  const time = step.duration >= 60 ? ` · ${formatDuration(step.duration).replace('about ', '')}` : ''
+  return formatDistance(step.distance) + time
+}
+
 function legDescription(leg) {
   if (leg.mode === 'WALK') return `Walk to ${leg.to || 'the next stop'}`
   const transport = leg.mode === 'BUS' ? 'Bus' : leg.mode === 'RAIL' ? 'Train' : leg.mode
@@ -304,9 +328,10 @@ onBeforeUnmount(() => map?.remove())
           {{ legDescription(leg) }}
           <span v-if="leg.duration"> · {{ formatDuration(leg.duration).replace('about ', '') }}</span>
         </li>
-        <li v-for="(instruction, index) in routeSummary.instructions" :key="`instruction-${index}`">
-          {{ instruction.action }}<span v-if="instruction.road"> on {{ instruction.road }}</span>
-          <span v-if="instruction.distance"> · {{ formatDistance(instruction.distance) }}</span>
+        <li v-for="(instruction, index) in routeSummary.instructions" :key="`instruction-${index}`"
+          data-test="route-step">
+          {{ stepText(instruction) }}
+          <span v-if="stepDetail(instruction)" class="x-place-map__step-detail"> · {{ stepDetail(instruction) }}</span>
         </li>
       </ol>
     </details>
@@ -440,6 +465,8 @@ onBeforeUnmount(() => map?.remove())
   color: var(--x-ink);
   font-size: .8rem;
 }
+
+.x-place-map__step-detail { color: var(--x-muted); }
 
 .x-place-map__details {
   margin: -.3rem 0 1rem;

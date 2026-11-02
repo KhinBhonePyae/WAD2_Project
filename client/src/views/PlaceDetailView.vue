@@ -19,7 +19,6 @@ import ReportIssue from '../components/ReportIssue.vue'
 
 const route = useRoute()
 const carouselRef = ref(null)
-const reviewsScrollRef = ref(null)
 const place = ref(null)
 const reviews = ref([])
 const crowdRef = ref(null)
@@ -87,6 +86,11 @@ function closeReviewModal() {
   if (busy.value) return
   reviewError.value = ''
   reviewModalOpen.value = false
+}
+
+// Esc closes the review popup, like other dialogs on the site
+function onKeydown(event) {
+  if (event.key === 'Escape' && reviewModalOpen.value) closeReviewModal()
 }
 
 async function refreshPlaceScoreData() {
@@ -167,22 +171,9 @@ async function deleteReview(id) {
   }
 }
 
-function scrollReviews(event) {
-  const el = reviewsScrollRef.value
-  if (!el) return
-
-  const atTop = el.scrollTop <= 0
-  const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1
-
-  if ((event.deltaY < 0 && atTop) || (event.deltaY > 0 && atBottom)) return
-
-  event.preventDefault()
-  event.stopPropagation()
-  el.scrollTop += event.deltaY
-}
-
 onMounted(async () => {
   window.addEventListener('user-login', syncUser)
+  window.addEventListener('keydown', onKeydown)
   const id = route.params.id
 
   try {
@@ -232,6 +223,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('user-login', syncUser)
+  window.removeEventListener('keydown', onKeydown)
   ctx?.revert()
 })
 </script>
@@ -391,16 +383,16 @@ onUnmounted(() => {
               <p class="ss-muted mb-0">See what LockedIN users think about this study space.</p>
             </div>
 
-            <button v-if="currentUser" type="button" class="btn btn-primary review-button" @click="openReviewModal">
+            <button v-if="currentUser" type="button" class="btn btn-primary review-button" data-test="review-open" @click="openReviewModal">
               ★ Leave a review
             </button>
 
-            <RouterLink v-else to="/login" class="btn btn-primary review-button">
+            <RouterLink v-else to="/login" class="btn btn-primary review-button" data-test="review-login">
               Log in to review
             </RouterLink>
           </div>
 
-          <div ref="reviewsScrollRef" class="reviews-scroll" @wheel="scrollReviews">
+          <div class="reviews-list">
             <ReviewList :reviews="reviews" :current-user-id="currentUser?._id" @edit-review="editReview" @delete-review="deleteReview" />
           </div>
         </div>
@@ -412,11 +404,11 @@ onUnmounted(() => {
 
       <!-- LEAVE REVIEW POPUP -->
       <div v-if="reviewModalOpen" class="review-modal-overlay" @click.self="closeReviewModal">
-        <div class="review-modal">
+        <div class="review-modal" role="dialog" aria-modal="true" aria-labelledby="review-modal-title">
           <div class="review-modal-header">
             <div>
               <div class="review-modal-eyebrow">COMMUNITY REVIEW</div>
-              <h2 class="mb-1">Leave a review</h2>
+              <h2 id="review-modal-title" class="mb-1">Leave a review</h2>
               <p class="ss-muted mb-0">{{ place.name }}</p>
             </div>
 
@@ -461,30 +453,9 @@ onUnmounted(() => {
   flex-shrink:0;
 }
 
-.reviews-scroll {
-  height:430px;
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding-right:.7rem;
-  padding-bottom:.25rem;
-  scrollbar-gutter:stable;
-  overscroll-behavior-y:contain;
-  touch-action:pan-y;
-}
 
-.reviews-scroll::-webkit-scrollbar {
-  width:8px;
-}
 
-.reviews-scroll::-webkit-scrollbar-track {
-  background:transparent;
-}
 
-.reviews-scroll::-webkit-scrollbar-thumb {
-  background:var(--x-lilac);
-  border:1px solid var(--x-ink);
-  border-radius:999px;
-}
 
 .report-right {
   display:flex;
@@ -561,16 +532,6 @@ onUnmounted(() => {
 /* MOBILE */
 
 @media(max-width:991.98px) {
-  .reviews-scroll {
-    height:430px;
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding-right:.7rem;
-    scrollbar-gutter:stable;
-    overscroll-behavior-y:contain;
-    touch-action:pan-y;
-    -webkit-overflow-scrolling:touch;
-  }
 
   .reviews-section {
     margin-bottom:2rem;

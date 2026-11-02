@@ -7,7 +7,8 @@ export default defineConfig({
   expect: { timeout: 5000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // every test waits on the shared Atlas database; more than 3 browsers at once makes them time out
+  workers: process.env.CI ? 1 : 3,
   reporter: 'html',
   use: {
     actionTimeout: 0,
