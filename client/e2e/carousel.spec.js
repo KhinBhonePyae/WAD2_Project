@@ -21,11 +21,12 @@ test.describe('Place Detail Image Carousel', () => {
     for (let i = 0; i < 3; i++) {
       await expect(images.nth(i)).toBeVisible()
 
-      const loaded = await images.nth(i).evaluate(img =>
-        img.complete && img.naturalWidth > 0
-      )
-
-      expect(loaded).toBe(true)
+      await expect.poll(
+        async () => images.nth(i).evaluate(img =>
+          img.complete && img.naturalWidth > 0
+        ),
+        { timeout:LOAD }
+      ).toBe(true)
     }
 
     // First slide starts active

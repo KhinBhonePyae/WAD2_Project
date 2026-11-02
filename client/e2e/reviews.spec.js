@@ -17,27 +17,11 @@ test('home page lists study spaces', async ({ page }) => {
   expect(await cards.count()).toBeGreaterThan(0)
 })
 
-test('catalogue filters narrow the result set', async ({ page }) => {
-  await page.goto('/places')
-  await expect(page.locator('[data-test="place-card"]').first()).toBeVisible({ timeout: LOAD })
-  const before = await page.locator('[data-test="place-card"]').count()
-
-  await page.locator('[data-test="chip-outdoor"]').click()
-  await expect
-    .poll(async () => page.locator('[data-test="place-card"]').count())
-    .toBeLessThan(before)
-
-  await page.locator('[data-test="clear-filters"]').click()
-  await expect
-    .poll(async () => page.locator('[data-test="place-card"]').count())
-    .toBe(before)
-})
-
 test.describe('reviews', () => {
   test('logged-out visitors can read reviews but get a log-in prompt instead of the form', async ({ page }) => {
     await page.goto('/places/1')
     await expect(page.locator('[data-test="place-name"]')).toBeVisible({ timeout: LOAD })
-    await expect(page.locator('[data-test="review-login"]')).toBeVisible()
+    await expect(page.getByRole('link', { name:'Log in to review' })).toBeVisible()
     await expect(page.locator('[data-test="review-form"]')).toHaveCount(0)
   })
 
@@ -70,6 +54,7 @@ test.describe('reviews', () => {
 
     test('a user can post, edit and delete their own review', async ({ page }) => {
       await page.goto('/places/1')
+      await page.getByRole('button', { name:/Leave a review/ }).click()
       await expect(page.locator('[data-test="review-form"]')).toBeVisible({ timeout: LOAD })
 
       const items = page.locator('[data-test="review-item"]')

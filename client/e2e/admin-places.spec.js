@@ -69,7 +69,7 @@ test.describe('Admin Study Space Management E2E', () => {
 
     await page.goto('/admin/places')
 
-    await expect(page).toHaveURL(/\/places$/)
+    await expect(page).toHaveURL(/\/search$/)
   })
 
   test('admin can create a new study space', async ({ page }) => {
@@ -173,7 +173,7 @@ test.describe('Admin Study Space Management E2E', () => {
 
     await expect(
       page.locator('.admin-place-row', { hasText:updatedName })
-    ).toHaveCount(0)
+    ).toHaveCount(0, { timeout:LOAD })
 
     placeId = null
   })

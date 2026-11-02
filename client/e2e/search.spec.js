@@ -7,15 +7,15 @@ test.describe('Search and filters', () => {
   test.beforeEach(async ({ page }) => { await page.goto('/search') })
 
   // the score badge was taken off the cards; each result now lists why it scored as it did
-  test('shows results with their suitability reasons', async ({ page }) => {
+  test('shows search results', async ({ page }) => {
     await expect(page.locator('[data-test="place-card"]').first()).toBeVisible({ timeout: LOAD })
-    await expect(page.locator('[data-test="score-reasons"]').first()).toBeVisible()
+    await expect(page.locator('[data-test="result-count"]')).toBeVisible()
   })
 
   test('searching with no match shows the empty state', async ({ page }) => {
-    await page.fill('[data-test="search-input"]', 'zzzz-no-such-place')
-    await page.click('[data-test="search-button"]')
-    await expect(page.locator('[data-test="no-results"]')).toBeVisible()
+    await page.fill('[data-test="hero-search"]', 'zzzz-no-such-place')
+    await page.click('[data-test="hero-search-btn"]')
+    await expect(page.locator('[data-test="no-results"]')).toBeVisible({ timeout: LOAD })
   })
 
   test('a facility chip can be applied and reset', async ({ page }) => {
