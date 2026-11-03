@@ -351,7 +351,7 @@ onMounted(async () => {
         </div>
 
         <template v-else>
-          <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3 mb-5">
+          <div class="row row-cols-3 g-2 g-sm-3 mb-5">
             <div class="col" v-for="space in paginatedResults" :key="space.id">
               <PlaceCard 
                 :place="space" 
@@ -492,9 +492,38 @@ onMounted(async () => {
   user-select: none;
 }
 
-@media (max-width: 576px) {
-  .sort-select-wrapper {
-    max-width: 100%;
+@media (max-width: 575.98px) {
+  .x-browse__content h2 { font-size: 1.85rem; }
+  .x-weather-line { font-size: .68rem; margin-bottom: .75rem !important; }
+  .x-hero__search { margin-bottom: 1rem !important; }
+  .x-search { padding: 2px 2px 2px 10px; }
+
+  /* Filters toggle, count and sort scaled to the mini cards */
+  .x-browse__content :deep([data-test="filter-toggle"]) {
+    --bs-btn-padding-y: .25rem;
+    font-size: .85rem;
+    box-shadow: 2px 2px 0 var(--x-ink);
   }
+  [data-test="result-count"] { font-size: .8rem; }
+  .sort-select-wrapper { max-width: 140px; }
+  .sort-select-wrapper :deep(.ss-select-trigger) {
+    padding: .25rem .6rem;
+    border-radius: 10px;
+    font-size: .78rem;
+    box-shadow: 2px 2px 0 var(--x-ink);
+  }
+
+  /* the tester is dev-only; keep it a small strip that clears the chat buttons */
+  .x-weather-tester {
+    right: 10px;
+    bottom: 10px;
+    max-width: calc(100vw - 76px);
+    gap: 3px;
+    padding: 4px;
+    border-radius: 12px;
+    font-size: .66rem;
+  }
+  .x-weather-tester__label { display: none; }
+  .x-weather-tester button { padding: 2px 7px; }
 }
 </style>

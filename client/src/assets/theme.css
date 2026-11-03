@@ -520,6 +520,21 @@ main.container.ss-section { padding-top: 7.5rem; }
 .x-page { padding-top: 7.5rem !important; }
 main.auth-page, main.profile-page, main.saved-page { padding-top: 7.5rem !important; }
 
+/* Phones: the nav is shorter, so pages clear it with less room, and the
+   chunky controls slim down a touch so more content fits on screen */
+@media (max-width: 575.98px) {
+  main.container.ss-section, .x-page,
+  main.auth-page, main.profile-page, main.saved-page { padding-top: 5.25rem !important; }
+  h1 { font-size: 2.4rem; }
+  h2 { font-size: 1.85rem; }
+  .btn { --bs-btn-padding-x: 1rem; --bs-btn-padding-y: .45rem; box-shadow: 3px 3px 0 var(--x-ink); }
+  .btn:disabled { box-shadow: 3px 3px 0 var(--x-ink); }
+  .form-control, .form-select { padding: .5rem .8rem; }
+  .ss-search { box-shadow: 3px 3px 0 var(--x-ink); }
+  .ss-card { box-shadow: 3px 3px 0 var(--x-ink); }
+  .ss-section { padding-top: 3rem; padding-bottom: 3rem; }
+}
+
 /* page headings on inner pages get the same kinetic entrance */
 .x-page-title .x-word { display: inline-block; }
 

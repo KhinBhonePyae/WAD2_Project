@@ -1084,17 +1084,151 @@ onMounted(async () => {
   }
 
   .preferences-grid,
-  .edit-preferences,
-  .profile-spot-grid,
-  .edit-spot-grid {
+  .edit-preferences {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 575px) {
+  .profile-page {
+    padding-left: .25rem;
+    padding-right: .25rem;
+  }
+
+  .page-heading {
+    margin-bottom: 1rem;
+  }
+
+  .page-label {
+    font-size: .66rem;
+  }
+
+  .page-heading h1 {
+    font-size: 2.2rem;
+  }
+
   .profile-header {
     flex-direction: column;
-    padding: 1.2rem;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .profile-avatar {
+    width: 48px;
+    height: 48px;
+    flex-basis: 48px;
+    font-size: 1rem;
+  }
+
+  .profile-main {
+    gap: .8rem;
+  }
+
+  .profile-main h2 {
+    font-size: 1.15rem;
+  }
+
+  .profile-main p {
+    font-size: .82rem;
+    overflow-wrap: anywhere;
+  }
+
+  .profile-stats {
+    margin-top: .4rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .1rem !important;
+  }
+
+  .profile-stat-divider {
+    display: none;
+  }
+
+  .preference-group-title {
+    font-size: .95rem;
+  }
+
+  .edit-button,
+  .settings-button {
+    min-height: 40px;
+    box-shadow: 3px 3px 0 var(--x-ink);
+  }
+
+  .profile-card {
+    border-radius: 16px;
+    box-shadow: 3px 3px 0 var(--x-ink);
+  }
+
+  .preference-group-hint {
+    font-size: .78rem;
+  }
+
+  /* spot tiles stay two-up: emoji and status on top, label underneath */
+  .profile-spot-grid,
+  .edit-spot-grid {
+    gap: .55rem;
+  }
+
+  .profile-spot-card {
+    min-height: 0;
+    padding: .65rem .7rem;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: .35rem .5rem;
+    border-radius: 12px;
+  }
+
+  .profile-spot-emoji {
+    font-size: 1.15rem;
+  }
+
+  .profile-spot-card .status {
+    margin-left: auto;
+  }
+
+  .profile-spot-info {
+    order: 3;
+    flex-basis: 100%;
+  }
+
+  .profile-spot-info strong {
+    font-size: .85rem;
+  }
+
+  .profile-spot-info span {
+    font-size: .7rem;
+    line-height: 1.3;
+  }
+
+  .edit-spot-tile {
+    padding: .65rem .7rem;
+  }
+
+  .edit-spot-tile span:last-child {
+    font-size: .7rem;
+  }
+
+  .preferences-grid {
+    gap: .55rem;
+  }
+
+  .preference-row {
+    min-height: 0;
+    padding: .65rem .8rem;
+  }
+
+  .preference-row strong {
+    font-size: .85rem;
+  }
+
+  .preference-row div span {
+    font-size: .72rem;
+  }
+
+  .status {
+    padding: .22rem .55rem;
+    font-size: .64rem;
   }
 
   .edit-button,
@@ -1105,7 +1239,7 @@ onMounted(async () => {
   .profile-section,
   .settings-row,
   .edit-card {
-    padding: 1.2rem;
+    padding: 1rem;
   }
 
   .settings-row {

@@ -376,6 +376,30 @@ onUnmounted(() => {
   transform: scale(.85) translateY(8px);
 }
 
+@media (max-width: 575.98px) {
+  .x-assist {
+    left: 12px;
+    bottom: 12px;
+  }
+
+  .x-assist__btn {
+    width: 44px;
+    height: 44px;
+    box-shadow: 3px 3px 0 var(--x-ink);
+  }
+
+  .x-assist__btn svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .x-assist__card {
+    bottom: 54px;
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 90px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   .x-pop-enter-active,

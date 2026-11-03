@@ -159,4 +159,41 @@ onUnmounted(() => ctx?.revert())
             background: radial-gradient(circle at var(--shine-x, 50%) var(--shine-y, 50%), rgba(255,255,255,.75), transparent 45%);
             transition: opacity .3s; }
 .xc-wrap:hover .xc-shine { opacity: 1; }
+
+/* Tablets and small laptops (Browse sits beside the filters here): still three
+   to a row, so the card scales down between desktop and phone */
+@media (min-width: 576px) and (max-width: 1199.98px) {
+  .xc { border-radius: 18px; box-shadow: 4px 4px 0 var(--x-ink); }
+  .xc-wrap:hover .xc { box-shadow: 6px 6px 0 var(--x-ink); }
+  .xc-status { left: 8px; top: 8px; padding: 2px 8px; font-size: .58rem; }
+  .xc-fav { right: 8px; top: 8px; width: 32px; height: 32px; }
+  .xc-fav svg { width: 15px; height: 15px; }
+  .xc-body { gap: 4px; padding: 10px 12px 12px; }
+  .xc-title { font-size: clamp(.95rem, 2.2vw, 1.15rem); }
+  .xc-meta { font-size: .6rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .xc-tag { font-size: .6rem; padding: 1px 7px; }
+  .xc-intent { font-size: .68rem; }
+  .xc-foot { padding-top: 7px; font-size: .8rem; }
+}
+
+/* Phones: cards sit three to a row, so they shrink to a mini tile:
+   square photo, name, area and rating; tags and intent are dropped */
+@media (max-width: 575.98px) {
+  .xc { border-radius: 14px; box-shadow: 3px 3px 0 var(--x-ink); }
+  .xc-wrap:hover .xc { box-shadow: 3px 3px 0 var(--x-ink); }
+  .xc-photo { aspect-ratio: 1 / 1; }
+  .xc-photo img { inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); }
+  .xc-status { left: 5px; top: 5px; padding: 1px 5px; border-width: 1.5px; font-size: .48rem;
+               box-shadow: 1px 1px 0 var(--x-ink); }
+  .xc-fav { right: 5px; top: auto; bottom: 5px; width: 26px; height: 26px; border-width: 1.5px;
+            box-shadow: 1px 1px 0 var(--x-ink); }
+  .xc-fav svg { width: 13px; height: 13px; }
+  .xc-body { gap: 3px; padding: 7px 7px 8px; }
+  .xc-title { font-size: .78rem; letter-spacing: -.02em; line-height: 1.1;
+              display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .xc-meta { font-size: .5rem; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .xc-tags, .xc-intent { display: none; }
+  .xc-foot { padding-top: 5px; border-top-width: 1.5px; font-size: .55rem; line-height: 1.2; }
+  .xc-foot :deep(.ss-meta) { font-size: .55rem; }
+}
 </style>

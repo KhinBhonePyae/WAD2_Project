@@ -24,7 +24,11 @@ test('browse filters narrow the result set', async ({ page }) => {
   await expect(page.locator('[data-test="place-card"]').first()).toBeVisible({ timeout: LOAD })
   const before = await resultCount()
 
-  await page.locator('[data-test="free-entry"]').check()
+  const freeEntrySwitch = page.locator('label.x-switch').filter({ hasText: 'Free entry' })
+  await freeEntrySwitch.click()
+
+  await expect(page.locator('[data-test="free-entry"]')).toBeChecked()
+
   await page.locator('[data-test="apply-filters"]').click()
   await expect.poll(resultCount).toBeLessThan(before)
 
@@ -92,13 +96,37 @@ test.describe('reviews', () => {
       // it is the only review this user may edit, so target the edit fields directly
       await mine.locator('[data-test="edit-btn"]').click()
       await page.locator('[data-test="edit-comment"]').fill(stamp + ' edited')
+
+      const editResponsePromise = page.waitForResponse(response =>
+        response.url().includes('/reviews/') &&
+        response.request().method() === 'PUT'
+      )
+
+      const reloadResponsePromise = page.waitForResponse(response =>
+        response.url().includes('/reviews/place/') &&
+        response.request().method() === 'GET'
+      )
+
       await page.locator('[data-test="edit-save"]').click()
-      await expect(page.locator('[data-test="review-item"]', { hasText: stamp + ' edited' })).toHaveCount(1)
+
+      const editResponse = await editResponsePromise
+      expect(editResponse.ok()).toBeTruthy()
+
+      await reloadResponsePromise
+
+      await expect(
+        page.locator('[data-test="review-item"]', {
+          hasText: stamp + ' edited'
+        })
+      ).toHaveCount(1, { timeout: LOAD })
 
       // delete
       await page.locator('[data-test="review-item"]', { hasText: stamp })
         .locator('[data-test="delete-btn"]').click()
-      await expect(page.locator('[data-test="review-item"]', { hasText: stamp })).toHaveCount(0)
+
+      await expect(
+        page.locator('[data-test="review-item"]', { hasText: stamp })
+      ).toHaveCount(0)
     })
   })
 })
