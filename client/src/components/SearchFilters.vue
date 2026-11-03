@@ -108,25 +108,29 @@ function reset() {
 
   <div class="filter-collapse-wrapper" :class="{ 'is-open': showMobileFilters }">
     <div class="filter-collapse-inner">
-      <div class="card card-body mb-3" data-test="filter-panel">
+      
+      <div class="card card-body mb-3 x-bold-container" data-test="filter-panel">
         
         <h6>Facilities I need</h6>
         <FilterChips :options="chipOptions" :selected="local.facilities" @toggle="toggleFacility" />
-        <div class="form-check form-switch mt-2">
-          <input class="form-check-input" type="checkbox" id="strict" v-model="local.strictFacilities"
-            data-test="strict-facilities" />
-          <label class="form-check-label small" for="strict">Must have all selected</label>
-        </div>
+        
+        <!-- Custom Switch -->
+        <label class="x-switch mt-2">
+          <input type="checkbox" v-model="local.strictFacilities" data-test="strict-facilities" />
+          <span class="x-switch__track"></span>
+          <span class="x-switch__label small">Must have all selected</span>
+        </label>
 
         <h6 class="mt-3">Area</h6>
         <CustomSelect v-model="local.area" :options="formattedAreaOptions" data-test="area-select" />
 
         <h6 class="mt-3">Distance</h6>
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="nearbyOnly" v-model="local.nearbyOnly"
-            data-test="nearby-toggle" />
-          <label class="form-check-label" for="nearbyOnly">Only show places near me</label>
-        </div>
+        <!-- Custom Switch -->
+        <label class="x-switch">
+          <input type="checkbox" v-model="local.nearbyOnly" data-test="nearby-toggle" />
+          <span class="x-switch__track"></span>
+          <span class="x-switch__label">Only show places near me</span>
+        </label>
 
         <div v-if="locationError" class="small text-danger mt-1" data-test="location-error">
           {{ locationError }}
@@ -153,16 +157,18 @@ function reset() {
         <h6 class="mt-3">Minimum rating</h6>
         <CustomSelect v-model="local.minRating" :options="ratingOptions" />
 
-        <div class="form-check form-switch mt-3">
-          <input class="form-check-input" type="checkbox" id="openNow" v-model="local.openNowOnly" data-test="open-now" />
-          <label class="form-check-label" for="openNow">Open now</label>
-        </div>
+        <!-- Custom Switches -->
+        <label class="x-switch mt-3">
+          <input type="checkbox" v-model="local.openNowOnly" data-test="open-now" />
+          <span class="x-switch__track"></span>
+          <span class="x-switch__label">Open now</span>
+        </label>
 
-        <div class="form-check form-switch mt-2">
-          <input class="form-check-input" type="checkbox" id="freeEntry" v-model="local.freeEntryOnly"
-            data-test="free-entry" />
-          <label class="form-check-label" for="freeEntry">Free entry</label>
-        </div>
+        <label class="x-switch mt-2">
+          <input type="checkbox" v-model="local.freeEntryOnly" data-test="free-entry" />
+          <span class="x-switch__track"></span>
+          <span class="x-switch__label">Free entry</span>
+        </label>
 
         <div class="d-flex gap-2 mt-3">
           <button class="btn btn-primary flex-fill" @click="apply" :disabled="locating"
@@ -175,11 +181,13 @@ function reset() {
           Use my profile preferences
         </button>
       </div>
+
     </div>
   </div>
 </template>
 
 <style scoped>
+/* --- Container Animation --- */
 .filter-collapse-wrapper {
   max-height: 0;
   overflow: hidden;
@@ -188,18 +196,8 @@ function reset() {
 }
 
 .filter-collapse-wrapper.is-open {
-  max-height: 1200px; 
+  max-height: 1500px;
   opacity: 1;
-}
-
-.profile-pref-link {
-  width: 100%;
-  border: none;
-  background: none;
-  padding: 0;
-  color: inherit;
-  text-decoration: underline;
-  cursor: pointer;
 }
 
 @media (min-width: 992px) {
@@ -208,6 +206,96 @@ function reset() {
     overflow: visible !important;
     opacity: 1 !important;
   }
+}
+
+/* --- Bold Container --- */
+.x-bold-container {
+  background-color: var(--x-card, #fff);
+  border: 2px solid var(--x-ink, #111) !important;
+  border-radius: 20px !important;
+  box-shadow: 4px 4px 0 var(--x-ink, #111) !important;
+}
+
+/* --- THEMED TOGGLE SWITCHES --- */
+.x-switch {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  gap: 10px;
+  margin-bottom: 0.2rem; /* Slight spacing adjustment */
+}
+
+/* Hide the default checkbox */
+.x-switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* The Track */
+.x-switch__track {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background-color: var(--x-card, #fff);
+  border: 2px solid var(--x-ink, #111);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 var(--x-ink, #111);
+  transition: all 0.2s ease;
+  flex-shrink: 0; /* Prevents squishing on mobile */
+}
+
+/* The Knob */
+.x-switch__track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background-color: var(--x-ink, #111);
+  border-radius: 50%;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Checked State */
+.x-switch input:checked + .x-switch__track {
+  background-color: var(--x-lime, #d1f529);
+}
+
+.x-switch input:checked + .x-switch__track::after {
+  transform: translateX(20px);
+}
+
+/* Focus State for Accessibility */
+.x-switch input:focus-visible + .x-switch__track {
+  outline: 3px solid var(--x-orange, #ff5b22);
+  outline-offset: 2px;
+}
+
+/* The Label */
+.x-switch__label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--x-ink, #111);
+  line-height: 1.2;
+}
+
+.x-switch__label.small {
+  font-size: 0.8rem;
+}
+
+/* Profile preferences link */
+.profile-pref-link {
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 /* Removes the sticky focus state on the mobile button */
