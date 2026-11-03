@@ -75,7 +75,6 @@ function setFormValues() {
 
 function toggleStudySpot(key) {
   const spots = studySpots.value
-
   studySpots.value = spots.includes(key)
     ? spots.filter(spot => spot !== key)
     : [...spots, key]
@@ -248,7 +247,6 @@ async function deleteAccount() {
       router.push('/login')
       return
     }
-
     deleteError.value = error.response?.data?.error || 'Unable to delete account.'
   } finally {
     deleting.value = false
@@ -268,7 +266,6 @@ function handleAuthError(error, defaultMessage) {
 
 onMounted(async () => {
   await getProfile()
-
   if (route.query.edit === '1' && user.value) {
     editProfile()
   }
@@ -326,16 +323,11 @@ onMounted(async () => {
                   :class="{ active: user.preferences?.studySpots?.includes(spot.key) }"
                 >
                   <span class="profile-spot-emoji" aria-hidden="true">{{ spot.emoji }}</span>
-
                   <div class="profile-spot-info">
                     <strong>{{ spot.label }}</strong>
                     <span>{{ spot.note }}</span>
                   </div>
-
-                  <span
-                    class="status"
-                    :class="{ active: user.preferences?.studySpots?.includes(spot.key) }"
-                  >
+                  <span class="status" :class="{ active: user.preferences?.studySpots?.includes(spot.key) }">
                     {{ user.preferences?.studySpots?.includes(spot.key) ? 'Preferred' : 'Not selected' }}
                   </span>
                 </div>
@@ -344,36 +336,21 @@ onMounted(async () => {
 
             <div class="preference-group must-have-group">
               <p class="preference-group-title">Must-haves</p>
-
               <div class="preferences-grid">
                 <div class="preference-row">
-                  <div>
-                    <strong>Wi-Fi</strong>
-                    <span>Reliable internet access</span>
-                  </div>
-
+                  <div><strong>Wi-Fi</strong><span>Reliable internet access</span></div>
                   <span class="status" :class="{ active: user.preferences?.wifiRequired }">
                     {{ user.preferences?.wifiRequired ? 'Required' : 'Not required' }}
                   </span>
                 </div>
-
                 <div class="preference-row">
-                  <div>
-                    <strong>Power Sockets</strong>
-                    <span>Access to charging points</span>
-                  </div>
-
+                  <div><strong>Power Sockets</strong><span>Access to charging points</span></div>
                   <span class="status" :class="{ active: user.preferences?.socketsRequired }">
                     {{ user.preferences?.socketsRequired ? 'Required' : 'Not required' }}
                   </span>
                 </div>
-
                 <div class="preference-row">
-                  <div>
-                    <strong>Quiet Environment</strong>
-                    <span>Preference for quieter spaces</span>
-                  </div>
-
+                  <div><strong>Quiet Environment</strong><span>Preference for quieter spaces</span></div>
                   <span class="status" :class="{ active: user.preferences?.quietPreferred }">
                     {{ user.preferences?.quietPreferred ? 'Preferred' : 'No preference' }}
                   </span>
@@ -387,8 +364,7 @@ onMounted(async () => {
               <h3>Account & Security</h3>
               <p>Update your account password.</p>
             </div>
-            <button type="button" class="btn settings-button password-button" @click="openPasswordModal">Change
-              Password</button>
+            <button type="button" class="btn settings-button password-button" @click="openPasswordModal">Change Password</button>
           </section>
 
           <section class="settings-row">
@@ -409,8 +385,7 @@ onMounted(async () => {
               <h3>Delete Account</h3>
               <p>Permanently delete your LockedIN account.</p>
             </div>
-            <button type="button" class="btn settings-button delete-button" @click="openDeleteModal">Delete
-              Account</button>
+            <button type="button" class="btn settings-button delete-button" @click="openDeleteModal">Delete Account</button>
           </section>
         </div>
 
@@ -426,7 +401,6 @@ onMounted(async () => {
                 <label for="name" class="form-label fw-semibold">Name</label>
                 <input id="name" v-model="name" type="text" class="form-control profile-input" maxlength="60" required>
               </div>
-
               <div class="col-md-6">
                 <label for="email" class="form-label fw-semibold">Email</label>
                 <input id="email" v-model="email" type="email" class="form-control profile-input" required>
@@ -443,7 +417,6 @@ onMounted(async () => {
             <div class="edit-preference-group">
               <p class="preference-group-title">Where do you like to study?</p>
               <p class="preference-group-hint">Pick any. These come first when you browse; nothing gets hidden.</p>
-
               <div class="edit-spot-grid">
                 <button v-for="spot in STUDY_SPOTS" :key="spot.key" type="button" class="edit-spot-tile" :class="{ active: studySpots.includes(spot.key) }" :aria-pressed="studySpots.includes(spot.key)" :data-test="'edit-spot-' + spot.key" @click="toggleStudySpot(spot.key)">
                   <span class="edit-spot-emoji">{{ spot.emoji }}</span>
@@ -455,18 +428,15 @@ onMounted(async () => {
 
             <div class="edit-preference-group">
               <p class="preference-group-title">Must-haves</p>
-
               <div class="edit-preferences">
                 <label class="edit-preference">
                   <div><strong>Wi-Fi</strong><span>Require reliable internet access</span></div>
                   <div class="form-check form-switch"><input v-model="wifiRequired" class="form-check-input" type="checkbox"></div>
                 </label>
-
                 <label class="edit-preference">
                   <div><strong>Power Sockets</strong><span>Require access to charging points</span></div>
                   <div class="form-check form-switch"><input v-model="socketsRequired" class="form-check-input" type="checkbox"></div>
                 </label>
-
                 <label class="edit-preference">
                   <div><strong>Quiet Environment</strong><span>Prefer quieter study spaces</span></div>
                   <div class="form-check form-switch"><input v-model="quietPreferred" class="form-check-input" type="checkbox"></div>
@@ -475,10 +445,8 @@ onMounted(async () => {
             </div>
 
             <div class="edit-actions">
-              <button type="button" class="btn btn-outline-secondary" :disabled="saving"
-                @click="cancelEdit">Cancel</button>
-              <button type="submit" class="btn save-button" :disabled="saving">{{ saving ? 'Saving...' : 'Save Changes'
-                }}</button>
+              <button type="button" class="btn btn-outline-secondary" :disabled="saving" @click="cancelEdit">Cancel</button>
+              <button type="submit" class="btn save-button" :disabled="saving">{{ saving ? 'Saving...' : 'Save Changes' }}</button>
             </div>
           </form>
         </div>
@@ -495,25 +463,18 @@ onMounted(async () => {
             <form @submit.prevent="changePassword">
               <div class="mb-3">
                 <label for="currentPassword" class="form-label fw-semibold">Current Password</label>
-                <input id="currentPassword" v-model="currentPassword" type="password" class="form-control profile-input"
-                  autocomplete="current-password" required>
+                <input id="currentPassword" v-model="currentPassword" type="password" class="form-control profile-input" autocomplete="current-password" required>
               </div>
-
               <div class="mb-3">
                 <label for="newPassword" class="form-label fw-semibold">New Password</label>
-                <input id="newPassword" v-model="newPassword" type="password" class="form-control profile-input"
-                  autocomplete="new-password" required>
+                <input id="newPassword" v-model="newPassword" type="password" class="form-control profile-input" autocomplete="new-password" required>
               </div>
-
               <div class="mb-3">
                 <label for="confirmPassword" class="form-label fw-semibold">Confirm New Password</label>
-                <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control profile-input"
-                  autocomplete="new-password" required>
+                <input id="confirmPassword" v-model="confirmPassword" type="password" class="form-control profile-input" autocomplete="new-password" required>
               </div>
-
               <div class="modal-actions">
-                <button type="button" class="btn btn-outline-secondary" :disabled="changingPassword"
-                  @click="closePasswordModal">Cancel</button>
+                <button type="button" class="btn btn-outline-secondary" :disabled="changingPassword" @click="closePasswordModal">Cancel</button>
                 <button type="submit" class="btn save-button" :disabled="changingPassword">
                   {{ changingPassword ? 'Changing...' : 'Change Password' }}
                 </button>
@@ -526,20 +487,17 @@ onMounted(async () => {
           <div class="profile-modal-card">
             <div class="danger-icon">!</div>
             <h2>Are you sure?</h2>
-            <p class="modal-description">Enter your password to permanently delete your LockedIN account. This action
-              cannot be undone.</p>
+            <p class="modal-description">Enter your password to permanently delete your LockedIN account. This action cannot be undone.</p>
 
             <div v-if="deleteError" class="alert alert-danger">{{ deleteError }}</div>
 
             <div class="mb-3">
               <label for="deletePassword" class="form-label fw-semibold">Password</label>
-              <input id="deletePassword" v-model="deletePassword" type="password" class="form-control profile-input"
-                placeholder="Enter your password" autocomplete="current-password" @keyup.enter="deleteAccount">
+              <input id="deletePassword" v-model="deletePassword" type="password" class="form-control profile-input" placeholder="Enter your password" autocomplete="current-password" @keyup.enter="deleteAccount">
             </div>
 
             <div class="modal-actions">
-              <button type="button" class="btn btn-outline-secondary" :disabled="deleting"
-                @click="closeDeleteModal">Cancel</button>
+              <button type="button" class="btn btn-outline-secondary" :disabled="deleting" @click="closeDeleteModal">Cancel</button>
               <button type="button" class="btn btn-danger" :disabled="deleting" @click="deleteAccount">
                 {{ deleting ? 'Deleting...' : 'Delete Account' }}
               </button>
@@ -552,724 +510,97 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.profile-page {
-  min-height: calc(100vh - 120px);
-  padding: 2rem 1rem 3rem;
-}
-
-.profile-container {
-  max-width: 1000px;
-}
-
-.page-heading {
-  margin-bottom: 1.25rem;
-}
-
-.page-label {
-  margin: 0 0 .25rem;
-  color: var(--x-ink);
-  font-size: .73rem;
-  font-weight: 800;
-  letter-spacing: .14em;
-}
-
-.page-heading h1 {
-  margin: 0;
-  color: var(--x-ink);
-  font-size: 2rem;
-  font-weight: 800;
-}
-
-.profile-loading {
-  min-height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: .8rem;
-}
-
-.profile-card {
-  overflow: hidden;
-  border: 1px solid var(--x-ink);
-  border-radius: 18px;
-  background: white;
-  box-shadow: var(--x-pop);
-}
-
-.profile-header {
-  padding: 1.5rem 1.75rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-  border-bottom: 1px solid var(--x-ink);
-  background: var(--x-card);
-}
-
-.profile-main {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.profile-avatar {
-  width: 64px;
-  height: 64px;
-  flex: 0 0 64px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--x-paper);
-  color: var(--x-ink);
-  font-size: 1.2rem;
-  font-weight: 800;
-}
-
-.profile-main h2 {
-  margin: 0;
-  color: var(--x-ink);
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-
-.profile-main p {
-  margin: .2rem 0 0;
-  color: var(--x-muted);
-  font-size: .9rem;
-}
-
-.profile-stats {
-  margin-top: .6rem;
-  display: flex;
-  align-items: center;
-  gap: .6rem;
-  color: var(--x-muted);
-  font-family: var(--x-mono);
-  font-size: .75rem;
-}
-
-.profile-stat-divider {
-  width: 1px;
-  height: 13px;
-  background: var(--x-ink);
-  opacity: .3;
-}
-
-.edit-button,
-.settings-button {
-  width: 180px;
-  min-height: 44px;
-  border: 1px solid var(--x-ink);
-  border-radius: 10px;
-  font-weight: 700;
-  box-shadow: 6px 6px 0 var(--x-ink);
-  transition: .2s ease;
-}
-
-.edit-button {
-  background: var(--x-orange);
-  color: white;
-}
-
-.password-button {
-  background: #d8d1ee;
-  color: var(--x-ink);
-}
-
-.logout-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .55rem;
-  background: #e8dfd2;
-  color: var(--x-ink);
-}
-
-.logout-button svg {
-  width: 18px;
-  height: 18px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.delete-button {
-  background: var(--ss-danger);
-  color: white;
-}
-
-.edit-button:hover,
-.password-button:hover,
-.logout-button:hover,
-.delete-button:hover {
-  border-color: var(--x-ink);
-  transform: translateY(-2px);
-}
-
-.edit-button:hover {
-  background: var(--x-orange);
-  color: white;
-}
-
-.password-button:hover {
-  background: #ccc3e8;
-  color: var(--x-ink);
-}
-
-.logout-button:hover {
-  background: #ddd2c3;
-  color: var(--x-ink);
-}
-
-.delete-button:hover {
-  background: var(--ss-danger);
-  color: white;
-}
-
-.save-button {
-  padding: .6rem 1.2rem;
-  border: 1px solid var(--x-ink);
-  border-radius: 10px;
-  background: var(--x-orange);
-  color: white;
-  font-weight: 700;
-  box-shadow: 5px 5px 0 var(--x-ink);
-}
-
-.save-button:hover {
-  background: var(--x-orange);
-  color: white;
-}
-
-.form-switch .form-check-input:checked {
-  background-color: var(--x-orange);
-  border-color: var(--x-orange);
-}
-
-.profile-section {
-  padding: 1.5rem 1.75rem;
-  border-bottom: 1px solid var(--x-ink);
-}
-
-.section-heading {
-  margin-bottom: 1rem;
-}
-
-.section-heading h3,
-.settings-row h3 {
-  margin: 0;
-  color: var(--x-ink);
-  font-size: 1rem;
-  font-weight: 800;
-}
-
-.section-heading p,
-.settings-row p {
-  margin: .25rem 0 0;
-  color: var(--x-muted);
-  font-size: .85rem;
-}
-
-.preference-group {
-  margin-top: 1.25rem;
-}
-
-.preference-group:first-of-type {
-  margin-top: 0;
-}
-
-.must-have-group {
-  margin-top: 1.5rem;
-}
-
-.preference-group-title {
-  margin: 0 0 .25rem;
-  color: var(--x-ink);
-  font-weight: 800;
-}
-
-.preference-group-hint {
-  margin: 0 0 .8rem;
-  color: var(--x-muted);
-  font-size: .85rem;
-}
-
-.profile-spot-grid,
-.edit-spot-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: .75rem;
-}
-
-.profile-spot-card {
-  min-height: 88px;
-  padding: .9rem 1rem;
-  border: 1px solid var(--x-ink);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-  background: var(--x-card);
-}
-
-.profile-spot-card.active {
-  background: var(--x-lime);
-}
-
-.profile-spot-emoji,
-.edit-spot-emoji {
-  flex-shrink: 0;
-  font-size: 1.4rem;
-}
-
-.profile-spot-info {
-  min-width: 0;
-  flex: 1;
-}
-
-.profile-spot-info strong {
-  display: block;
-  color: var(--x-ink);
-  font-size: .9rem;
-}
-
-.profile-spot-info span {
-  display: block;
-  margin-top: .15rem;
-  color: var(--x-muted);
-  font-size: .78rem;
-}
-
-.preferences-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: .75rem;
-}
-
-.preference-row {
-  min-height: 74px;
-  padding: .9rem 1rem;
-  border: 1px solid var(--x-ink);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  background: var(--x-card);
-}
-
-.preference-row > div {
-  min-width: 0;
-}
-
-.preference-row strong,
-.edit-preference strong {
-  display: block;
-  color: var(--x-ink);
-  font-size: .9rem;
-}
-
-.preference-row div span,
-.edit-preference div span {
-  display: block;
-  margin-top: .15rem;
-  color: var(--x-muted);
-  font-size: .78rem;
-}
-
-.status {
-  flex-shrink: 0;
-  padding: .3rem .65rem;
-  border-radius: 999px;
-  background: var(--x-paper);
-  color: var(--x-muted);
-  font-size: .73rem;
-  font-weight: 700;
-}
-
-.status.active {
-  background: var(--x-lime);
-  color: var(--ss-success);
-}
-
-.settings-row {
-  padding: 1.15rem 1.75rem;
-  border-bottom: 1px solid var(--x-ink);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
-}
-
-.danger-row {
-  border-bottom: 0;
-  background: var(--ss-danger-soft);
-}
-
-.danger-row h3 {
-  color: var(--ss-danger);
-}
-
-.edit-card {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.75rem;
-}
-
-.edit-heading {
-  margin-bottom: 1.5rem;
-}
-
-.edit-heading h2 {
-  margin: 0;
-  color: var(--x-ink);
-  font-size: 1.5rem;
-  font-weight: 800;
-}
-
-.profile-input {
-  min-height: 44px;
-  border-radius: 9px;
-  border-color: var(--x-ink);
-}
-
-.profile-input:focus {
-  border-color: var(--x-ink);
-  box-shadow: 0 0 0 3px var(--x-lime);
-}
-
-.edit-divider {
-  height: 1px;
-  margin: 1.5rem 0;
-  background: var(--x-paper);
-}
-
-.edit-preference-group {
-  margin-bottom: 1.5rem;
-}
-
-.edit-spot-tile {
-  padding: .9rem 1rem;
-  border: 1px solid var(--x-ink);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: .15rem;
-  background: var(--x-card);
-  color: var(--x-ink);
-  text-align: left;
-  cursor: pointer;
-  transition: .2s ease;
-}
-
-.edit-spot-tile:hover {
-  transform: translateY(-2px);
-}
-
-.edit-spot-tile.active {
-  background: var(--x-lime);
-  box-shadow: 3px 3px 0 var(--x-ink);
-}
-
-.edit-spot-tile strong {
-  color: var(--x-ink);
-  font-size: .9rem;
-}
-
-.edit-spot-tile span:last-child {
-  color: var(--x-muted);
-  font-size: .78rem;
-}
-
-.edit-preferences {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: .75rem;
-}
-
-.edit-preference {
-  min-height: 72px;
-  padding: .9rem 1rem;
-  border: 1px solid var(--x-ink);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  background: var(--x-card);
-  cursor: pointer;
-}
-
-.form-switch {
-  margin: 0;
-  padding-left: 2.8rem;
-}
-
-.form-switch .form-check-input {
-  width: 2.5rem;
-  height: 1.3rem;
-  cursor: pointer;
-}
-
-.edit-actions,
-.modal-actions {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: flex-end;
-  gap: .75rem;
-}
-
-.profile-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1050;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(18, 24, 42, .5);
-  backdrop-filter: blur(3px);
-}
-
-.profile-modal-card {
-  width: 100%;
-  max-width: 450px;
-  padding: 1.75rem;
-  border-radius: 18px;
-  background: white;
-  box-shadow: var(--x-pop);
-}
-
-.profile-modal-card h2 {
-  margin: 0 0 .4rem;
-  color: var(--x-ink);
-  font-size: 1.35rem;
-  font-weight: 800;
-}
-
-.modal-description {
-  margin-bottom: 1.25rem;
-  color: var(--x-muted);
-  font-size: .9rem;
-}
-
-.danger-icon {
-  width: 42px;
-  height: 42px;
-  margin-bottom: .9rem;
-  border-radius: 11px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--ss-danger-soft);
-  color: var(--ss-danger);
-  font-weight: 900;
-}
-
+.profile-page { min-height: calc(100vh - 120px); padding: 2rem 1rem 3rem; }
+.profile-container { max-width: 1000px; }
+.page-heading { margin-bottom: 1.25rem; }
+.page-label { margin: 0 0 .25rem; color: var(--x-ink); font-size: .73rem; font-weight: 800; letter-spacing: .14em; }
+.page-heading h1 { margin: 0; color: var(--x-ink); font-size: 2rem; font-weight: 800; }
+.profile-loading { min-height: 300px; display: flex; align-items: center; justify-content: center; gap: .8rem; }
+.profile-card { overflow: hidden; border: 1px solid var(--x-ink); border-radius: 18px; background: white; box-shadow: var(--x-pop); }
+.profile-header { padding: 1.5rem 1.75rem; display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; border-bottom: 1px solid var(--x-ink); background: var(--x-card); }
+.profile-main { display: flex; align-items: center; gap: 1rem; }
+.profile-avatar { width: 64px; height: 64px; flex: 0 0 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--x-paper); color: var(--x-ink); font-size: 1.2rem; font-weight: 800; }
+.profile-main h2 { margin: 0; color: var(--x-ink); font-size: 1.25rem; font-weight: 800; }
+.profile-main p { margin: .2rem 0 0; color: var(--x-muted); font-size: .9rem; }
+.profile-stats { margin-top: .6rem; display: flex; align-items: center; gap: .6rem; color: var(--x-muted); font-family: var(--x-mono); font-size: .75rem; }
+.profile-stat-divider { width: 1px; height: 13px; background: var(--x-ink); opacity: .3; }
+.edit-button, .settings-button { width: 180px; min-height: 44px; border: 1px solid var(--x-ink); border-radius: 10px; font-weight: 700; box-shadow: 6px 6px 0 var(--x-ink); transition: .2s ease; }
+.edit-button { background: var(--x-orange); color: white; }
+.password-button { background: #d8d1ee; color: var(--x-ink); }
+.logout-button { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; background: #e8dfd2; color: var(--x-ink); }
+.logout-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.delete-button { background: var(--ss-danger); color: white; }
+.edit-button:hover, .password-button:hover, .logout-button:hover, .delete-button:hover { border-color: var(--x-ink); transform: translateY(-2px); }
+.edit-button:hover { background: var(--x-orange); color: white; }
+.password-button:hover { background: #ccc3e8; color: var(--x-ink); }
+.logout-button:hover { background: #ddd2c3; color: var(--x-ink); }
+.delete-button:hover { background: var(--ss-danger); color: white; }
+.save-button { padding: .6rem 1.2rem; border: 1px solid var(--x-ink); border-radius: 10px; background: var(--x-orange); color: white; font-weight: 700; box-shadow: 5px 5px 0 var(--x-ink); }
+.save-button:hover { background: var(--x-orange); color: white; }
+.form-switch .form-check-input:checked { background-color: var(--x-orange); border-color: var(--x-orange); }
+.profile-section { padding: 1.5rem 1.75rem; border-bottom: 1px solid var(--x-ink); }
+.section-heading { margin-bottom: 1rem; }
+.section-heading h3, .settings-row h3 { margin: 0; color: var(--x-ink); font-size: 1rem; font-weight: 800; }
+.section-heading p, .settings-row p { margin: .25rem 0 0; color: var(--x-muted); font-size: .85rem; }
+.preference-group { margin-top: 1.25rem; }
+.preference-group:first-of-type { margin-top: 0; }
+.must-have-group { margin-top: 1.5rem; }
+.preference-group-title { margin: 0 0 .25rem; color: var(--x-ink); font-weight: 800; }
+.preference-group-hint { margin: 0 0 .8rem; color: var(--x-muted); font-size: .85rem; }
+.profile-spot-grid, .edit-spot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.profile-spot-card { min-height: 88px; padding: .9rem 1rem; border: 1px solid var(--x-ink); border-radius: 12px; display: flex; align-items: center; gap: .75rem; background: var(--x-card); }
+.profile-spot-card.active { background: var(--x-lime); }
+.profile-spot-emoji, .edit-spot-emoji { flex-shrink: 0; font-size: 1.4rem; }
+.profile-spot-info { min-width: 0; flex: 1; }
+.profile-spot-info strong { display: block; color: var(--x-ink); font-size: .9rem; }
+.profile-spot-info span { display: block; margin-top: .15rem; color: var(--x-muted); font-size: .78rem; }
+.preferences-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.preference-row { min-height: 74px; padding: .9rem 1rem; border: 1px solid var(--x-ink); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; background: var(--x-card); }
+.preference-row > div { min-width: 0; }
+.preference-row strong, .edit-preference strong { display: block; color: var(--x-ink); font-size: .9rem; }
+.preference-row div span, .edit-preference div span { display: block; margin-top: .15rem; color: var(--x-muted); font-size: .78rem; }
+.status { flex-shrink: 0; padding: .3rem .65rem; border-radius: 999px; background: var(--x-paper); color: var(--x-muted); font-size: .73rem; font-weight: 700; }
+.status.active { background: var(--x-lime); color: var(--ss-success); }
+.settings-row { padding: 1.15rem 1.75rem; border-bottom: 1px solid var(--x-ink); display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.danger-row { border-bottom: 0; background: var(--ss-danger-soft); }
+.danger-row h3 { color: var(--ss-danger); }
+.edit-card { max-width: 900px; margin: 0 auto; padding: 1.75rem; }
+.edit-heading { margin-bottom: 1.5rem; }
+.edit-heading h2 { margin: 0; color: var(--x-ink); font-size: 1.5rem; font-weight: 800; }
+.profile-input { min-height: 44px; border-radius: 9px; border-color: var(--x-ink); }
+.profile-input:focus { border-color: var(--x-ink); box-shadow: 0 0 0 3px var(--x-lime); }
+.edit-divider { height: 1px; margin: 1.5rem 0; background: var(--x-paper); }
+.edit-preference-group { margin-bottom: 1.5rem; }
+.edit-spot-tile { padding: .9rem 1rem; border: 1px solid var(--x-ink); border-radius: 12px; display: flex; flex-direction: column; align-items: flex-start; gap: .15rem; background: var(--x-card); color: var(--x-ink); text-align: left; cursor: pointer; transition: .2s ease; }
+.edit-spot-tile:hover { transform: translateY(-2px); }
+.edit-spot-tile.active { background: var(--x-lime); box-shadow: 3px 3px 0 var(--x-ink); }
+.edit-spot-tile strong { color: var(--x-ink); font-size: .9rem; }
+.edit-spot-tile span:last-child { color: var(--x-muted); font-size: .78rem; }
+.edit-preferences { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.edit-preference { min-height: 72px; padding: .9rem 1rem; border: 1px solid var(--x-ink); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; background: var(--x-card); cursor: pointer; }
+.form-switch { margin: 0; padding-left: 2.8rem; }
+.form-switch .form-check-input { width: 2.5rem; height: 1.3rem; cursor: pointer; }
+.edit-actions, .modal-actions { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: .75rem; }
+.profile-modal-backdrop { position: fixed; inset: 0; z-index: 1050; padding: 1rem; display: flex; align-items: center; justify-content: center; background: rgba(18, 24, 42, .5); backdrop-filter: blur(3px); }
+.profile-modal-card { width: 100%; max-width: 450px; padding: 1.75rem; border-radius: 18px; background: white; box-shadow: var(--x-pop); }
+.profile-modal-card h2 { margin: 0 0 .4rem; color: var(--x-ink); font-size: 1.35rem; font-weight: 800; }
+.modal-description { margin-bottom: 1.25rem; color: var(--x-muted); font-size: .9rem; }
+.danger-icon { width: 42px; height: 42px; margin-bottom: .9rem; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: var(--ss-danger-soft); color: var(--ss-danger); font-weight: 900; }
 @media (max-width: 767px) {
-  .profile-page {
-    padding: 1.5rem .75rem 2.5rem;
-  }
-
-  .page-heading h1 {
-    font-size: 1.75rem;
-  }
-
-  .profile-header {
-    align-items: flex-start;
-  }
-
-  .preferences-grid,
-  .edit-preferences {
-    grid-template-columns: 1fr;
-  }
+  .profile-page { padding: 1.5rem .75rem 2.5rem; }
+  .page-heading h1 { font-size: 1.75rem; }
+  .profile-header { align-items: flex-start; }
+  .preferences-grid, .edit-preferences, .profile-spot-grid, .edit-spot-grid { grid-template-columns: 1fr; }
 }
-
 @media (max-width: 575px) {
-  .profile-page {
-    padding-left: .25rem;
-    padding-right: .25rem;
-  }
-
-  .page-heading {
-    margin-bottom: 1rem;
-  }
-
-  .page-label {
-    font-size: .66rem;
-  }
-
-  .page-heading h1 {
-    font-size: 2.2rem;
-  }
-
-  .profile-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-    padding: 1rem;
-  }
-
-  .profile-avatar {
-    width: 48px;
-    height: 48px;
-    flex-basis: 48px;
-    font-size: 1rem;
-  }
-
-  .profile-main {
-    gap: .8rem;
-  }
-
-  .profile-main h2 {
-    font-size: 1.15rem;
-  }
-
-  .profile-main p {
-    font-size: .82rem;
-    overflow-wrap: anywhere;
-  }
-
-  .profile-stats {
-    margin-top: .4rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: .1rem !important;
-  }
-
-  .profile-stat-divider {
-    display: none;
-  }
-
-  .preference-group-title {
-    font-size: .95rem;
-  }
-
-  .edit-button,
-  .settings-button {
-    min-height: 40px;
-    box-shadow: 3px 3px 0 var(--x-ink);
-  }
-
-  .profile-card {
-    border-radius: 16px;
-    box-shadow: 3px 3px 0 var(--x-ink);
-  }
-
-  .preference-group-hint {
-    font-size: .78rem;
-  }
-
-  /* spot tiles stay two-up: emoji and status on top, label underneath */
-  .profile-spot-grid,
-  .edit-spot-grid {
-    gap: .55rem;
-  }
-
-  .profile-spot-card {
-    min-height: 0;
-    padding: .65rem .7rem;
-    flex-wrap: wrap;
-    align-content: flex-start;
-    gap: .35rem .5rem;
-    border-radius: 12px;
-  }
-
-  .profile-spot-emoji {
-    font-size: 1.15rem;
-  }
-
-  .profile-spot-card .status {
-    margin-left: auto;
-  }
-
-  .profile-spot-info {
-    order: 3;
-    flex-basis: 100%;
-  }
-
-  .profile-spot-info strong {
-    font-size: .85rem;
-  }
-
-  .profile-spot-info span {
-    font-size: .7rem;
-    line-height: 1.3;
-  }
-
-  .edit-spot-tile {
-    padding: .65rem .7rem;
-  }
-
-  .edit-spot-tile span:last-child {
-    font-size: .7rem;
-  }
-
-  .preferences-grid {
-    gap: .55rem;
-  }
-
-  .preference-row {
-    min-height: 0;
-    padding: .65rem .8rem;
-  }
-
-  .preference-row strong {
-    font-size: .85rem;
-  }
-
-  .preference-row div span {
-    font-size: .72rem;
-  }
-
-  .status {
-    padding: .22rem .55rem;
-    font-size: .64rem;
-  }
-
-  .edit-button,
-  .settings-button {
-    width: 100%;
-  }
-
-  .profile-section,
-  .settings-row,
-  .edit-card {
-    padding: 1rem;
-  }
-
-  .settings-row {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .profile-stats {
-    flex-wrap: wrap;
-    gap: .45rem;
-    font-size: .7rem;
-  }
-
-  .preference-row,
-  .profile-spot-card {
-    align-items: flex-start;
-  }
-
-  .edit-actions,
-  .modal-actions {
-    flex-direction: column-reverse;
-  }
-
-  .edit-actions button,
-  .modal-actions button {
-    width: 100%;
-  }
-
-  .profile-modal-card {
-    padding: 1.4rem;
-  }
+  .profile-header { flex-direction: column; padding: 1.2rem; }
+  .edit-button, .settings-button { width: 100%; }
+  .profile-section, .settings-row, .edit-card { padding: 1.2rem; }
+  .settings-row { align-items: flex-start; flex-direction: column; }
+  .profile-stats { flex-wrap: wrap; gap: .45rem; font-size: .7rem; }
+  .preference-row, .profile-spot-card { align-items: flex-start; }
+  .edit-actions, .modal-actions { flex-direction: column-reverse; }
+  .edit-actions button, .modal-actions button { width: 100%; }
+  .profile-modal-card { padding: 1.4rem; }
 }
 </style>
