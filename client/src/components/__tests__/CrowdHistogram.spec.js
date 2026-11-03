@@ -94,7 +94,6 @@ describe('CrowdHistogram: what it shows', () => {
     const wrapper = mount(CrowdHistogram, { props: { place: openPlace } })
     await flushPromises()
     expect(wrapper.find('[role="alert"]').text()).toBe('Could not load crowd reports.')
-    // a failed load must not claim the place has no reports
     expect(find(wrapper, 'crowd-none').exists()).toBe(false)
   })
 
@@ -124,7 +123,7 @@ describe('CrowdHistogram: checking in', () => {
     localStorage.setItem('token', 'test-token')
     const wrapper = await mountCard()
     checkIn.mockResolvedValue({})
-    fetchMyCheckin.mockResolvedValue('quiet')   // what the server says after the tap
+    fetchMyCheckin.mockResolvedValue('quiet')
 
     await find(wrapper, 'checkin-quiet').trigger('click')
     await flushPromises()
@@ -150,6 +149,20 @@ describe('CrowdHistogram: checking in', () => {
     await find(wrapper, 'checkin-packed').trigger('click')
     await flushPromises()
     expect(wrapper.find('[role="alert"]').text()).toContain('This place is closed')
+  })
+
+  // NEW: check-in that comes back 401 → kick to login, no error bubble
+  it('redirects to /login when a check-in is rejected with 401', async () => {
+    localStorage.setItem('token', 'expired')
+    const wrapper = await mountCard()
+    checkIn.mockRejectedValue({ response: { status: 401 } })
+
+    await find(wrapper, 'checkin-quiet').trigger('click')
+    await flushPromises()
+
+    expect(push).toHaveBeenCalledWith('/login')
+    expect(wrapper.emitted('reported')).toBeUndefined()
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 })
 
@@ -180,5 +193,38 @@ describe('CrowdHistogram: undo', () => {
 
     expect(undoCheckin).toHaveBeenCalledWith(7)
     expect(checkIn).not.toHaveBeenCalled()
+  })
+
+  // NEW: undo 401 → kick to login
+  it('redirects to /login when the undo is rejected with 401', async () => {
+    localStorage.setItem('token', 'expired')
+    const wrapper = await mountCard({ mine: 'quiet' })
+    undoCheckin.mockRejectedValue({ response: { status: 401 } })
+
+    await find(wrapper, 'checkin-undo').trigger('click')
+    await flushPromises()
+
+    expect(push).toHaveBeenCalledWith('/login')
+    expect(wrapper.emitted('reported')).toBeUndefined()
+  })
+
+  // NEW: undo 404 (report already expired) → silently reload, no error bubble
+  it('silently reloads when the undo comes back 404 (report already expired)', async () => {
+    localStorage.setItem('token', 'test-token')
+    const wrapper = await mountCard({ mine: 'quiet' })
+    expect(find(wrapper, 'checkin-thanks').exists()).toBe(true)
+    expect(fetchPlaceCrowd).toHaveBeenCalledTimes(1)
+
+    undoCheckin.mockRejectedValue({ response: { status: 404 } })
+    // The reload after the 404 returns "no check-in" — the server says it's gone
+    fetchMyCheckin.mockResolvedValueOnce(null)
+
+    await find(wrapper, 'checkin-undo').trigger('click')
+    await flushPromises()
+
+    expect(fetchPlaceCrowd).toHaveBeenCalledTimes(2)             // reloaded
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)  // silent
+    expect(find(wrapper, 'checkin-thanks').exists()).toBe(false) // state updated
+    expect(wrapper.emitted('reported')).toBeUndefined()          // not a "success" emit
   })
 })
