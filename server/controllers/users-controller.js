@@ -47,6 +47,27 @@ function cleanPreferences(preferences) {
   }
 }
 
+/* POST /users/check-email */
+exports.checkEmail = async (req, res, next) => {
+  try {
+    const email = req.body.email?.trim().toLowerCase()
+
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Enter a valid email address' })
+    }
+
+    const existingUser = await userModel.findByEmail(email)
+
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email is already registered' })
+    }
+
+    res.json({ available: true })
+  } catch (e) {
+    next(e)
+  }
+}
+
 /* POST /users/register */
 exports.register = async (req, res, next) => {
   try {

@@ -71,8 +71,9 @@ test.describe('accounts', () => {
     await page.fill('#password', creds.password)
     await page.fill('#confirmPassword', creds.password)
     await page.locator('[data-test="signup-next"]').click()
-    await page.locator('[data-test="signup-submit"]').click()
-    await expect(page.locator('[data-test="auth-error"]')).toBeVisible({ timeout: LOAD })
+
+    await expect(page.locator('[data-test="auth-error"]')).toContainText('Email is already registered')
+    await expect(page.locator('[data-test="signup-submit"]')).toHaveCount(0)
     await expect(page).toHaveURL(/\/signup$/)
   })
 
