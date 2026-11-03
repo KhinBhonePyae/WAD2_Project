@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import axios from 'axios'
 import { BASE_URL } from '../utils/api.js'
-import { STUDY_SPOTS, spotLabels } from '../utils/studySpots.js'
+import { STUDY_SPOTS } from '../utils/studySpots.js'
 import { fetchSavedIds } from '../utils/saved.js'
 
 const router = useRouter()
@@ -71,6 +71,14 @@ function setFormValues() {
   quietPreferred.value = user.value.preferences?.quietPreferred || false
   indoorPreferred.value = user.value.preferences?.indoorPreferred || false
   studySpots.value = [...(user.value.preferences?.studySpots || [])]
+}
+
+function toggleStudySpot(key) {
+  const spots = studySpots.value
+
+  studySpots.value = spots.includes(key)
+    ? spots.filter(spot => spot !== key)
+    : [...spots, key]
 }
 
 function editProfile() {
@@ -306,33 +314,70 @@ onMounted(async () => {
               <h3>Your Study Preferences</h3>
             </div>
 
-            <div class="preferences-grid">
-              <div class="preference-row">
-                <div><strong>Wi-Fi</strong><span>Reliable internet access</span></div>
-                <span class="status" :class="{ active: user.preferences?.wifiRequired }">
-                  {{ user.preferences?.wifiRequired ? 'Required' : 'Not required' }}
-                </span>
-              </div>
+            <div class="preference-group">
+              <p class="preference-group-title">Where do you like to study?</p>
+              <p class="preference-group-hint">Your selected places are shown first when you browse.</p>
 
-              <div class="preference-row">
-                <div><strong>Power Sockets</strong><span>Access to charging points</span></div>
-                <span class="status" :class="{ active: user.preferences?.socketsRequired }">
-                  {{ user.preferences?.socketsRequired ? 'Required' : 'Not required' }}
-                </span>
-              </div>
+              <div class="profile-spot-grid" data-test="profile-spots">
+                <div
+                  v-for="spot in STUDY_SPOTS"
+                  :key="spot.key"
+                  class="profile-spot-card"
+                  :class="{ active: user.preferences?.studySpots?.includes(spot.key) }"
+                >
+                  <span class="profile-spot-emoji" aria-hidden="true">{{ spot.emoji }}</span>
 
-              <div class="preference-row">
-                <div><strong>Quiet Environment</strong><span>Preference for quieter spaces</span></div>
-                <span class="status" :class="{ active: user.preferences?.quietPreferred }">
-                  {{ user.preferences?.quietPreferred ? 'Preferred' : 'No preference' }}
-                </span>
-              </div>
+                  <div class="profile-spot-info">
+                    <strong>{{ spot.label }}</strong>
+                    <span>{{ spot.note }}</span>
+                  </div>
 
-              <div class="preference-row">
-                <div><strong>Favourite spots</strong><span>Shown first when you browse</span></div>
-                <span class="status" :class="{ active: user.preferences?.studySpots?.length }" data-test="profile-spots">
-                  {{ spotLabels(user.preferences?.studySpots).join(', ') || 'No preference' }}
-                </span>
+                  <span
+                    class="status"
+                    :class="{ active: user.preferences?.studySpots?.includes(spot.key) }"
+                  >
+                    {{ user.preferences?.studySpots?.includes(spot.key) ? 'Preferred' : 'Not selected' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="preference-group must-have-group">
+              <p class="preference-group-title">Must-haves</p>
+
+              <div class="preferences-grid">
+                <div class="preference-row">
+                  <div>
+                    <strong>Wi-Fi</strong>
+                    <span>Reliable internet access</span>
+                  </div>
+
+                  <span class="status" :class="{ active: user.preferences?.wifiRequired }">
+                    {{ user.preferences?.wifiRequired ? 'Required' : 'Not required' }}
+                  </span>
+                </div>
+
+                <div class="preference-row">
+                  <div>
+                    <strong>Power Sockets</strong>
+                    <span>Access to charging points</span>
+                  </div>
+
+                  <span class="status" :class="{ active: user.preferences?.socketsRequired }">
+                    {{ user.preferences?.socketsRequired ? 'Required' : 'Not required' }}
+                  </span>
+                </div>
+
+                <div class="preference-row">
+                  <div>
+                    <strong>Quiet Environment</strong>
+                    <span>Preference for quieter spaces</span>
+                  </div>
+
+                  <span class="status" :class="{ active: user.preferences?.quietPreferred }">
+                    {{ user.preferences?.quietPreferred ? 'Preferred' : 'No preference' }}
+                  </span>
+                </div>
               </div>
             </div>
           </section>
@@ -395,35 +440,38 @@ onMounted(async () => {
               <p>Select what matters when finding a study space.</p>
             </div>
 
-            <div class="edit-preferences">
-              <label class="edit-preference">
-                <div><strong>Wi-Fi</strong><span>Require reliable internet access</span></div>
-                <div class="form-check form-switch">
-                  <input v-model="wifiRequired" class="form-check-input" type="checkbox">
-                </div>
-              </label>
+            <div class="edit-preference-group">
+              <p class="preference-group-title">Where do you like to study?</p>
+              <p class="preference-group-hint">Pick any. These come first when you browse; nothing gets hidden.</p>
 
-              <label class="edit-preference">
-                <div><strong>Power Sockets</strong><span>Require access to charging points</span></div>
-                <div class="form-check form-switch">
-                  <input v-model="socketsRequired" class="form-check-input" type="checkbox">
-                </div>
-              </label>
+              <div class="edit-spot-grid">
+                <button v-for="spot in STUDY_SPOTS" :key="spot.key" type="button" class="edit-spot-tile" :class="{ active: studySpots.includes(spot.key) }" :aria-pressed="studySpots.includes(spot.key)" :data-test="'edit-spot-' + spot.key" @click="toggleStudySpot(spot.key)">
+                  <span class="edit-spot-emoji">{{ spot.emoji }}</span>
+                  <strong>{{ spot.label }}</strong>
+                  <span>{{ spot.note }}</span>
+                </button>
+              </div>
+            </div>
 
-              <label class="edit-preference">
-                <div><strong>Quiet Environment</strong><span>Prefer quieter study spaces</span></div>
-                <div class="form-check form-switch">
-                  <input v-model="quietPreferred" class="form-check-input" type="checkbox">
-                </div>
-              </label>
+            <div class="edit-preference-group">
+              <p class="preference-group-title">Must-haves</p>
 
-              <label v-for="spot in STUDY_SPOTS" :key="spot.key" class="edit-preference">
-                <div><strong>{{ spot.emoji }} {{ spot.label }}</strong><span>{{ spot.note }}. Shown first when you browse</span></div>
-                <div class="form-check form-switch">
-                  <input v-model="studySpots" :value="spot.key" class="form-check-input" type="checkbox"
-                    :data-test="'edit-spot-' + spot.key">
-                </div>
-              </label>
+              <div class="edit-preferences">
+                <label class="edit-preference">
+                  <div><strong>Wi-Fi</strong><span>Require reliable internet access</span></div>
+                  <div class="form-check form-switch"><input v-model="wifiRequired" class="form-check-input" type="checkbox"></div>
+                </label>
+
+                <label class="edit-preference">
+                  <div><strong>Power Sockets</strong><span>Require access to charging points</span></div>
+                  <div class="form-check form-switch"><input v-model="socketsRequired" class="form-check-input" type="checkbox"></div>
+                </label>
+
+                <label class="edit-preference">
+                  <div><strong>Quiet Environment</strong><span>Prefer quieter study spaces</span></div>
+                  <div class="form-check form-switch"><input v-model="quietPreferred" class="form-check-input" type="checkbox"></div>
+                </label>
+              </div>
             </div>
 
             <div class="edit-actions">
@@ -725,6 +773,76 @@ onMounted(async () => {
   font-size: .85rem;
 }
 
+.preference-group {
+  margin-top: 1.25rem;
+}
+
+.preference-group:first-of-type {
+  margin-top: 0;
+}
+
+.must-have-group {
+  margin-top: 1.5rem;
+}
+
+.preference-group-title {
+  margin: 0 0 .25rem;
+  color: var(--x-ink);
+  font-weight: 800;
+}
+
+.preference-group-hint {
+  margin: 0 0 .8rem;
+  color: var(--x-muted);
+  font-size: .85rem;
+}
+
+.profile-spot-grid,
+.edit-spot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .75rem;
+}
+
+.profile-spot-card {
+  min-height: 88px;
+  padding: .9rem 1rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  background: var(--x-card);
+}
+
+.profile-spot-card.active {
+  background: var(--x-lime);
+}
+
+.profile-spot-emoji,
+.edit-spot-emoji {
+  flex-shrink: 0;
+  font-size: 1.4rem;
+}
+
+.profile-spot-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.profile-spot-info strong {
+  display: block;
+  color: var(--x-ink);
+  font-size: .9rem;
+}
+
+.profile-spot-info span {
+  display: block;
+  margin-top: .15rem;
+  color: var(--x-muted);
+  font-size: .78rem;
+}
+
 .preferences-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -743,7 +861,7 @@ onMounted(async () => {
   background: var(--x-card);
 }
 
-.preference-row>div {
+.preference-row > div {
   min-width: 0;
 }
 
@@ -827,6 +945,44 @@ onMounted(async () => {
   height: 1px;
   margin: 1.5rem 0;
   background: var(--x-paper);
+}
+
+.edit-preference-group {
+  margin-bottom: 1.5rem;
+}
+
+.edit-spot-tile {
+  padding: .9rem 1rem;
+  border: 1px solid var(--x-ink);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .15rem;
+  background: var(--x-card);
+  color: var(--x-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.edit-spot-tile:hover {
+  transform: translateY(-2px);
+}
+
+.edit-spot-tile.active {
+  background: var(--x-lime);
+  box-shadow: 3px 3px 0 var(--x-ink);
+}
+
+.edit-spot-tile strong {
+  color: var(--x-ink);
+  font-size: .9rem;
+}
+
+.edit-spot-tile span:last-child {
+  color: var(--x-muted);
+  font-size: .78rem;
 }
 
 .edit-preferences {
@@ -928,7 +1084,9 @@ onMounted(async () => {
   }
 
   .preferences-grid,
-  .edit-preferences {
+  .edit-preferences,
+  .profile-spot-grid,
+  .edit-spot-grid {
     grid-template-columns: 1fr;
   }
 }
@@ -961,7 +1119,8 @@ onMounted(async () => {
     font-size: .7rem;
   }
 
-  .preference-row {
+  .preference-row,
+  .profile-spot-card {
     align-items: flex-start;
   }
 

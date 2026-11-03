@@ -29,25 +29,35 @@ function toggleSpot(key) {
   preferences.value.indoorPreferred = preferences.value.studySpots.includes('indoor')
 }
 
-function goToPreferences() {
+async function goToPreferences() {
   errorMessage.value = ''
+
   if (!name.value.trim() || !email.value.trim() || !password.value || !confirmPassword.value) {
     errorMessage.value = 'Please fill in all fields.'
     return
   }
+
   if (name.value.trim().length > 60) {
     errorMessage.value = 'Name must be 60 characters or fewer.'
     return
   }
+
   if (password.value.length < 8) {
     errorMessage.value = 'Password must be at least 8 characters.'
     return
   }
+
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Passwords do not match.'
     return
   }
-  step.value = 2
+
+  try {
+    await axios.post(`${BASE_URL}/users/check-email`, { email: email.value.trim() })
+    step.value = 2
+  } catch (error) {
+    errorMessage.value = error.response?.data?.error || 'Unable to verify email.'
+  }
 }
 
 async function register() {
