@@ -442,6 +442,40 @@ onUnmounted(() => {
   background: rgba(20, 18, 15, .18);
 }
 
+@media (max-width: 575.98px) {
+  .x-nav {
+    top: 10px;
+    width: calc(100% - 20px);
+    padding: 5px 5px 5px 12px;
+    box-shadow: 3px 3px 0 var(--x-ink);
+  }
+
+  .x-nav__logo {
+    width: 22px;
+    height: 22px;
+  }
+
+  .x-nav__menu-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .x-nav__menu-btn span {
+    width: 15px;
+    margin: 3px auto;
+  }
+
+  .x-nav__mobile-menu {
+    top: calc(100% + 8px);
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .x-nav__mobile-link {
+    padding: 8px 12px;
+  }
+}
+
 @media (max-width: 420px) {
   .x-nav__name {
     display: inline;

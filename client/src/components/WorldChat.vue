@@ -484,6 +484,31 @@ onUnmounted(() => {
   transform: scale(.85) translateY(8px);
 }
 
+@media (max-width: 575.98px) {
+  .x-world-chat {
+    left: 12px;
+    bottom: 64px;
+  }
+
+  .x-world-chat__button {
+    width: 44px;
+    height: 44px;
+    box-shadow: 3px 3px 0 var(--x-ink);
+  }
+
+  .x-world-chat__button svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .x-world-chat__panel {
+    bottom: 54px;
+    width: calc(100vw - 24px);
+    max-height: calc(100dvh - 140px);
+    min-height: min(300px, calc(100dvh - 140px));
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   .x-world-chat-pop-enter-active,

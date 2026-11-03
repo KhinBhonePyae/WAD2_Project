@@ -121,8 +121,25 @@ function reset() {
           <span class="x-switch__label small">Must have all selected</span>
         </label>
 
-        <h6 class="mt-3">Area</h6>
-        <CustomSelect v-model="local.area" :options="formattedAreaOptions" data-test="area-select" />
+        <!-- the four dropdowns: one column on desktop, two-up when the panel collapses -->
+        <div class="x-filter-grid">
+          <div>
+            <h6>Area</h6>
+            <CustomSelect v-model="local.area" :options="formattedAreaOptions" data-test="area-select" />
+          </div>
+          <div>
+            <h6>Indoor / outdoor</h6>
+            <CustomSelect v-model="local.setting" :options="settingOptions" data-test="setting-select" />
+          </div>
+          <div>
+            <h6>Crowd level</h6>
+            <CustomSelect v-model="local.maxCrowd" :options="crowdOptions" data-test="crowd-select" />
+          </div>
+          <div>
+            <h6>Minimum rating</h6>
+            <CustomSelect v-model="local.minRating" :options="ratingOptions" />
+          </div>
+        </div>
 
         <h6 class="mt-3">Distance</h6>
         <!-- Custom Switch -->
@@ -148,27 +165,20 @@ function reset() {
           </div>
         </div>
 
-        <h6 class="mt-3">Indoor / outdoor</h6>
-        <CustomSelect v-model="local.setting" :options="settingOptions" data-test="setting-select" />
-
-        <h6 class="mt-3">Crowd level</h6>
-        <CustomSelect v-model="local.maxCrowd" :options="crowdOptions" data-test="crowd-select" />
-
-        <h6 class="mt-3">Minimum rating</h6>
-        <CustomSelect v-model="local.minRating" :options="ratingOptions" />
-
         <!-- Custom Switches -->
-        <label class="x-switch mt-3">
-          <input type="checkbox" v-model="local.openNowOnly" data-test="open-now" />
-          <span class="x-switch__track"></span>
-          <span class="x-switch__label">Open now</span>
-        </label>
+        <div class="x-filter-toggles mt-3">
+          <label class="x-switch">
+            <input type="checkbox" v-model="local.openNowOnly" data-test="open-now" />
+            <span class="x-switch__track"></span>
+            <span class="x-switch__label">Open now</span>
+          </label>
 
-        <label class="x-switch mt-2">
-          <input type="checkbox" v-model="local.freeEntryOnly" data-test="free-entry" />
-          <span class="x-switch__track"></span>
-          <span class="x-switch__label">Free entry</span>
-        </label>
+          <label class="x-switch">
+            <input type="checkbox" v-model="local.freeEntryOnly" data-test="free-entry" />
+            <span class="x-switch__track"></span>
+            <span class="x-switch__label">Free entry</span>
+          </label>
+        </div>
 
         <div class="d-flex gap-2 mt-3">
           <button class="btn btn-primary flex-fill" @click="apply" :disabled="locating"
@@ -296,6 +306,110 @@ function reset() {
   color: inherit;
   text-decoration: underline;
   cursor: pointer;
+}
+
+/* --- Dropdown grid and switch group --- */
+.x-filter-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.x-filter-toggles {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+/* Collapsible panel (below desktop): smaller text and controls, dropdowns
+   two-up and switches side by side, so it takes far less height */
+@media (max-width: 991.98px) {
+  .x-bold-container {
+    padding: .85rem .9rem;
+    border-radius: 16px !important;
+    box-shadow: 3px 3px 0 var(--x-ink, #111) !important;
+  }
+
+  .x-bold-container h6 {
+    margin-bottom: .3rem;
+    font-size: .78rem;
+  }
+
+  .x-bold-container :deep(.d-flex.flex-wrap) {
+    gap: .35rem !important;
+  }
+
+  .x-bold-container :deep(.ss-chip) {
+    padding: .22rem .65rem;
+    border-width: 1.5px;
+    font-size: .74rem;
+    box-shadow: 2px 2px 0 var(--x-ink, #111);
+  }
+
+  .x-switch {
+    gap: 7px;
+    margin-bottom: 0;
+  }
+
+  .x-switch__track {
+    width: 34px;
+    height: 19px;
+    border-width: 1.5px;
+  }
+
+  .x-switch__track::after {
+    top: 2px;
+    left: 2px;
+    width: 12px;
+    height: 12px;
+  }
+
+  .x-switch input:checked + .x-switch__track::after {
+    transform: translateX(15px);
+  }
+
+  .x-switch__label,
+  .x-switch__label.small {
+    font-size: .76rem;
+  }
+
+  .x-filter-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .6rem .7rem;
+    margin-top: .75rem;
+  }
+
+  .x-bold-container :deep(.ss-select-trigger) {
+    padding: .3rem .6rem;
+    border-radius: 10px;
+    font-size: .8rem;
+    box-shadow: 2px 2px 0 var(--x-ink, #111);
+  }
+
+  .x-bold-container h6.mt-3,
+  .x-filter-toggles.mt-3 {
+    margin-top: .75rem !important;
+  }
+
+  .x-filter-toggles {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: .4rem 1.2rem;
+  }
+
+  .x-bold-container .btn {
+    --bs-btn-padding-y: .3rem;
+    font-size: .85rem;
+    box-shadow: 2px 2px 0 var(--x-ink, #111);
+  }
+
+  .x-bold-container .d-flex.gap-2.mt-3 {
+    margin-top: .85rem !important;
+  }
+
+  .profile-pref-link {
+    font-size: .78rem;
+  }
 }
 
 /* Removes the sticky focus state on the mobile button */

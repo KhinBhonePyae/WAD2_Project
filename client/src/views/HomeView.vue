@@ -371,13 +371,13 @@ const words = text => text.split(' ')
         <RouterLink to="/profile">change</RouterLink>
       </p>
 
-      <div v-if="loading" class="row g-4">
-        <div v-for="n in 3" :key="n" class="col-12 col-md-6 col-lg-4">
+      <div v-if="loading" class="row g-2 g-sm-4">
+        <div v-for="n in 3" :key="n" class="col-4">
           <div class="ss-card ss-skeleton" style="height:360px"></div>
         </div>
       </div>
       <div v-else class="row g-4 x-picks">
-        <div v-for="place in topPicks" :key="place.id" class="col-12 col-md-6 col-lg-4 x-pick"
+        <div v-for="place in topPicks" :key="place.id" class="col-4 x-pick"
           :data-flip-id="place.id">
           <PlaceCard :place="place" :saved="saved.includes(place.id)"
             @toggle-save="toggleSave" />
@@ -725,28 +725,174 @@ const words = text => text.split(' ')
   overflow: hidden;
 }
 
+/* Below desktop: title and the 2x2 stats share the top row, the line and search
+   go full width below, and all four vibes sit on one row. Sizes are fluid so
+   phones and tablets get the same layout at a matching scale. */
 @media (max-width: 991.98px) {
-  .x-vibes {
-    grid-template-columns: repeat(2, 1fr);
+  .x-hero {
+    padding-top: clamp(80px, 13vw, 120px);
+    padding-bottom: 1rem;
   }
 
   .x-hero__grid {
-    grid-template-columns: 1fr;
-    gap: 1.6rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      "title stats"
+      "line line"
+      "search search";
+    gap: 0 clamp(12px, 3vw, 32px);
+  }
+
+  .x-hero__main {
+    display: contents;
+  }
+
+  .x-hero__title {
+    grid-area: title;
+    align-self: center;
+    font-size: clamp(2.9rem, 9vw, 5rem);
+  }
+
+  .x-stats {
+    grid-area: stats;
+    align-self: center;
+    gap: clamp(7px, 1.6vw, 14px);
+  }
+
+  .x-hero__line {
+    grid-area: line;
+    max-width: none;
+    margin: clamp(1rem, 2.4vw, 1.6rem) 0 clamp(.8rem, 1.8vw, 1.2rem);
+    font-size: clamp(.95rem, 2vw, 1.1rem);
+  }
+
+  .x-hero__search {
+    grid-area: search;
+    max-width: none;
+  }
+
+  .x-hero__logo {
+    width: clamp(28px, 5vw, 50px);
+    margin-left: 4px;
+  }
+
+  .x-hero__aside {
+    margin-left: clamp(7px, 1.2vw, 12px);
+    margin-bottom: .4em;
+    font-size: clamp(.72rem, 1.9vw, 1.05rem);
+    white-space: nowrap;
+  }
+
+  .x-stat {
+    gap: 1px;
+    padding: clamp(6px, 1.6vw, 16px) clamp(7px, 1.8vw, 18px);
+    border-radius: clamp(12px, 2.4vw, 22px);
+  }
+
+  .x-stat b {
+    font-size: clamp(1.15rem, 4vw, 2.6rem);
+  }
+
+  .x-stat span {
+    font-size: clamp(.56rem, 1.5vw, .9rem);
+    line-height: 1.15;
+  }
+
+  .x-section {
+    padding-top: clamp(2.5rem, 7vw, 5rem);
+    padding-bottom: clamp(2.5rem, 7vw, 5rem);
+  }
+
+  .x-vibes {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: clamp(7px, 1.6vw, 16px);
+    margin-bottom: clamp(1.25rem, 3vw, 2rem);
+  }
+
+  .x-vibe {
+    gap: clamp(3px, .6vw, 5px);
+    min-height: clamp(62px, 12vw, 110px);
+    padding: clamp(7px, 1.8vw, 18px);
+    border-radius: clamp(12px, 2.4vw, 22px);
+  }
+
+  .x-vibe__label {
+    font-size: clamp(.74rem, 2.2vw, 1.35rem);
+    line-height: 1.1;
+    letter-spacing: -.02em;
+  }
+
+  .x-vibe__note {
+    font-size: clamp(.46rem, 1.15vw, .66rem);
+    line-height: 1.3;
+    letter-spacing: .02em;
   }
 }
 
 @media (max-width: 767.98px) {
-  .x-hero {
-    padding-top: 96px;
-  }
-
   .x-hero__row--2 {
     padding-left: 0;
   }
+}
 
-  .x-hero__aside {
-    display: none;
+/* Phones: slimmer shadows and tighter spacing to suit the mini cards */
+@media (max-width: 575.98px) {
+  .x-hero__row--2 .x-char:first-child {
+    -webkit-text-stroke: 2px var(--x-ink);
+  }
+
+  .x-search {
+    padding: 2px 2px 2px 10px;
+  }
+
+  .x-stat {
+    box-shadow: 2px 2px 0 var(--x-ink);
+  }
+
+  .x-head {
+    margin-bottom: 1rem;
+  }
+
+  .x-vibe {
+    box-shadow: 2px 2px 0 var(--x-ink);
+  }
+
+  .x-vibe:hover,
+  .x-vibe[aria-checked="true"] {
+    box-shadow: 3px 3px 0 var(--x-ink);
+  }
+
+  .x-picks {
+    --bs-gutter-x: .5rem;
+    --bs-gutter-y: .5rem;
+  }
+
+  .x-big-btn {
+    font-size: .9rem;
+    padding: .5rem 1.2rem;
+  }
+
+  .x-marquee {
+    margin: 2rem 0;
+  }
+
+  .x-marquee__track span {
+    font-size: 1.1rem;
+  }
+
+  .x-final {
+    padding-block: 2.5rem 2rem;
+  }
+
+  .x-final__line {
+    font-size: 2.2rem;
+    margin-bottom: 1.1rem;
+  }
+
+  .x-yes {
+    min-width: 120px;
+    padding: .5rem 1.6rem;
+    font-size: 1rem;
   }
 }
 

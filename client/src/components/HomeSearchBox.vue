@@ -126,6 +126,24 @@ function searchAll() { open.value = false; emit('search', props.modelValue) }
     flex-shrink: 0;
 }
 
+/* Phones: a slimmer pill to sit with the mini cards */
+@media (max-width: 575.98px) {
+    .hero-search-pill {
+        gap: .35rem;
+    }
+
+    .hero-search-pill input {
+        font-size: .85rem;
+    }
+
+    .hero-search-pill .btn-primary {
+        --bs-btn-padding-x: .8rem;
+        --bs-btn-padding-y: .25rem;
+        font-size: .82rem;
+        box-shadow: 2px 2px 0 var(--x-ink);
+    }
+}
+
 .suggest {
     position: absolute;
     top: calc(100% + 8px);

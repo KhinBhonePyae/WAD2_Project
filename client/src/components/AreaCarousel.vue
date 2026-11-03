@@ -146,4 +146,56 @@ const words = text => text.split(' ')
     min-height: 440px;
   }
 }
+
+/* Below desktop: area cards scale with the screen to match the place cards */
+@media (max-width: 991.98px) {
+  .x-areas {
+    padding: clamp(2rem, 5vw, 4rem) 0;
+  }
+
+  .x-areas__track {
+    gap: clamp(12px, 2.4vw, 24px);
+    padding-inline: clamp(12px, 2.4vw, 24px);
+  }
+
+  .x-areas__intro {
+    width: 40vw;
+  }
+
+  .x-area {
+    width: clamp(170px, 34vw, 320px);
+    min-height: 0;
+    aspect-ratio: 4 / 5;
+    padding: clamp(12px, 2.4vw, 24px);
+    border-radius: clamp(18px, 3vw, 28px);
+  }
+
+  .x-area__count {
+    font-size: clamp(.56rem, 1.2vw, .72rem);
+  }
+
+  .x-area__name {
+    font-size: clamp(1.25rem, 3.6vw, 2.2rem);
+    margin-top: .2rem;
+  }
+
+  .x-area__photos {
+    margin-top: clamp(.6rem, 1.4vw, 1rem);
+  }
+
+  .x-area__photo {
+    border-radius: clamp(10px, 1.8vw, 18px);
+  }
+}
+
+@media (max-width: 575.98px) {
+  .x-area {
+    box-shadow: 4px 4px 0 var(--x-ink);
+  }
+
+  .x-area__photo {
+    border-width: 1.5px;
+    box-shadow: 2px 2px 0 var(--x-ink);
+  }
+}
 </style>
