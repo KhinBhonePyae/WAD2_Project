@@ -6,6 +6,7 @@ import HomeSearchBox from '../components/HomeSearchBox.vue'
 import SearchFilters from '../components/SearchFilters.vue'
 import PlaceCard from '../components/PlaceCard.vue'
 import WeatherBackdrop from '../components/WeatherBackdrop.vue'
+import { previewSky } from '../utils/weatherPreview.js'
 import CustomSelect from '../components/CustomSelect.vue'
 import { suitabilityBreakdown, preferencesToWanted } from '../utils/suitability'
 import { DEFAULT_PREFS, filterPlaces, prefsFromUserPreferences, sortByDistance, distanceKm, placeCoords } from '../utils/searchFilters'
@@ -165,6 +166,17 @@ function cardTags(space) {
   return tags
 }
 
+// TESTING ONLY: weather background switcher (see the template)
+const WEATHER_PREVIEWS = [
+  { key: '', label: 'Live' },
+  { key: 'clear', label: '☀️ Clear' },
+  { key: 'cloudy', label: '☁️ Cloudy' },
+  { key: 'rain', label: '🌧 Rain' },
+  { key: 'night', label: '🌙 Night' },
+]
+const showWeatherTester = import.meta.env.DEV || route.query.weather === 'test'
+const showBackdrop = ref(true)   // TESTING: compare the page background with the nav weather alone
+
 const weatherLine = computed(() => {
   const w = weather.value
   if (!w) return ''
@@ -288,7 +300,18 @@ onMounted(async () => {
 
 <template>
   <div class="x-browse">
-  <WeatherBackdrop :weather="weather" />
+  <WeatherBackdrop v-if="showBackdrop" :weather="weather" :preview="previewSky" />
+
+  <!-- TESTING ONLY: switch the weather background. Shown when running locally,
+       or on any copy with ?weather=test in the URL; markers never see it. -->
+  <div v-if="showWeatherTester" class="x-weather-tester" role="group" aria-label="Weather preview" data-test="weather-tester">
+    <span class="x-weather-tester__label">Weather test</span>
+    <button v-for="option in WEATHER_PREVIEWS" :key="option.key" type="button"
+      :class="{ 'is-active': previewSky === option.key }" :aria-pressed="previewSky === option.key"
+      @click="previewSky = option.key">{{ option.label }}</button>
+    <button type="button" :class="{ 'is-active': showBackdrop }" :aria-pressed="showBackdrop"
+      data-test="toggle-backdrop" @click="showBackdrop = !showBackdrop">Page bg {{ showBackdrop ? 'on' : 'off' }}</button>
+  </div>
   <div class="container py-4 x-page x-browse__content">
     <h2 class="mb-1">Find a study spot</h2>
     <p v-if="weatherLine" class="x-weather-line x-mono mb-3" data-test="weather-line">{{ weatherLine }}</p>
@@ -312,7 +335,7 @@ onMounted(async () => {
       <!-- This ref is crucial for the scrolling logic -->
       <div class="col-lg-9" ref="resultsContainer" style="scroll-margin-top: 100px;">
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <span data-test="result-count">{{ results.length }} result(s)</span>
+          <span data-test="result-count">{{ loading ? 'Loading…' : results.length + ' result(s)' }}</span>
           
           <div class="sort-select-wrapper">
             <CustomSelect v-model="sortBy" :options="sortOptions" data-test="sort-select" />
@@ -372,6 +395,35 @@ onMounted(async () => {
 .x-browse { position: relative; }
 .x-browse__content { position: relative; z-index: 1; }
 .x-weather-line { font-size: .85rem; color: var(--x-muted); }
+
+/* TESTING ONLY: weather background switcher */
+.x-weather-tester {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100vw - 120px);
+  padding: 6px;
+  border: 2px solid var(--x-ink);
+  border-radius: 14px;
+  background: var(--x-card);
+  box-shadow: 3px 3px 0 var(--x-ink);
+  font-size: .78rem;
+}
+.x-weather-tester__label { padding: 0 6px; font-weight: 800; }
+.x-weather-tester button {
+  padding: 4px 9px;
+  border: 1px solid var(--x-ink);
+  border-radius: 999px;
+  background: var(--x-paper);
+  color: var(--x-ink);
+  font-weight: 700;
+}
+.x-weather-tester button.is-active { background: var(--x-lime); }
 
 .x-hero__search {
   width: 100%;

@@ -8,6 +8,10 @@ import WorldChat from './components/WorldChat.vue'
 import { startSmoothScroll, scrollToTop, ScrollTrigger, reducedMotion } from './utils/motion.js'
 import { BASE_URL, authConfig } from './utils/api.js'
 import logoUrl from './assets/logo.svg'
+// TEST: weather in the nav bar (remove these three lines and <NavWeather> to undo)
+import NavWeather from './components/NavWeather.vue'
+import { fetchWeather } from './utils/weather.js'
+import { previewSky, SKY_ICONS } from './utils/weatherPreview.js'
 
 const router = useRouter()
 
@@ -73,6 +77,10 @@ const removeAfterEach = router.afterEach(() => {
   nextTick(() => setTimeout(() => ScrollTrigger.refresh(), 450))
 })
 
+// TEST: weather in the nav bar
+const navWeather = ref(null)
+fetchWeather().then(w => { navWeather.value = w }).catch(() => {})
+
 onMounted(() => {
   startSmoothScroll()
   window.addEventListener('user-login', updateUser)
@@ -99,6 +107,7 @@ onUnmounted(() => {
   <div v-if="mobileMenuOpen" class="x-nav__backdrop" @click="mobileMenuOpen = false"></div>
 
   <nav class="x-nav" :class="{ 'x-nav--hidden': navHidden }">
+    <NavWeather :weather="navWeather" :preview="previewSky" />
     <RouterLink to="/" class="x-nav__brand" data-cursor="home">
       <img :src="logoUrl" alt="" class="x-nav__logo">
       <span class="x-nav__name">LockedIN</span>
@@ -106,6 +115,9 @@ onUnmounted(() => {
 
     <!-- DESKTOP NAV -->
     <div class="x-nav__links">
+      <span v-if="navWeather" class="x-nav__weather" :title="navWeather.label" data-test="nav-weather-chip">
+        {{ previewSky ? SKY_ICONS[previewSky] : navWeather.icon }} {{ navWeather.temp }}°
+      </span>
       <RouterLink to="/places" class="x-nav__link" data-test="nav-browse">Browse</RouterLink>
 
       <template v-if="!user">
@@ -234,6 +246,17 @@ onUnmounted(() => {
   align-items: center;
   gap: 4px;
   margin-left: auto;
+}
+
+.x-nav__weather {
+  padding: 4px 10px;
+  border: 1px solid var(--x-ink);
+  border-radius: 999px;
+  background: rgba(255, 253, 248, .7);
+  font-family: var(--x-mono);
+  font-size: .8rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 .x-nav__link {
