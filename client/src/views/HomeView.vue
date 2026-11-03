@@ -144,6 +144,7 @@ async function toggleSave(id) {
 let ctx = null
 let mm = null
 let heroPlayed = false
+let marqueeNudge = null
 
 function playHero() {
   if (heroPlayed || reducedMotion || !ctx) return
@@ -185,16 +186,28 @@ function setupScrollAnimations() {
       })
     })
 
+    // The tracks hold every place name twice, so their length grows with the
+    // list. Time each loop by its width for a steady, readable speed.
+    const MARQUEE_PX_PER_SEC = 60
     const rows = gsap.utils.toArray('.x-marquee__track')
-    const loops = rows.map((row, i) => i % 2
-      ? gsap.fromTo(row, { xPercent: -50 }, { xPercent: 0, duration: 40, ease: 'none', repeat: -1 })
-      : gsap.fromTo(row, { xPercent: 0 }, { xPercent: -50, duration: 40, ease: 'none', repeat: -1 }))
+    const loops = rows.map((row, i) => {
+      const duration = Math.max(20, row.scrollWidth / 2 / MARQUEE_PX_PER_SEC)
+      return i % 2
+        ? gsap.fromTo(row, { xPercent: -50 }, { xPercent: 0, duration, ease: 'none', repeat: -1 })
+        : gsap.fromTo(row, { xPercent: 0 }, { xPercent: -50, duration, ease: 'none', repeat: -1 })
+    })
     if (rows.length) ScrollTrigger.create({
       trigger: '.x-marquee', start: 'top bottom', end: 'bottom top',
       onUpdate: self => {
-        const speed = gsap.utils.clamp(-6, 6, self.getVelocity() / 300)
-        loops.forEach(l => gsap.to(l, { timeScale: speed >= 0 ? 1 + speed : speed - 1, duration: 0.3, overwrite: true }))
-        gsap.to('.x-marquee', { skewY: gsap.utils.clamp(-4, 4, self.getVelocity() / -600), duration: 0.4, overwrite: true })
+        // scrolling gives a small nudge (up to 2x) that eases back to normal.
+        // Always forwards: a reversed loop sticks at its start.
+        const boost = 1 + Math.min(1, Math.abs(self.getVelocity()) / 1500)
+        marqueeNudge?.kill()
+        marqueeNudge = gsap.timeline()
+          .to(loops, { timeScale: boost, duration: 0.3 })
+          .to('.x-marquee', { skewY: gsap.utils.clamp(-4, 4, self.getVelocity() / -600), duration: 0.4 }, 0)
+          .to(loops, { timeScale: 1, duration: 1.2, ease: 'power2.out' })
+          .to('.x-marquee', { skewY: 0, duration: 0.8, ease: 'power2.out' }, '<')
       },
     })
 
