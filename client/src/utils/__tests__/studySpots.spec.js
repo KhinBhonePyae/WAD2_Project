@@ -1,53 +1,91 @@
 import { describe, it, expect } from 'vitest'
-import { isSpot, spotMatches, orderBySpots, spotLabels } from '../studySpots.js'
+import { STUDY_SPOTS, isSpot, spotMatches, orderBySpots, spotLabels } from '../studySpots.js'
 
-const library = { id: 1, name: 'Bishan Public Library', indoor: true, branchCode: 'BIPL', tags: [] }
-const cafe = { id: 2, name: 'Kopi Corner', indoor: true, placeType: 'coffee_shop', tags: [] }
-const terrace = { id: 3, name: 'Funan Study Terrace', indoor: true, placeType: '', tags: ['Outdoor'] }
-const park = { id: 4, name: 'Park Bench', indoor: false, placeType: '', tags: [] }
-
-describe('isSpot', () => {
-  it('recognises libraries by NLB branch code or name', () => {
-    expect(isSpot(library, 'library')).toBe(true)
-    expect(isSpot({ name: 'SMU Li Ka Shing Library' }, 'library')).toBe(true)
-    expect(isSpot(cafe, 'library')).toBe(false)
+describe('studySpots.isSpot', () => {
+  it('indoor requires place.indoor === true', () => {
+    expect(isSpot({ indoor: true }, 'indoor')).toBe(true)
+    expect(isSpot({ indoor: false }, 'indoor')).toBe(false)
+    expect(isSpot({}, 'indoor')).toBe(false)
   })
 
-  it('recognises every coffee-type Google category as a café', () => {
-    expect(isSpot(cafe, 'cafe')).toBe(true)
+  it('outdoor is any place that is not indoor, or tagged "Outdoor"', () => {
+    expect(isSpot({ indoor: false }, 'outdoor')).toBe(true)
+    expect(isSpot({}, 'outdoor')).toBe(true)
+    expect(isSpot({ indoor: true }, 'outdoor')).toBe(false)
+    expect(isSpot({ indoor: true, tags: ['Outdoor'] }, 'outdoor')).toBe(true)
+  })
+
+  it('cafe matches café-ish place types', () => {
+    expect(isSpot({ placeType: 'cafe' }, 'cafe')).toBe(true)
+    expect(isSpot({ placeType: 'coffee_shop' }, 'cafe')).toBe(true)
     expect(isSpot({ placeType: 'tea_house' }, 'cafe')).toBe(true)
-    expect(isSpot(library, 'cafe')).toBe(false)
+    expect(isSpot({ placeType: 'library' }, 'cafe')).toBe(false)
   })
 
-  it('counts outdoor seating and fully outdoor places as outdoor', () => {
-    expect(isSpot(terrace, 'outdoor')).toBe(true)
-    expect(isSpot(park, 'outdoor')).toBe(true)
-    expect(isSpot(library, 'outdoor')).toBe(false)
-    expect(isSpot(park, 'indoor')).toBe(false)
-  })
-})
-
-describe('orderBySpots', () => {
-  const list = [park, cafe, library, terrace]
-
-  it('keeps the order when the user has no favourite spots', () => {
-    expect(orderBySpots(list, []).map(p => p.id)).toEqual([4, 2, 1, 3])
+  it('library matches NLB branches, library types, and names', () => {
+    expect(isSpot({ branchCode: 'TRL' }, 'library')).toBe(true)
+    expect(isSpot({ placeType: 'library' }, 'library')).toBe(true)
+    expect(isSpot({ name: 'Central Library' }, 'library')).toBe(true)
+    expect(isSpot({ name: 'Bugis Cafe', placeType: 'cafe' }, 'library')).toBe(false)
   })
 
-  it('moves matching places first and keeps the rest in their order', () => {
-    expect(orderBySpots(list, ['library']).map(p => p.id)).toEqual([1, 4, 2, 3])
-  })
-
-  it('ranks places matching more favourites higher, and hides nothing', () => {
-    const ordered = orderBySpots(list, ['indoor', 'cafe'])
-    expect(ordered.map(p => p.id)).toEqual([2, 1, 3, 4])
-    expect(ordered).toHaveLength(list.length)
+  it('returns false for an unknown key', () => {
+    expect(isSpot({}, 'gym')).toBe(false)
   })
 })
 
-describe('labels', () => {
-  it('lists the matches in a fixed order', () => {
-    expect(spotMatches(terrace, ['outdoor', 'indoor'])).toEqual(['outdoor', 'indoor'])
-    expect(spotLabels(['library', 'indoor'])).toEqual(['Indoor', 'Library'])
+describe('studySpots.spotMatches', () => {
+  it('returns only the preferred kinds this place actually is', () => {
+    const place = { indoor: true, placeType: 'cafe' }
+    expect(spotMatches(place, ['indoor', 'cafe', 'library'])).toEqual(['indoor', 'cafe'])
+  })
+
+  it('returns [] when no preferences are given', () => {
+    expect(spotMatches({ indoor: true }, [])).toEqual([])
+  })
+})
+
+describe('studySpots.orderBySpots', () => {
+  it('returns the list untouched when there are no preferred kinds', () => {
+    const list = [{ id: 1 }, { id: 2 }]
+    expect(orderBySpots(list, [])).toBe(list)
+  })
+
+  it('puts places matching more preferred kinds first', () => {
+    const list = [
+      { id: 'cafe', placeType: 'cafe' },               // 1 match (cafe)
+      { id: 'indoor-cafe', indoor: true, placeType: 'cafe' }, // 2 matches (indoor, cafe)
+      { id: 'other', placeType: 'park' },              // 0 matches
+    ]
+    const out = orderBySpots(list, ['indoor', 'cafe'])
+    expect(out.map((p) => p.id)).toEqual(['indoor-cafe', 'cafe', 'other'])
+  })
+
+  it('keeps the original order for ties', () => {
+    const list = [
+      { id: 'a', indoor: true },
+      { id: 'b', indoor: true },
+    ]
+    expect(orderBySpots(list, ['indoor']).map((p) => p.id)).toEqual(['a', 'b'])
+  })
+})
+
+describe('studySpots.spotLabels', () => {
+  it('returns the human labels of the requested keys', () => {
+    expect(spotLabels(['indoor', 'cafe'])).toEqual(['Indoor', 'Café'])
+  })
+
+  it('drops unknown keys', () => {
+    expect(spotLabels(['indoor', 'gym'])).toEqual(['Indoor'])
+  })
+
+  it('returns [] for no keys', () => {
+    expect(spotLabels([])).toEqual([])
+  })
+})
+
+describe('studySpots.STUDY_SPOTS', () => {
+  it('contains exactly the four expected kinds', () => {
+    expect(STUDY_SPOTS.map((s) => s.key)).toEqual(['indoor', 'outdoor', 'cafe', 'library'])
   })
 })
