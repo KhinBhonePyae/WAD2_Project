@@ -148,21 +148,32 @@ test.describe('Admin Study Space Management E2E', () => {
   test('admin can delete the study space', async ({ page }) => {
     await loginAs(page, admin)
 
+    const placesResponsePromise = page.waitForResponse(response =>
+      response.url() === `${API}/places` &&
+      response.request().method() === 'GET'
+    )
+
     await page.goto('/admin/places')
+
+    const placesResponse = await placesResponsePromise
+    expect(placesResponse.ok()).toBeTruthy()
 
     await expect(
       page.getByRole('heading', { name:'Manage Study Spaces' })
     ).toBeVisible({ timeout:LOAD })
 
-    await page.locator(
+    const searchInput = page.locator(
       'input[placeholder="Search by name, area or address..."]'
-    ).fill(updatedName)
+    )
+
+    await expect(searchInput).toBeVisible({ timeout:LOAD })
+    await searchInput.fill(updatedName)
 
     const row = page.locator('.admin-place-row', {
       hasText:updatedName
     })
 
-    await expect(row).toHaveCount(1)
+    await expect(row).toHaveCount(1, { timeout:LOAD })
 
     page.once('dialog', async dialog => {
       expect(dialog.message()).toContain(updatedName)
