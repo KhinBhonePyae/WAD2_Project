@@ -72,7 +72,6 @@ onMounted(async () => {
     closeTime.value = times[1] || ''
     indoor.value = data.indoor ?? true
     closureStatus.value = inferClosureStatus(data)
-    // markedOpen is the saved switch; openNow from the API is live and depends on the time of day
     openNow.value = closureStatus.value === 'normal' ? (data.markedOpen ?? data.openNow ?? true) : false
     description.value = data.description || ''
     capacity.value = data.capacity ?? ''
@@ -84,11 +83,7 @@ onMounted(async () => {
     photo3.value = data.photos?.[2] || ''
     extraPhotos.value = data.photos?.slice(3) || []
 
-    originalPhotos.value = [
-      photo1.value,
-      photo2.value,
-      photo3.value
-    ]
+    originalPhotos.value = [photo1.value, photo2.value, photo3.value]
   } catch (e) {
     console.error('Could not load place', e)
     validationErrors.value = ['Could not load the study space.']
@@ -97,7 +92,6 @@ onMounted(async () => {
 
 function validPhotoUrl(url) {
   if (!url) return true
-
   try {
     const parsedUrl = new URL(url)
     return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:'
@@ -109,7 +103,6 @@ function validPhotoUrl(url) {
 function validPhoto(photo, index) {
   if (!photo) return true
   if (validPhotoUrl(photo)) return true
-
   return (
     isEdit.value &&
     photo === originalPhotos.value[index] &&
@@ -164,39 +157,25 @@ function validateForm() {
   if (closureStatus.value === 'normal') {
     if (!openTime.value) validationErrors.value.push('Opening time is required.')
     if (!closeTime.value) validationErrors.value.push('Closing time is required.')
-
     if (openTime.value && closeTime.value && timeToMinutes(closeTime.value) <= timeToMinutes(openTime.value)) {
       validationErrors.value.push('Closing time must be later than opening time.')
     }
   }
 
-  if (allPhotos.length === 0) {
-    validationErrors.value.push('At least one photo is required.')
-  }
+  if (allPhotos.length === 0) validationErrors.value.push('At least one photo is required.')
 
-  if (photo1.value.trim() && !validPhoto(photo1.value.trim(), 0)) {
-    validationErrors.value.push('Photo URL 1 must be a valid http or https URL.')
-  }
-
-  if (photo2.value.trim() && !validPhoto(photo2.value.trim(), 1)) {
-    validationErrors.value.push('Photo URL 2 must be a valid http or https URL.')
-  }
-
-  if (photo3.value.trim() && !validPhoto(photo3.value.trim(), 2)) {
-    validationErrors.value.push('Photo URL 3 must be a valid http or https URL.')
-  }
+  if (photo1.value.trim() && !validPhoto(photo1.value.trim(), 0)) validationErrors.value.push('Photo URL 1 must be a valid http or https URL.')
+  if (photo2.value.trim() && !validPhoto(photo2.value.trim(), 1)) validationErrors.value.push('Photo URL 2 must be a valid http or https URL.')
+  if (photo3.value.trim() && !validPhoto(photo3.value.trim(), 2)) validationErrors.value.push('Photo URL 3 must be a valid http or https URL.')
 
   if (capacity.value !== '' && capacity.value !== null) {
     const cap = Number(capacity.value)
-
     if (!Number.isInteger(cap) || cap < 1 || cap > 5000) {
       validationErrors.value.push('Capacity must be a whole number between 1 and 5000.')
     }
   }
 
-  if (!cleanDescription) {
-    validationErrors.value.push('Description is required.')
-  }
+  if (!cleanDescription) validationErrors.value.push('Description is required.')
 
   return validationErrors.value.length === 0
 }
@@ -209,11 +188,7 @@ async function savePlace() {
 
   busy.value = true
 
-  const editablePhotos = [
-    photo1.value.trim(),
-    photo2.value.trim(),
-    photo3.value.trim()
-  ].filter(Boolean)
+  const editablePhotos = [photo1.value.trim(), photo2.value.trim(), photo3.value.trim()].filter(Boolean)
 
   const payload = {
     name: name.value.trim(),
@@ -227,18 +202,13 @@ async function savePlace() {
     openNow: closureStatus.value === 'normal' ? openNow.value : false,
     closureStatus: closureStatus.value,
     facilities: facilities.value,
-    photos: isEdit.value
-      ? [...editablePhotos, ...extraPhotos.value]
-      : editablePhotos,
+    photos: isEdit.value ? [...editablePhotos, ...extraPhotos.value] : editablePhotos,
     description: description.value.trim(),
-    capacity: capacity.value === '' || capacity.value === null
-      ? null
-      : Number(capacity.value)
+    capacity: capacity.value === '' || capacity.value === null ? null : Number(capacity.value)
   }
 
   try {
     let data
-
     if (isEdit.value) {
       const response = await axios.put(`${BASE_URL}/places/${route.params.id}`, payload, authConfig())
       data = response.data
@@ -246,15 +216,10 @@ async function savePlace() {
       const response = await axios.post(`${BASE_URL}/places`, payload, authConfig())
       data = response.data
     }
-
     router.push(`/places/${data.id}`)
   } catch (e) {
     console.error('Could not save place', e)
-
-    validationErrors.value = [
-      e.response?.data?.error || 'Could not save study space.'
-    ]
-
+    validationErrors.value = [e.response?.data?.error || 'Could not save study space.']
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     busy.value = false
@@ -264,128 +229,90 @@ async function savePlace() {
 
 <template>
   <main class="container ss-section place-form-page">
-    <!-- HEADER -->
     <div class="form-page-header">
       <div>
-        <div class="form-eyebrow">
-          {{ isEdit ? 'EDIT LISTING' : 'NEW LISTING' }}
-        </div>
-
-        <h1 class="mb-2">
-          {{ isEdit ? 'Edit Study Space' : 'Add Study Space' }}
-        </h1>
-
+        <div class="form-eyebrow">{{ isEdit ? 'EDIT LISTING' : 'NEW LISTING' }}</div>
+        <h1 class="mb-2">{{ isEdit ? 'Edit Study Space' : 'Add Study Space' }}</h1>
         <p class="ss-muted mb-0">
-          {{
-            isEdit
+          {{ isEdit
               ? 'Keep this study space accurate and useful for students.'
-              : 'Create a new study space listing for students to discover.'
-          }}
+              : 'Create a new study space listing for students to discover.' }}
         </p>
       </div>
-
-      <RouterLink to="/admin/places" class="btn btn-outline-primary">
-        ← Back to Manage
-      </RouterLink>
+      <RouterLink to="/admin/places" class="btn btn-outline-primary">← Back to Manage</RouterLink>
     </div>
 
-    <!-- VALIDATION -->
     <div v-if="validationErrors.length" class="form-errors">
-      <div class="form-errors-title">
-        Please fix the following
-      </div>
-
+      <div class="form-errors-title">Please fix the following</div>
       <ul class="mb-0 mt-2">
-        <li v-for="error in validationErrors" :key="error">
-          {{ error }}
-        </li>
+        <li v-for="error in validationErrors" :key="error">{{ error }}</li>
       </ul>
     </div>
 
     <form @submit.prevent="savePlace" novalidate>
-      <!-- SECTION 01 -->
       <section class="form-section">
         <div class="form-section-heading">
           <span class="form-section-number form-section-orange">01</span>
-
           <div>
             <h2>Basic Information</h2>
             <p>What students should know about this study space.</p>
           </div>
         </div>
-
         <div class="row g-3">
           <div class="col-12 col-md-6">
             <label class="form-label">Name</label>
             <input v-model="name" class="form-control" maxlength="100" placeholder="e.g. Li Ka Shing Library">
           </div>
-
           <div class="col-12 col-md-6">
             <label class="form-label">Area</label>
             <input v-model="area" class="form-control" maxlength="80" placeholder="e.g. Bras Basah">
           </div>
-
           <div class="col-12">
             <label class="form-label">Address</label>
-            <input v-model="address" class="form-control" maxlength="200"
-              placeholder="e.g. 70 Stamford Rd, Singapore 178901">
+            <input v-model="address" class="form-control" maxlength="200" placeholder="e.g. 70 Stamford Rd, Singapore 178901">
           </div>
         </div>
       </section>
 
-      <!-- SECTION 02 -->
       <section class="form-section">
         <div class="form-section-heading">
           <span class="form-section-number form-section-sky">02</span>
-
           <div>
             <h2>Location &amp; Availability</h2>
             <p>Coordinates, opening hours, status and estimated capacity.</p>
           </div>
         </div>
-
         <div class="row g-3">
           <div class="col-12 col-md-6">
             <label class="form-label">Latitude</label>
-            <input v-model="lat" type="number" step="any" min="-90" max="90" class="form-control"
-              placeholder="e.g. 1.2963">
+            <input v-model="lat" type="number" step="any" min="-90" max="90" class="form-control" placeholder="e.g. 1.2963">
             <div class="form-text">Must be between -90 and 90.</div>
           </div>
-
           <div class="col-12 col-md-6">
             <label class="form-label">Longitude</label>
-            <input v-model="lon" type="number" step="any" min="-180" max="180" class="form-control"
-              placeholder="e.g. 103.8502">
+            <input v-model="lon" type="number" step="any" min="-180" max="180" class="form-control" placeholder="e.g. 103.8502">
             <div class="form-text">Must be between -180 and 180.</div>
           </div>
-
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Seats (approx.)</label>
-            <input v-model="capacity" type="number" min="1" max="5000" step="1" class="form-control"
-              placeholder="e.g. 40" data-test="capacity-input">
+            <input v-model="capacity" type="number" min="1" max="5000" step="1" class="form-control" placeholder="e.g. 40" data-test="capacity-input">
             <div class="form-text">Used to estimate how packed it may be.</div>
           </div>
-
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Opening time</label>
             <input v-model="openTime" type="time" class="form-control" :disabled="closureStatus !== 'normal'">
           </div>
-
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Closing time</label>
-            <input v-model="closeTime" type="time" :min="openTime" class="form-control"
-              :disabled="closureStatus !== 'normal'">
+            <input v-model="closeTime" type="time" :min="openTime" class="form-control" :disabled="closureStatus !== 'normal'">
           </div>
-
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Location</label>
-
             <select v-model="indoor" class="form-select">
               <option :value="true">Indoor</option>
               <option :value="false">Outdoor</option>
             </select>
           </div>
-
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Entry</label>
             <select v-model="entry" class="form-select" data-test="entry-select">
@@ -395,7 +322,6 @@ async function savePlace() {
               <option value="pass">Requires membership/day pass</option>
             </select>
           </div>
-
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Status</label>
             <select v-model="openNow" class="form-select" :disabled="closureStatus !== 'normal'">
@@ -404,7 +330,6 @@ async function savePlace() {
             </select>
             <div class="form-text">"Open now" is worked out from the opening hours; choose closed to override them.</div>
           </div>
-
           <div class="col-12 col-sm-6 col-lg-3">
             <label class="form-label">Closure type</label>
             <select v-model="closureStatus" class="form-select">
@@ -414,77 +339,56 @@ async function savePlace() {
             </select>
             <div class="form-text">Use temporary/permanent only for special closures.</div>
           </div>
-
           <div v-if="closureStatus !== 'normal'" class="col-12">
-            <div class="closure-note"><strong>{{ closureStatus === 'temporary' ? 'Temporarily closed' : 'Permanently closed' }}</strong> 
-            <!-- current status is automatically set to closed and opening hours are not required. -->
+            <div class="closure-note">
+              <strong>{{ closureStatus === 'temporary' ? 'Temporarily closed' : 'Permanently closed' }}</strong>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SECTION 03 -->
       <section class="form-section">
         <div class="form-section-heading">
           <span class="form-section-number form-section-lime">03</span>
-
           <div>
             <h2>Facilities</h2>
             <p>Select everything students can expect to find there.</p>
           </div>
         </div>
-
         <div class="facility-grid">
-          <label v-for="f in FACILITIES" :key="f.value" class="facility-chip"
-            :class="{ active: facilities.includes(f.value) }">
+          <label v-for="f in FACILITIES" :key="f.value" class="facility-chip" :class="{ active: facilities.includes(f.value) }">
             <input v-model="facilities" :value="f.value" type="checkbox">
-
-            <span class="facility-check">
-              {{ facilities.includes(f.value) ? '✓' : '+' }}
-            </span>
-
+            <span class="facility-check">{{ facilities.includes(f.value) ? '✓' : '+' }}</span>
             <span>{{ f.label }}</span>
           </label>
         </div>
       </section>
 
-      <!-- SECTION 04 -->
       <section class="form-section">
         <div class="form-section-heading">
           <span class="form-section-number form-section-lilac">04</span>
-
           <div>
             <h2>Photos</h2>
             <p>Show students what the space looks like before they arrive.</p>
           </div>
         </div>
-
         <div class="row g-3">
           <div class="col-12">
             <label class="form-label">Photo URL 1</label>
             <input v-model="photo1" type="text" class="form-control" placeholder="https://example.com/photo1.jpg">
           </div>
-
           <div class="col-12">
             <label class="form-label">Photo URL 2</label>
             <input v-model="photo2" type="text" class="form-control" placeholder="https://example.com/photo2.jpg">
           </div>
-
           <div class="col-12">
             <label class="form-label">Photo URL 3</label>
             <input v-model="photo3" type="text" class="form-control" placeholder="https://example.com/photo3.jpg">
-
-            <div class="form-text">
-              Add or edit up to 3 photo URLs. Extra imported photos are preserved automatically.
-            </div>
+            <div class="form-text">Add or edit up to 3 photo URLs. Extra imported photos are preserved automatically.</div>
           </div>
-
-          <!-- PREVIEW -->
-          <div v-if="canPreviewPhoto(photo1, 0) || canPreviewPhoto(photo2, 1) || canPreviewPhoto(photo3, 2)"
-            class="col-12">
+          <div v-if="canPreviewPhoto(photo1, 0) || canPreviewPhoto(photo2, 1) || canPreviewPhoto(photo3, 2)" class="col-12">
             <div class="photo-panel">
               <div class="photo-panel-title">Photo preview</div>
-
               <div class="photo-grid">
                 <img v-if="canPreviewPhoto(photo1, 0)" :src="photo1" :alt="`${name} photo 1`">
                 <img v-if="canPreviewPhoto(photo2, 1)" :src="photo2" :alt="`${name} photo 2`">
@@ -492,73 +396,40 @@ async function savePlace() {
               </div>
             </div>
           </div>
-
-          <!-- EXTRA IMPORTED -->
           <div v-if="isEdit && extraPhotos.length" class="col-12">
             <div class="photo-panel photo-panel-extra">
-              <div class="photo-panel-title">
-                Additional existing photos
-              </div>
-
+              <div class="photo-panel-title">Additional existing photos</div>
               <div class="photo-grid">
-                <img v-for="(photo, index) in extraPhotos" :key="index" :src="photo"
-                  :alt="`${name} photo ${index + 4}`">
+                <img v-for="(photo, index) in extraPhotos" :key="index" :src="photo" :alt="`${name} photo ${index + 4}`">
               </div>
-
-              <div class="form-text mt-2">
-                These imported photos will be kept automatically when you save.
-              </div>
+              <div class="form-text mt-2">These imported photos will be kept automatically when you save.</div>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- SECTION 05 -->
       <section class="form-section">
         <div class="form-section-heading">
           <span class="form-section-number form-section-butter">05</span>
-
           <div>
             <h2>Description</h2>
             <p>Give students a quick idea of what makes this place useful.</p>
           </div>
         </div>
-
         <label class="form-label">Study space description</label>
-
-        <textarea v-model="description" class="form-control description-box" rows="5"
-          placeholder="Describe the study space..."></textarea>
-
-        <div class="description-counter">
-          {{ description.length }} characters
-        </div>
+        <textarea v-model="description" class="form-control description-box" rows="5" placeholder="Describe the study space..."></textarea>
+        <div class="description-counter">{{ description.length }} characters</div>
       </section>
 
-      <!-- ACTION BAR -->
       <div class="form-action-bar">
         <div>
-          <div class="form-action-title">
-            {{ isEdit ? 'Ready to update this listing?' : 'Ready to publish this space?' }}
-          </div>
-
-          <div class="ss-muted">
-            Check the information before saving.
-          </div>
+          <div class="form-action-title">{{ isEdit ? 'Ready to update this listing?' : 'Ready to publish this space?' }}</div>
+          <div class="ss-muted">Check the information before saving.</div>
         </div>
-
         <div class="form-action-buttons">
-          <RouterLink to="/admin/places" class="btn btn-outline-primary">
-            Cancel
-          </RouterLink>
-
+          <RouterLink to="/admin/places" class="btn btn-outline-primary">Cancel</RouterLink>
           <button class="btn btn-primary" type="submit" :disabled="busy">
-            {{
-              busy
-                ? 'Saving...'
-                : isEdit
-                  ? 'Save Changes'
-                  : 'Add Study Space'
-            }}
+            {{ busy ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Study Space' }}
           </button>
         </div>
       </div>
@@ -567,290 +438,48 @@ async function savePlace() {
 </template>
 
 <style scoped>
-.place-form-page {
-  max-width: 1100px;
-  padding-top: 8.5rem !important;
-  padding-bottom: 6rem;
-}
-
-.form-page-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.form-page-header h1 {
-  margin: 0;
-  font-size: clamp(3rem, 6vw, 5rem);
-}
-
-.form-eyebrow {
-  display: inline-block;
-  margin-bottom: .75rem;
-  padding: .35rem .75rem;
-  border: 2px solid var(--x-ink);
-  border-radius: 999px;
-  background: var(--x-orange);
-  font-family: var(--x-mono);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .06em;
-  box-shadow: 3px 3px 0 var(--x-ink);
-}
-
-/* ERROR */
-.form-errors {
-  margin-bottom: 1.5rem;
-  padding: 1.25rem 1.5rem;
-  border: 2px solid var(--x-ink);
-  border-radius: 20px;
-  background: #FFC9B8;
-  box-shadow: 4px 4px 0 var(--x-ink);
-}
-
-.form-errors-title {
-  font-weight: 800;
-  font-size: 1.05rem;
-}
-
-/* SECTION CARD */
-.form-section {
-  margin-bottom: 1.5rem;
-  padding: 1.7rem;
-  border: 2px solid var(--x-ink);
-  border-radius: 24px;
-  background: var(--x-card);
-  box-shadow: 5px 5px 0 var(--x-ink);
-}
-
-.form-section-heading {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 2px solid var(--x-ink);
-}
-
-.form-section-heading h2 {
-  margin: 0 0 .25rem;
-  font-size: 1.4rem !important;
-  line-height: 1.1 !important;
-  letter-spacing: -.02em !important;
-}
-
-.form-section-heading p {
-  margin: 0;
-  color: var(--x-muted);
-  font-size: .88rem;
-}
-
-.form-section-number {
-  width: 48px;
-  height: 48px;
-  flex-shrink: 0;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--x-ink);
-  border-radius: 14px;
-  font-weight: 800;
-  box-shadow: 3px 3px 0 var(--x-ink);
-}
-
-.form-section-orange {
-  background: var(--x-orange);
-}
-
-.form-section-sky {
-  background: var(--x-sky);
-}
-
-.form-section-lime {
-  background: var(--x-lime);
-}
-
-.form-section-lilac {
-  background: var(--x-lilac);
-}
-
-.form-section-butter {
-  background: var(--x-butter);
-}
-
-/* LABELS */
-.form-label {
-  font-weight: 700;
-  margin-bottom: .45rem;
-}
-
-.form-text {
-  color: var(--x-muted);
-  font-size: .75rem;
-}
-
-.closure-note {
-  padding: .9rem 1rem;
-  border: 2px solid var(--x-ink);
-  border-radius: 14px;
-  background: var(--x-butter);
-  font-size: .82rem;
-  box-shadow: 3px 3px 0 var(--x-ink);
-}
-
-/* FACILITY CHIPS */
-.facility-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .75rem;
-}
-
-.facility-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: .55rem;
-  padding: .65rem 1rem;
-  border: 2px solid var(--x-ink);
-  border-radius: 999px;
-  background: var(--x-card);
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 3px 3px 0 var(--x-ink);
-  transition: transform .18s var(--x-ease), box-shadow .18s var(--x-ease), background .2s;
-  user-select: none;
-}
-
-.facility-chip input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.facility-chip:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 5px 5px 0 var(--x-ink);
-}
-
-.facility-chip.active {
-  background: var(--x-lime);
-}
-
-.facility-check {
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  border: 1.5px solid var(--x-ink);
-  border-radius: 50%;
-  background: var(--x-card);
-  font-size: .75rem;
-}
-
-/* PHOTOS */
-.photo-panel {
-  margin-top: .5rem;
-  padding: 1.25rem;
-  border: 2px dashed var(--x-ink);
-  border-radius: 18px;
-  background: var(--x-paper);
-}
-
-.photo-panel-extra {
-  background: #F5F0FF;
-}
-
-.photo-panel-title {
-  margin-bottom: .8rem;
-  font-weight: 800;
-}
-
-.photo-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .8rem;
-}
-
-.photo-grid img {
-  width: 165px;
-  height: 105px;
-  object-fit: cover;
-  border: 2px solid var(--x-ink);
-  border-radius: 14px;
-  background: var(--x-paper-2);
-  box-shadow: 3px 3px 0 var(--x-ink);
-}
-
-/* DESCRIPTION */
-.description-box {
-  min-height: 150px;
-  resize: vertical;
-}
-
-.description-counter {
-  margin-top: .45rem;
-  text-align: right;
-  color: var(--x-muted);
-  font-family: var(--x-mono);
-  font-size: .72rem;
-}
-
-/* BOTTOM ACTION BAR */
-.form-action-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 2rem;
-  padding: 1.5rem;
-  border: 2px solid var(--x-ink);
-  border-radius: 22px;
-  background: var(--x-butter);
-  box-shadow: 5px 5px 0 var(--x-ink);
-}
-
-.form-action-title {
-  margin-bottom: .2rem;
-  font-size: 1.1rem;
-  font-weight: 800;
-}
-
-.form-action-buttons {
-  display: flex;
-  gap: .8rem;
-  flex-shrink: 0;
-}
-
-/* RESPONSIVE */
+.place-form-page { max-width: 1100px; padding-top: 8.5rem !important; padding-bottom: 6rem; }
+.form-page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 2rem; margin-bottom: 2rem; }
+.form-page-header h1 { margin: 0; font-size: clamp(3rem, 6vw, 5rem); }
+.form-eyebrow { display: inline-block; margin-bottom: .75rem; padding: .35rem .75rem; border: 2px solid var(--x-ink); border-radius: 999px; background: var(--x-orange); font-family: var(--x-mono); font-size: .72rem; font-weight: 700; letter-spacing: .06em; box-shadow: 3px 3px 0 var(--x-ink); }
+.form-errors { margin-bottom: 1.5rem; padding: 1.25rem 1.5rem; border: 2px solid var(--x-ink); border-radius: 20px; background: #FFC9B8; box-shadow: 4px 4px 0 var(--x-ink); }
+.form-errors-title { font-weight: 800; font-size: 1.05rem; }
+.form-section { margin-bottom: 1.5rem; padding: 1.7rem; border: 2px solid var(--x-ink); border-radius: 24px; background: var(--x-card); box-shadow: 5px 5px 0 var(--x-ink); }
+.form-section-heading { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 2px solid var(--x-ink); }
+.form-section-heading h2 { margin: 0 0 .25rem; font-size: 1.4rem !important; line-height: 1.1 !important; letter-spacing: -.02em !important; }
+.form-section-heading p { margin: 0; color: var(--x-muted); font-size: .88rem; }
+.form-section-number { width: 48px; height: 48px; flex-shrink: 0; display: grid; place-items: center; border: 2px solid var(--x-ink); border-radius: 14px; font-weight: 800; box-shadow: 3px 3px 0 var(--x-ink); }
+.form-section-orange { background: var(--x-orange); }
+.form-section-sky { background: var(--x-sky); }
+.form-section-lime { background: var(--x-lime); }
+.form-section-lilac { background: var(--x-lilac); }
+.form-section-butter { background: var(--x-butter); }
+.form-label { font-weight: 700; margin-bottom: .45rem; }
+.form-text { color: var(--x-muted); font-size: .75rem; }
+.closure-note { padding: .9rem 1rem; border: 2px solid var(--x-ink); border-radius: 14px; background: var(--x-butter); font-size: .82rem; box-shadow: 3px 3px 0 var(--x-ink); }
+.facility-grid { display: flex; flex-wrap: wrap; gap: .75rem; }
+.facility-chip { display: inline-flex; align-items: center; gap: .55rem; padding: .65rem 1rem; border: 2px solid var(--x-ink); border-radius: 999px; background: var(--x-card); font-weight: 700; cursor: pointer; box-shadow: 3px 3px 0 var(--x-ink); transition: transform .18s var(--x-ease), box-shadow .18s var(--x-ease), background .2s; user-select: none; }
+.facility-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.facility-chip:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--x-ink); }
+.facility-chip.active { background: var(--x-lime); }
+.facility-check { width: 22px; height: 22px; display: grid; place-items: center; border: 1.5px solid var(--x-ink); border-radius: 50%; background: var(--x-card); font-size: .75rem; }
+.photo-panel { margin-top: .5rem; padding: 1.25rem; border: 2px dashed var(--x-ink); border-radius: 18px; background: var(--x-paper); }
+.photo-panel-extra { background: #F5F0FF; }
+.photo-panel-title { margin-bottom: .8rem; font-weight: 800; }
+.photo-grid { display: flex; flex-wrap: wrap; gap: .8rem; }
+.photo-grid img { width: 165px; height: 105px; object-fit: cover; border: 2px solid var(--x-ink); border-radius: 14px; background: var(--x-paper-2); box-shadow: 3px 3px 0 var(--x-ink); }
+.description-box { min-height: 150px; resize: vertical; }
+.description-counter { margin-top: .45rem; text-align: right; color: var(--x-muted); font-family: var(--x-mono); font-size: .72rem; }
+.form-action-bar { display: flex; justify-content: space-between; align-items: center; gap: 2rem; padding: 1.5rem; border: 2px solid var(--x-ink); border-radius: 22px; background: var(--x-butter); box-shadow: 5px 5px 0 var(--x-ink); }
+.form-action-title { margin-bottom: .2rem; font-size: 1.1rem; font-weight: 800; }
+.form-action-buttons { display: flex; gap: .8rem; flex-shrink: 0; }
 @media (max-width: 700px) {
-  .place-form-page {
-    padding-top: 9rem !important;
-  }
-
-  .form-page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .form-section {
-    padding: 1.2rem;
-  }
-
-  .form-action-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .form-action-buttons {
-    width: 100%;
-  }
-
-  .form-action-buttons .btn {
-    flex: 1;
-  }
-
-  .photo-grid img {
-    width: 135px;
-    height: 90px;
-  }
+  .place-form-page { padding-top: 9rem !important; }
+  .form-page-header { flex-direction: column; align-items: flex-start; }
+  .form-section { padding: 1.2rem; }
+  .form-action-bar { flex-direction: column; align-items: stretch; }
+  .form-action-buttons { width: 100%; }
+  .form-action-buttons .btn { flex: 1; }
+  .photo-grid img { width: 135px; height: 90px; }
 }
 </style>
