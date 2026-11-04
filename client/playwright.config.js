@@ -7,22 +7,33 @@ export default defineConfig({
   expect: { timeout: 5000 },
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
+
   // every test waits on the shared Atlas database; more than 3 browsers at once makes them time out
   workers: process.env.CI ? 1 : 3,
+
   reporter: 'html',
+
   use: {
     actionTimeout: 0,
     baseURL: process.env.CI ? 'http://localhost:4173' : 'http://localhost:5173',
     trace: 'on-first-retry',
     headless: !!process.env.CI,
+
+    // automatically record every Playwright test
+    video: 'on',
   },
+
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
+
   /* NOTE: the Express API on :8000 must be running separately
      (cd ../server && pnpm dev, or npm run dev) for these tests to pass. */
   webServer: {
-    command: process.env.CI ? 'vite preview' : 'vite',   // works under pnpm or npm
+    command: process.env.CI ? 'vite preview' : 'vite',
     port: process.env.CI ? 4173 : 5173,
     reuseExistingServer: !process.env.CI,
   },
