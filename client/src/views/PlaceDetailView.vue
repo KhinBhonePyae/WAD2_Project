@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { Carousel } from 'bootstrap'  // Library: Bootstrap 5: open-source CSS/JS framework (MIT)
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL } from '../utils/api.js'
 import { suitabilityBreakdown, preferencesToWanted, FACILITY_LABELS, ENTRY_LABELS, closureStatusOf } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'
+import { STUDY_SPOTS, isSpot } from '../utils/studySpots.js'
+import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'
 import SuitabilityScore from '../components/SuitabilityScore.vue'
 import CrowdMeter from '../components/CrowdMeter.vue'
 import StarRating from '../components/StarRating.vue'
@@ -18,6 +20,7 @@ import PlaceMap from '../components/PlaceMap.vue'
 import ReportIssue from '../components/ReportIssue.vue'
 
 const route = useRoute()
+const router = useRouter()
 const carouselRef = ref(null)
 const place = ref(null)
 const reviews = ref([])
@@ -32,6 +35,27 @@ const reviewModalOpen = ref(false)
 const notFound = ref(false)
 let ctx = null
 
+// Save button on the photo carousel, same server list as the heart on the place cards
+const savedIds = ref([])
+const saveBusy = ref(false)
+const isSaved = computed(() => !!place.value && savedIds.value.includes(place.value.id))
+
+async function toggleSave() {
+  if (!isLoggedIn()) {
+    router.push('/login')
+    return
+  }
+  if (saveBusy.value || !place.value) return
+  saveBusy.value = true
+  try {
+    savedIds.value = await toggleSavedId(savedIds.value, place.value.id)
+  } catch (e) {
+    console.error('Could not update saved place', e)
+  } finally {
+    saveBusy.value = false
+  }
+}
+
 function readStoredUser() {
   try { return JSON.parse(localStorage.getItem('user') || 'null') }
   catch { return null }
@@ -39,7 +63,8 @@ function readStoredUser() {
 
 const currentUser = ref(readStoredUser())
 const profileWanted = computed(() => preferencesToWanted(currentUser.value?.preferences))
-const isPersonalized = computed(() => !!currentUser.value && profileWanted.value.length > 0)
+const profileSpots = computed(() => currentUser.value?.preferences?.studySpots || [])
+const isPersonalized = computed(() => !!currentUser.value && (profileWanted.value.length > 0 || profileSpots.value.length > 0))
 const closureStatus = computed(() => closureStatusOf(place.value || {}))
 
 function syncUser() {
@@ -48,7 +73,7 @@ function syncUser() {
 
 const scoreInfo = computed(() => {
   if (!place.value || !currentUser.value) return { score:0, reasons:[] }
-  return suitabilityBreakdown(place.value, profileWanted.value, weather.value)
+  return suitabilityBreakdown(place.value, profileWanted.value, weather.value, profileSpots.value)
 })
 
 const score = computed(() => scoreInfo.value.score)
@@ -61,7 +86,8 @@ const preferenceMatches = computed(() => {
     { key:'wifi', label:'Wi-Fi', active:currentUser.value?.preferences?.wifiRequired, matched:facilities.includes('wifi') },
     { key:'sockets', label:'Power sockets', active:currentUser.value?.preferences?.socketsRequired, matched:facilities.includes('sockets') },
     { key:'quiet', label:'Quiet environment', active:currentUser.value?.preferences?.quietPreferred, matched:facilities.includes('quiet') },
-    { key:'indoor', label:'Indoor location', active:currentUser.value?.preferences?.indoorPreferred, matched:!!place.value.indoor }
+    { key:'indoor', label:'Indoor location', active:currentUser.value?.preferences?.indoorPreferred, matched:!!place.value.indoor },
+    ...STUDY_SPOTS.map(spot => ({ key:'spot-'+spot.key, label:spot.label, active:profileSpots.value.includes(spot.key), matched:isSpot(place.value, spot.key) }))
   ].filter(item => item.active)
 })
 
@@ -180,10 +206,12 @@ onMounted(async () => {
     const { data } = await axios.get(`${BASE_URL}/places/${id}`)
     place.value = data
 
-    const [, w] = await Promise.all([
+    const [, w, ids] = await Promise.all([
       loadReviews(id),
-      fetchWeather().catch(() => null)
+      fetchWeather().catch(() => null),
+      fetchSavedIds()
     ])
+    savedIds.value = ids || []
 
     weather.value = w
   } catch (e) {
@@ -260,6 +288,16 @@ onUnmounted(() => {
           <span class="carousel-control-next-icon" aria-hidden="true"></span>
           <span class="visually-hidden">Next</span>
         </button>
+
+        <button class="place-save" type="button" :aria-pressed="isSaved" :disabled="saveBusy"
+                :aria-label="isSaved ? 'Remove from saved' : 'Save this place'"
+                :title="isSaved ? 'Remove from saved' : 'Save this place'"
+                data-test="detail-save" data-cursor="save" @click="toggleSave">
+          <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+            <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"
+                  :fill="isSaved ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" />
+          </svg>
+        </button>
       </div>
 
       <div v-else class="ss-card mb-4">
@@ -271,7 +309,7 @@ onUnmounted(() => {
       </p>
 
       <div class="row g-4 x-detail-head">
-        <div class="col-12" :class="{ 'col-lg-7':isPersonalized && profileWanted.length }">
+        <div class="col-12" :class="{ 'col-lg-7':isPersonalized }">
           <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
             <div>
               <h1 class="mb-1 x-detail-title" data-test="place-name" :aria-label="place.name">
@@ -335,7 +373,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div v-if="isPersonalized && profileWanted.length" class="col-12 col-lg-5">
+        <div v-if="isPersonalized" class="col-12 col-lg-5">
           <div class="ss-card h-auto p-4">
             <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3 mb-3">
               <h2 class="h6 mb-0">Why this matches you</h2>
@@ -429,6 +467,19 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* Save button, top right of the photo carousel (matches the heart on the place cards) */
+.place-save { position: absolute; top: 14px; right: 14px; z-index: 3; width: 48px; height: 48px;
+  display: grid; place-items: center; padding: 0; border-radius: 50%;
+  background: var(--x-card); color: var(--x-ink); border: var(--x-line); box-shadow: 2px 2px 0 var(--x-ink);
+  transition: background-color .2s, transform .15s; }
+.place-save[aria-pressed="true"] { background: var(--x-orange); }
+.place-save:hover { background: var(--x-pink); }
+.place-save:active { transform: scale(.92); }
+.place-save:disabled { cursor: wait; }
+@media (max-width: 575.98px) {
+  .place-save { top: 10px; right: 10px; width: 40px; height: 40px; }
+  .place-save svg { width: 18px; height: 18px; }
+}
 .reviews-section {
   margin-bottom:3rem;
 }

@@ -9,7 +9,9 @@
  *   star rating        0-15
  *   weather modifier  -25-+10
  *   planned visits    -10-0
+ *   preferred type     0 or +10 (Indoor / Outdoor / Café / Library picked at sign-up)
  */
+import { spotMatches, spotLabels } from './studySpots.js'
 
 export const FACILITY_LABELS = {
   wifi: 'Wi-Fi', sockets: 'Power sockets', fnb: 'Food & drink', water: 'Water dispenser', toilets: 'Toilets', quiet: 'Quiet environment', indoor: 'Indoor location'
@@ -39,7 +41,8 @@ function matchesPreference(place, preference) {
   return (place.facilities || []).includes(preference)
 }
 
-export function suitabilityBreakdown(place, wanted = [], weather = null) {
+// spots: the user's preferred kinds of study spot (preferences.studySpots), optional
+export function suitabilityBreakdown(place, wanted = [], weather = null, spots = []) {
   const closureStatus = closureStatusOf(place)
   if (closureStatus === 'permanent') return { score: 0, reasons: ['Permanently closed'] }
   if (closureStatus === 'temporary') return { score: 0, reasons: ['Temporarily closed'] }
@@ -75,14 +78,17 @@ export function suitabilityBreakdown(place, wanted = [], weather = null) {
     else if (weather.fair) { score += 10; reasons.push('Outdoor - fine weather helps') }
   }
 
+  const typeMatches = spotMatches(place, Array.isArray(spots) ? spots : [])
+  if (typeMatches.length) { score += 10; reasons.push(`Your preferred type: ${spotLabels(typeMatches).join(', ')}`) }
+
   score = Math.max(0, Math.min(100, Math.round(score)))
   if (!place.openNow) score = Math.min(score, 45)
 
   return { score, reasons }
 }
 
-export function suitabilityScore(place, wanted = [], weather = null) {
-  return suitabilityBreakdown(place, wanted, weather).score
+export function suitabilityScore(place, wanted = [], weather = null, spots = []) {
+  return suitabilityBreakdown(place, wanted, weather, spots).score
 }
 
 export function scoreBand(score) {

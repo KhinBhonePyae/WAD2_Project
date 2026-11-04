@@ -27,6 +27,7 @@ function readStoredUser() {
 
 const currentUser = ref(readStoredUser())
 const profileWanted = computed(() => preferencesToWanted(currentUser.value?.preferences))
+const profileSpots = computed(() => currentUser.value?.preferences?.studySpots || [])
 
 function syncUser() {
   currentUser.value = readStoredUser()
@@ -88,7 +89,7 @@ const results = computed(() => {
   if (!currentUser.value) return list.map(place => ({ place, score: null }))
 
   return list
-    .map(place => ({ place, score: suitabilityScore(place, profileWanted.value, weather.value) }))
+    .map(place => ({ place, score: suitabilityScore(place, profileWanted.value, weather.value, profileSpots.value) }))
     .sort((a, b) => b.score - a.score)
 })
 

@@ -133,7 +133,7 @@ const scoreWanted = computed(() => prefs.value.facilities.length ? prefs.value.f
 const results = computed(() => {
   const scored = spaces.value.map((s) => ({
     ...s,
-    ...suitabilityBreakdown(s, scoreWanted.value, weather.value),
+    ...suitabilityBreakdown(s, scoreWanted.value, weather.value, mySpots),
   }))
   
   let list = filterPlaces(scored, prefs.value)

@@ -203,8 +203,10 @@ onMounted(getSavedPlaces)
     font-size: 1.8rem;
   }
 
+  /* two mini tiles per row on phones instead of one long column */
   .saved-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .75rem;
   }
 }
 </style>
