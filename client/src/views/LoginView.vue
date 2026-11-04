@@ -277,22 +277,6 @@ async function login() {
   box-shadow: 0 0 0 3px var(--x-lime);
 }
 
-.forgot-row {
-  margin: -.7rem 0 1.2rem;
-  text-align: right;
-}
-
-.forgot-link {
-  color: var(--x-ink);
-  font-size: .9rem;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.forgot-link:hover {
-  text-decoration: underline;
-}
-
 .auth-button {
   width: 100%;
   min-height: 54px;

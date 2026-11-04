@@ -91,7 +91,10 @@ onUnmounted(() => ctx?.revert())
                         style="color:inherit" data-test="place-link">{{ place.name }}</RouterLink>
           </h3>
         </div>
-        <div class="xc-meta">{{ place.area }} · {{ place.hours }}<template v-if="ENTRY_LABELS[place.entry]"> · {{ ENTRY_LABELS[place.entry] }}</template></div>
+        <div class="xc-meta">
+          <span class="xc-meta__line">{{ place.area }}<template v-if="ENTRY_LABELS[place.entry]"> · {{ ENTRY_LABELS[place.entry] }}</template></span>
+          <span class="xc-meta__line" data-test="card-hours">{{ place.hours }}</span>
+        </div>
         <div v-if="tags?.length" class="xc-tags">
           <span v-for="tag in tags" :key="tag" class="xc-tag" data-test="card-tag">{{ tag }}</span>
         </div>
@@ -148,6 +151,8 @@ onUnmounted(() => ctx?.revert())
 .xc-body { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px 18px; flex: 1; }
 .xc-title { font-size: 1.35rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.05; margin: 0; }
 .xc-meta { font-family: var(--x-mono); font-size: .74rem; text-transform: uppercase; letter-spacing: .03em; color: var(--x-muted); }
+/* area on one line, opening hours on the next, so narrow cards never cut the hours off mid-way */
+.xc-meta__line { display: block; }
 .xc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .xc-tag { padding: 2px 9px; border: 1px solid var(--x-ink); border-radius: 999px; background: var(--x-paper);
   font-family: var(--x-mono); font-size: .7rem; font-weight: 700; }
@@ -170,7 +175,8 @@ onUnmounted(() => ctx?.revert())
   .xc-fav svg { width: 15px; height: 15px; }
   .xc-body { gap: 4px; padding: 10px 12px 12px; }
   .xc-title { font-size: clamp(.95rem, 2.2vw, 1.15rem); }
-  .xc-meta { font-size: .6rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .xc-meta { font-size: .6rem; }
+  .xc-meta__line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .xc-tag { font-size: .6rem; padding: 1px 7px; }
   .xc-intent { font-size: .68rem; }
   .xc-foot { padding-top: 7px; font-size: .8rem; }
@@ -183,7 +189,7 @@ onUnmounted(() => ctx?.revert())
   .xc-wrap:hover .xc { box-shadow: 3px 3px 0 var(--x-ink); }
   .xc-photo { aspect-ratio: 1 / 1; }
   .xc-photo img { inset: -6px; width: calc(100% + 12px); height: calc(100% + 12px); }
-  .xc-status { left: 5px; top: 5px; padding: 1px 5px; border-width: 1.5px; font-size: .48rem;
+  .xc-status { left: 5px; top: 5px; padding: 1px 5px; border-width: 1.5px; font-size: .56rem;
                box-shadow: 1px 1px 0 var(--x-ink); }
   .xc-fav { right: 5px; top: auto; bottom: 5px; width: 26px; height: 26px; border-width: 1.5px;
             box-shadow: 1px 1px 0 var(--x-ink); }
@@ -191,9 +197,10 @@ onUnmounted(() => ctx?.revert())
   .xc-body { gap: 3px; padding: 7px 7px 8px; }
   .xc-title { font-size: .78rem; letter-spacing: -.02em; line-height: 1.1;
               display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .xc-meta { font-size: .5rem; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .xc-meta { font-size: .6rem; letter-spacing: 0; }
+  .xc-meta__line { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .xc-tags, .xc-intent { display: none; }
-  .xc-foot { padding-top: 5px; border-top-width: 1.5px; font-size: .55rem; line-height: 1.2; }
-  .xc-foot :deep(.ss-meta) { font-size: .55rem; }
+  .xc-foot { padding-top: 5px; border-top-width: 1.5px; font-size: .62rem; line-height: 1.2; }
+  .xc-foot :deep(.ss-meta) { font-size: .62rem; }
 }
 </style>

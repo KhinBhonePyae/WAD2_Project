@@ -171,7 +171,7 @@ const words = text => text.split(' ')
   }
 
   .x-area__count {
-    font-size: clamp(.56rem, 1.2vw, .72rem);
+    font-size: clamp(.64rem, 1.2vw, .72rem);
   }
 
   .x-area__name {

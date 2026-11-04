@@ -823,7 +823,7 @@ const words = text => text.split(' ')
   }
 
   .x-vibe__note {
-    font-size: clamp(.46rem, 1.15vw, .66rem);
+    font-size: clamp(.6rem, 1.15vw, .66rem);
     line-height: 1.3;
     letter-spacing: .02em;
   }

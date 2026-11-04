@@ -35,7 +35,7 @@ Users can also save places, write reviews, report how busy a place is right now,
 
 ## Features
 
-1. **Accounts and profiles:** sign-up with study preferences (favourite kinds of spot: indoor, outdoor, café, library; and must-haves: Wi-Fi, sockets, quiet), log in and out, forgot/reset password by email, edit profile, change password, delete account
+1. **Accounts and profiles:** sign-up with study preferences (favourite kinds of spot: indoor, outdoor, café, library; and must-haves: Wi-Fi, sockets, quiet), log in and out, edit profile, change password, delete account
 2. **Study space catalogue:** browse places 12 per page, ordered so your favourite kinds of spot come first (nothing is hidden); detail pages with a photo carousel, facilities, opening hours and a live "Open now" status in Singapore time
 3. **Search, filters and suitability scoring:** filter by facilities, area, crowd level, rating, open now, free entry, indoor or outdoor, and distance from your current location (cards show "📍 Nearby" with the distance); each place gets a score based on your preferences and the weather, and the live weather shows as a soft page background
 4. **Map and directions:** OneMap map, location search, and walking (step by step, with compass directions), driving and public-transport routes
@@ -255,10 +255,10 @@ There are three layers of automated tests: client unit and component tests (Vite
 
 | Layer | Where | Tests | Needs the API / database? |
 |---|---|---|---|
-| Unit tests | `client/src/utils/__tests__/` | 47 | No |
-| Component tests | `client/src/components/__tests__/`, `client/src/views/__tests__/` | 42 | No (API calls are faked) |
-| Server tests | `server/tests/` | 55 | No (runs in mock mode) |
-| End-to-end tests | `client/e2e/` | 37 | Yes |
+| Unit tests | `client/src/utils/__tests__/` | 119 | No |
+| Component tests | `client/src/components/__tests__/`, `client/src/views/__tests__/` | 207 | No (API calls are faked) |
+| Server tests | `server/tests/` | 47 | No (runs in mock mode) |
+| End-to-end tests | `client/e2e/` | 34 | Yes |
 
 ### Unit and component tests (Vitest)
 
@@ -274,7 +274,6 @@ Component tests mount a single Vue component in a simulated browser (jsdom) with
 - `StarRating.spec.js`: stars, average and count, and "No reviews yet" for a place without reviews
 - `StarPicker.spec.js`: tap-to-rate stars, including the arrow keys
 - `SearchFilters.spec.js`: the "near me" filter, the distance options and a denied location permission
-- `ForgotPasswordView.spec.js` and `ResetPasswordView.spec.js`: the password reset pages
 - `CrowdHistogram.spec.js`: the "How busy is it?" card, including the empty state, "right now" vs "last reported", the report split, "planning to go" counts, hiding check-ins while closed, the login redirect, checking in, and undo
 - `ReportIssue.spec.js`: the report form's login redirect, validation and success message
 - `AdminReportsView.spec.js`: the admin reports page, including filters, resolving, deleting and the non-admin redirect
@@ -291,7 +290,6 @@ These run in mock mode (`data/places.json`, in-memory data), so they never touch
 - `crowd.test.js`: crowd reports and check-ins, including validation (bad level, unknown place, or a place that is closed right now), one report per user per hour, undo, and the place's crowd level following the newest report
 - `place-summary.test.js`: "Open now" in Singapore time, including Google weekly hours, past-midnight hours, 24/7 places and admin closures
 - `auth-middleware.test.js`: the login guard rejects missing, malformed and forged tokens and deleted accounts
-- `password-reset.test.js`: reset links, expiry and the new password
 - `report-model.test.js` and `reports-integration.test.js`: incorrect-information reports, from submitting to an admin resolving, reopening and deleting them, through the real routes
 
 ### End-to-end tests (Playwright)
@@ -331,7 +329,7 @@ pnpm exec playwright show-report              # open the HTML report
 
 | # | Journey | End-to-end test |
 |---|---|---|
-| 1 | Register, log in, log out | `accounts.spec.js` (sign-up with favourite spots and must-haves, password checks, duplicate email, wrong password, forgot password, log in, log out) |
+| 1 | Register, log in, log out | `accounts.spec.js` (sign-up with favourite spots and must-haves, password checks, duplicate email, wrong password, log in, log out) |
 | 2 | Browse the study space catalogue and open a place detail page | `reviews.spec.js` (home page lists places), `search.spec.js` (opens a place from a result), `carousel.spec.js` (photo carousel) |
 | 3 | Search and apply advanced filters | `search.spec.js` (12 per page, paging, empty search, facility chips), `reviews.spec.js` (Browse filters) |
 | 4 | Submit, edit and delete a review | `reviews.spec.js` (review popup with star rating) |
