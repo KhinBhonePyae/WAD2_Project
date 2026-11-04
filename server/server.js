@@ -52,6 +52,9 @@ const server = express();
 server.use(express.urlencoded({ extended: true }));
 server.use(cors());               // dev only: allows the Vite client on :5173
 server.use(express.json());
+// Express 5 leaves req.body undefined when nothing was parsed; default it so a request
+// without a JSON body gets a normal "required" message instead of a crash
+server.use((req, res, next) => { if (req.body === undefined) req.body = {}; next(); });
 
 
 server.get('/health', (req, res) => {
@@ -72,6 +75,13 @@ server.use('/crowd', crowdRoutes); // one-tap crowd check-ins
 // 404 + error handler (borrowed from the better-engineered wk5 blog example)
 server.use((req, res) => res.status(404).json({ error: 'Not found' }));
 server.use((err, req, res, next) => {
+  // Bad input from the client is a 400, not a server crash
+  if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'The request body is not valid JSON.' });
+  if (err.name === 'ValidationError') {
+    const first = Object.values(err.errors || {})[0];
+    return res.status(400).json({ error: first?.message || 'Some of the details are not valid.' });
+  }
+  if (err.name === 'CastError') return res.status(400).json({ error: 'Some of the details are not valid.' });
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });

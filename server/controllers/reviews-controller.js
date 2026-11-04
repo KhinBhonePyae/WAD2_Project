@@ -15,6 +15,8 @@ async function findOwnReview(id, userId, res) {
   return review;
 }
 
+const MAX_COMMENT = 600; // matches maxlength on the review model and the review forms
+
 async function resync(placeId) {
   const agg = await reviewModel.aggregateForPlace(placeId);
   await placeModel.updateAggregate(placeId, agg.rating, agg.reviewCount);
@@ -47,12 +49,15 @@ exports.addReview = async (req, res, next) => {
     if (!Number.isInteger(n) || n < 1 || n > 5) {
       return res.status(400).json({ error: 'rating must be a whole number from 1 to 5' });
     }
+    if (String(comment ?? '').trim().length > MAX_COMMENT) {
+      return res.status(400).json({ error: `Reviews must be ${MAX_COMMENT} characters or fewer.` });
+    }
     if (!(await placeModel.findByID(placeId))) {
       return res.status(404).json({ error: 'Place not found' });
     }
     const doc = await reviewModel.addReview({
       placeId: Number(placeId), userId: user._id, author: user.name, rating: n,
-      comment: (comment || '').trim(),
+      comment: String(comment ?? '').trim(),
       crowdLevel: ['quiet', 'moderate', 'packed'].includes(crowdLevel) ? crowdLevel : 'moderate',
     });
     const summary = await resync(placeId);
@@ -72,7 +77,12 @@ exports.editReview = async (req, res, next) => {
       }
       fields.rating = n;
     }
-    if (comment !== undefined) fields.comment = String(comment).trim();
+    if (comment !== undefined) {
+      fields.comment = String(comment ?? '').trim();
+      if (fields.comment.length > MAX_COMMENT) {
+        return res.status(400).json({ error: `Reviews must be ${MAX_COMMENT} characters or fewer.` });
+      }
+    }
     if (crowdLevel !== undefined && ['quiet', 'moderate', 'packed'].includes(crowdLevel)) {
       fields.crowdLevel = crowdLevel;
     }

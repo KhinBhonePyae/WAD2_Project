@@ -42,7 +42,7 @@ function submit() {
       </div>
       <div class="col-12">
         <label class="form-label ss-meta" for="rv-comment">Comment</label>
-        <textarea id="rv-comment" v-model="comment" class="form-control" rows="2"
+        <textarea id="rv-comment" v-model="comment" class="form-control" rows="2" maxlength="600"
           placeholder="Sockets? Noise? Seat availability?" data-test="rv-comment"></textarea>
       </div>
     </div>

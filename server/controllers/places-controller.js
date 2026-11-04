@@ -187,6 +187,17 @@ exports.getMapLocation = async (req, res, next) => {
   }
 };
 
+// "Service has ended" is only true late at night (roughly 00:00-05:30 in Singapore)
+function noTransitMessage(label) {
+  const [hour, minute] = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Singapore', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .format(new Date()).split(':').map(Number);
+  const lateNight = hour < 5 || (hour === 5 && minute < 30);
+  const Label = label[0].toUpperCase() + label.slice(1);
+  return lateNight
+    ? `${Label} service has ended for the day. Please try another route.`
+    : `No ${label} route found from your location right now. Please try another route.`;
+}
+
 /* POST /places/:id/map-route - get a route from the browser location */
 exports.getMapRoute = async (req, res) => {
   try {
@@ -252,15 +263,19 @@ exports.getMapRoute = async (req, res) => {
     ));
 
     if (isPublicTransport) {
-      const itinerary = data.plan?.itineraries?.[0];
+      const label = mode === 'bus' ? 'bus' : 'train';
+      const usesRequested = leg => (mode === 'bus' ? leg.mode === 'BUS' : ['RAIL', 'SUBWAY', 'TRAM'].includes(leg.mode));
+      const itineraries = data.plan?.itineraries || [];
+      // OneMap can return up to 3 options; use the first one that actually takes the bus/train
+      const itinerary = itineraries.find(option => (option.legs || []).some(usesRequested));
       const legs = itinerary?.legs || [];
-      const hasRequestedTransport = legs.some(leg => {
-        if (mode === 'bus') return leg.mode === 'BUS';
-        return ['RAIL', 'SUBWAY', 'TRAM'].includes(leg.mode);
-      });
-      if (!legs.length || !hasRequestedTransport) {
+      if (!itinerary) {
+        // A short trip comes back as walking only, which is not "service has ended"
+        const walkOnly = itineraries.length && itineraries.every(option => (option.legs || []).every(leg => leg.mode === 'WALK'));
         return res.status(404).json({
-          error: `${mode === 'bus' ? 'Bus' : 'Train'} service has ended for the day. Please try another route.`
+          error: walkOnly
+            ? `This place is close enough to walk, so there's no ${label} route. Try Walk instead.`
+            : noTransitMessage(label)
         });
       }
 
@@ -307,9 +322,7 @@ exports.getMapRoute = async (req, res) => {
   } catch (error) {
     console.error('OneMap route request failed:', error.message);
     if (error.response?.status === 404 && ['bus', 'train'].includes(req.body?.mode)) {
-      return res.status(404).json({
-        error: `${req.body.mode === 'bus' ? 'Bus' : 'Train'} service has ended for the day. Please try another route.`
-      });
+      return res.status(404).json({ error: noTransitMessage(req.body.mode === 'bus' ? 'bus' : 'train') });
     }
     res.status(error.status || 502).json({
       error: error.status === 404 || error.status === 503

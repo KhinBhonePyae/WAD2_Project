@@ -94,7 +94,7 @@ function fmt(d) {
           </div>
 
           <div class="col-12 col-md-7">
-            <input v-model="draftComment" class="form-control" aria-label="Comment" data-test="edit-comment">
+            <input v-model="draftComment" class="form-control" aria-label="Comment" maxlength="600" data-test="edit-comment">
           </div>
         </div>
 

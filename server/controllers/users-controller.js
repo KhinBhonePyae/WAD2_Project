@@ -48,7 +48,7 @@ function cleanPreferences(preferences) {
 /* POST /users/check-email */
 exports.checkEmail = async (req, res, next) => {
   try {
-    const email = req.body.email?.trim().toLowerCase()
+    const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : ''
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: 'Enter a valid email address' })

@@ -14,10 +14,25 @@ const ENTRY_TEXT = { free: 'free entry', purchase: 'buy a drink', pass: 'day pas
 
 /* One line per place so the assistant recommends real LockedIN spots
  * (and knows which are open right now) instead of guessing. */
-async function placeList() {
+/* Facilities the user asks for in plain words. The small model sometimes claims a place has
+ * a facility it doesn't, so places without every requested facility are left out of its list. */
+const FACILITY_WORDS = {
+  sockets: /\b(sockets?|power|plugs?|charg(e|ing))\b/i,
+  wifi: /\b(wi-?fi|internet)\b/i,
+  quiet: /\b(quiet|silent|silence)\b/i,
+  toilets: /\b(toilets?|restrooms?|washrooms?)\b/i,
+  water: /\b(water|refill)\b/i,
+};
+
+function requestedFacilities(text) {
+  return Object.keys(FACILITY_WORDS).filter(key => FACILITY_WORDS[key].test(text));
+}
+
+async function placeList(required = []) {
   const places = await summarisePlaces(await placeModel.retrieveAll());
   return places
     .filter(p => p.closureStatus !== 'permanent')
+    .filter(p => required.every(f => (p.facilities || []).includes(f)))
     .map(p => [
       p.name,
       p.area,
@@ -25,7 +40,7 @@ async function placeList() {
       p.openNow ? 'open now' : 'closed now',
       p.indoor ? 'indoor' : 'outdoor',
       ENTRY_TEXT[p.entry],
-      (p.facilities || []).join('/'),
+      'facilities: ' + ((p.facilities || []).join(', ') || 'none listed'),
       p.reviewCount ? `rated ${p.rating}` : '',
     ].filter(Boolean).join(' | '))
     .join('\n');
@@ -62,7 +77,17 @@ router.post('/study-assistant', async (req, res) => {
     : [];
 
   try {
-    const places = await placeList();
+    // check this message and the user's recent ones, so a follow-up keeps the same needs
+    const recentUserText = [userPrompt, ...history.filter(m => m.role === 'user').map(m => m.parts[0].text)].join(' ');
+    const required = requestedFacilities(recentUserText);
+    let places = await placeList(required);
+    const filtered = required.length > 0 && places.length > 0;
+    if (!filtered) places = await placeList();
+    const listNote = filtered
+      ? `Every place below has ${required.join(', ')}, which the user asked for.`
+      : required.length
+        ? `No LockedIN place has all of: ${required.join(', ')}. Say so, then suggest the closest options.`
+        : '';
     const response = await ai.models.generateContent({
       model: 'gemini-3.5-flash-lite',
       contents: [
@@ -70,7 +95,7 @@ router.post('/study-assistant', async (req, res) => {
         { role: 'user', parts: [{ text: userPrompt }] },
       ],
       config: {
-        systemInstruction: 'You are the helpful AI study assistant for LockedIN, a study-spot finder for students in Singapore. SMU means Singapore Management University, NUS the National University of Singapore and NTU Nanyang Technological University. Help people find suitable study spots and plan focused study sessions. When suggesting places, only suggest places from the LockedIN list below, by their exact name, and mention they can find them on the Browse page. Ask a brief follow-up when their needs are unclear. Be concise, friendly, and do not invent live availability or venue details. Avoid using ** or other formatting. Avoid filler text. Use paragraphs for clarity.\n\nLockedIN places (name | area | hours | open now? | indoor/outdoor | entry | facilities | rating):\n' + places,
+        systemInstruction: 'You are the helpful AI study assistant for LockedIN, a study-spot finder for students in Singapore. SMU means Singapore Management University, NUS the National University of Singapore and NTU Nanyang Technological University. Help people find suitable study spots and plan focused study sessions. When suggesting places, only suggest places from the LockedIN list below, by their exact name, and mention they can find them on the Browse page. If they ask for a facility (for example sockets or Wi-Fi), only suggest places whose facilities list includes it, and say so if none match. Ask a brief follow-up when their needs are unclear. Be concise, friendly, and do not invent live availability or venue details. Avoid using ** or other formatting. Avoid filler text. Use paragraphs for clarity.\n\nLockedIN places (name | area | hours | open now? | indoor/outdoor | entry | facilities | rating). A place only has the facilities written after "facilities:" on its line. ' + listNote + '\n' + places,
       },
     });
 
