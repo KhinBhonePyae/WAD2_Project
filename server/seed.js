@@ -2,9 +2,9 @@
  * Run with: pnpm seed  (or npm run seed)
  * Safe to re-run: each place is matched by its `id` and replaced,
  * so nothing is duplicated and places added through the app are kept. */
-const dotenv = require('dotenv');
+const dotenv = require('dotenv');  // Library: dotenv: open-source .env loader (BSD-2)
 const path = require('path');
-const mongoose = require('mongoose');
+const mongoose = require('mongoose');  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 const places = require('./data/places.json');
 const { Place } = require('./models/place-model');
 

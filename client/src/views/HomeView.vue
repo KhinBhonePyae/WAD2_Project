@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL } from '../utils/api.js'
 import { fetchWeather } from '../utils/weather.js'
 import { fetchSavedIds, toggleSavedId, isLoggedIn } from '../utils/saved.js'

@@ -1,5 +1,5 @@
-const express = require('express');
-const { GoogleGenAI } = require('@google/genai');
+const express = require('express');  // Library: Express: open-source Node.js web framework (MIT)
+const { GoogleGenAI } = require('@google/genai');  // Library: Google Gen AI SDK: official Gemini API client (Apache-2.0)
 const placeModel = require('../models/place-model');
 const { summarisePlaces } = require('../utils/place-summary');
 

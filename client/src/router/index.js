@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import axios from 'axios'
+import { createRouter, createWebHistory } from 'vue-router'  // Library: Vue Router: official Vue routing library (MIT)
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL, authConfig } from '../utils/api.js'
 import HomeView from '../views/HomeView.vue'
 import SearchView from '../views/SearchView.vue'

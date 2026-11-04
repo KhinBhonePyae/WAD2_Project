@@ -1,8 +1,8 @@
-const dotenv = require('dotenv');
+const dotenv = require('dotenv');  // Library: dotenv: open-source .env loader (BSD-2)
 const path = require('path');
 dotenv.config({ path: path.join(__dirname, 'config.env') });
-const axios = require('axios');
-const mongoose = require('mongoose');
+const axios = require('axios');  // Library: axios: open-source HTTP client library (MIT)
+const mongoose = require('mongoose');  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 const { Place } = require('./models/place-model');
 
 const options = {

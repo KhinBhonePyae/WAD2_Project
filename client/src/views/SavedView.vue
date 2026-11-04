@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL } from '../utils/api.js'
 import PlaceCard from '../components/PlaceCard.vue'
 

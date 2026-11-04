@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken')  // Library: jsonwebtoken: open-source JSON Web Token library (MIT)
 const userModel = require('../models/user-model')
 
 async function authenticate(req, res, next) {

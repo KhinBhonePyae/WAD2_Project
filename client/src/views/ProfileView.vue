@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL } from '../utils/api.js'
 import { STUDY_SPOTS } from '../utils/studySpots.js'
 import { fetchSavedIds } from '../utils/saved.js'

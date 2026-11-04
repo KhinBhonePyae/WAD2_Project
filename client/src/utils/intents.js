@@ -1,5 +1,5 @@
 // "Planning to go" intents (GET/POST/DELETE /intents).
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL } from './api.js'
 
 function authHeader() {

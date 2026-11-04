@@ -8,11 +8,11 @@
  * day one without Atlas credentials. Remove mock mode once the real
  * database is wired up.
  */
-const express = require('express');
-const dotenv = require('dotenv');
+const express = require('express');  // Library: Express: open-source Node.js web framework (MIT)
+const dotenv = require('dotenv');  // Library: dotenv: open-source .env loader (BSD-2)
 const path = require('path');
-const mongoose = require('mongoose');
-const cors = require('cors');
+const mongoose = require('mongoose');  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
+const cors = require('cors');  // Library: cors: open-source Express CORS middleware (MIT)
 
 dotenv.config({ path: path.join(__dirname, 'config.env') });
 

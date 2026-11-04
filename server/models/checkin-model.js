@@ -2,7 +2,7 @@
  * Separate from reviews so people can report the crowd without writing a review.
  * A user who reports the same place again within CHANGE_WINDOW_MS updates their
  * last report instead of adding another, so one person can't flood a place. */
-const mongoose = require('mongoose');
+const mongoose = require('mongoose');  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 
 const CHANGE_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 

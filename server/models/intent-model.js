@@ -2,7 +2,7 @@
  * One intent per user per place per slot (unique index).
  * expiresAt is the end of the slot; MongoDB's TTL index deletes old
  * intents automatically, and every query also ignores expired ones. */
-const mongoose = require('mongoose');
+const mongoose = require('mongoose');  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 const { slotEnd } = require('../utils/slots');
 
 const intentSchema = new mongoose.Schema({

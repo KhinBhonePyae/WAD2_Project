@@ -1,5 +1,5 @@
-const mongoose = require('mongoose')
-const dotenv = require('dotenv')
+const mongoose = require('mongoose')  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
+const dotenv = require('dotenv')  // Library: dotenv: open-source .env loader (BSD-2)
 const path = require('path')
 
 dotenv.config({

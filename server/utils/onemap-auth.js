@@ -1,4 +1,4 @@
-const axios = require('axios');
+const axios = require('axios');  // Library: axios: open-source HTTP client library (MIT)
 
 const TOKEN_URL = 'https://www.onemap.gov.sg/api/auth/post/getToken';
 const TOKEN_LIFETIME_MS = 72 * 60 * 60 * 1000;

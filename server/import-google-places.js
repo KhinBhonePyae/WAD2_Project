@@ -17,12 +17,12 @@
  *
  * Quota per run: ~3 pages x QUERIES.length Text Search calls (Enterprise + Atmosphere SKU,
  * because we ask for reviews) plus `--photos` Place Photo calls for each NEW place only. */
-const dotenv = require('dotenv');
+const dotenv = require('dotenv');  // Library: dotenv: open-source .env loader (BSD-2)
 const path = require('path');
 const fs = require('fs');
 dotenv.config({ path: path.join(__dirname, 'config.env') });
-const axios = require('axios');
-const mongoose = require('mongoose');
+const axios = require('axios');  // Library: axios: open-source HTTP client library (MIT)
+const mongoose = require('mongoose');  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 const { Place } = require('./models/place-model');
 
 const SMU = { lat: 1.2966, lon: 103.8500 }; // Li Ka Shing Library / SMU Green

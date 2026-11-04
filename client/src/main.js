@@ -1,10 +1,10 @@
-import { createApp } from 'vue'
+import { createApp } from 'vue'  // Library: Vue 3: open-source JavaScript framework (MIT)
 import App from './App.vue'
 import router from './router'
 
 // Bootstrap first, then our theme so the theme can override it.
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import 'bootstrap/dist/css/bootstrap.min.css'  // Library: Bootstrap 5: open-source CSS/JS framework (MIT)
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'  // Library: Bootstrap 5: open-source CSS/JS framework (MIT)
 import './assets/theme.css'
 
 const app = createApp(App)

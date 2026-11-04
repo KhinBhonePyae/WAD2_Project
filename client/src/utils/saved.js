@@ -1,6 +1,6 @@
 // Saved places on the server (GET/POST/DELETE /saved), shared by the
 // Home and Browse pages. Needs a logged-in user's token.
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL } from './api.js'
 
 function authHeader() {

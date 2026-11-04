@@ -2,7 +2,7 @@
  * Owner: Liew Tian Le (weather integration + AI assistant).
  * Docs: https://open-meteo.com/en/docs
  */
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 
 const SG = { lat: 1.2966, lon: 103.8521 }   // city centre fallback
 

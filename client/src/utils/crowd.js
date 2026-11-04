@@ -1,5 +1,5 @@
 // Crowd reports (GET/POST /crowd): one-tap check-ins plus the crowd level in reviews.
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL } from './api.js'
 
 export const CROWD_LABELS = { quiet: 'Quiet', moderate: 'Moderate', packed: 'Packed' }

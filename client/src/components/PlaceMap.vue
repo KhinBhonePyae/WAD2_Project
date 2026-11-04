@@ -1,9 +1,9 @@
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import axios from 'axios'
-import L from 'leaflet'
-import polyline from '@mapbox/polyline'
-import 'leaflet/dist/leaflet.css'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
+import L from 'leaflet'  // Library: Leaflet: open-source interactive map library (BSD-2)
+import polyline from '@mapbox/polyline'  // Library: @mapbox/polyline: open-source route-line decoder (BSD)
+import 'leaflet/dist/leaflet.css'  // Library: Leaflet: open-source interactive map library (BSD-2)
 import { BASE_URL } from '../utils/api.js'
 
 const props = defineProps({

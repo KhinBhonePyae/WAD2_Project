@@ -2,8 +2,8 @@ const userModel = require('../models/user-model')
 const savedModel = require('../models/saved-model')
 const intentModel = require('../models/intent-model')
 const checkinModel = require('../models/checkin-model')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
+const bcrypt = require('bcrypt')  // Library: bcrypt: open-source password hashing library (MIT)
+const jwt = require('jsonwebtoken')  // Library: jsonwebtoken: open-source JSON Web Token library (MIT)
 
 function userResponse(user) {
   return {

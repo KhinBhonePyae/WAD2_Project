@@ -1,6 +1,6 @@
 /* Review model + data-access helpers. This is Jeffrey's area:
  * ratings, reviews and crowd reporting. */
-const mongoose = require('mongoose');
+const mongoose = require('mongoose');  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 const checkinModel = require('./checkin-model');
 
 const reviewSchema = new mongoose.Schema({

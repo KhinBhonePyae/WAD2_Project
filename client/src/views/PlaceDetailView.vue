@@ -1,8 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
-import { Carousel } from 'bootstrap'
+import { Carousel } from 'bootstrap'  // Library: Bootstrap 5: open-source CSS/JS framework (MIT)
 import { useRoute, RouterLink } from 'vue-router'
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { BASE_URL } from '../utils/api.js'
 import { suitabilityBreakdown, preferencesToWanted, FACILITY_LABELS, ENTRY_LABELS, closureStatusOf } from '../utils/suitability.js'
 import { fetchWeather } from '../utils/weather.js'

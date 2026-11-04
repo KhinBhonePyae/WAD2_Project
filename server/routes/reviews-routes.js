@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express');  // Library: Express: open-source Node.js web framework (MIT)
 const reviewsController = require('../controllers/reviews-controller');
 const authenticate = require('../middleware/auth-middleware');
 const router = express.Router();

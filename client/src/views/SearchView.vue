@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import { useRoute, useRouter } from 'vue-router'
 import HomeSearchBox from '../components/HomeSearchBox.vue'
 import SearchFilters from '../components/SearchFilters.vue'

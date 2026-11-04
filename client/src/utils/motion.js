@@ -1,11 +1,11 @@
 // Shared animation setup: GSAP (+ ScrollTrigger, Flip) and Lenis smooth scrolling.
 // Everything checks reducedMotion so the site still works calmly for people
 // who turn animations off in their system settings.
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Flip } from 'gsap/Flip'
-import Lenis from 'lenis'
-import 'lenis/dist/lenis.css'
+import gsap from 'gsap'  // Library: GSAP: GreenSock animation library (free "no charge" licence)
+import { ScrollTrigger } from 'gsap/ScrollTrigger'  // Library: GSAP: GreenSock animation library (free "no charge" licence)
+import { Flip } from 'gsap/Flip'  // Library: GSAP: GreenSock animation library (free "no charge" licence)
+import Lenis from 'lenis'  // Library: Lenis: open-source smooth-scrolling library (MIT)
+import 'lenis/dist/lenis.css'  // Library: Lenis: open-source smooth-scrolling library (MIT)
 
 gsap.registerPlugin(ScrollTrigger, Flip)
 

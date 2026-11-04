@@ -1,7 +1,7 @@
 /* User model + data-access helpers.
  * Handles user accounts, profiles and study preferences.
  */
-const mongoose = require('mongoose')
+const mongoose = require('mongoose')  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true, maxlength: 60 },

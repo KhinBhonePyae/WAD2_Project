@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { RouterLink, RouterView, useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from 'axios'  // Library: axios: open-source HTTP client library (MIT)
 import CustomCursor from './components/CustomCursor.vue'
 import AssistantBubble from './components/AssistantBubble.vue'
 import WorldChat from './components/WorldChat.vue'

@@ -1,7 +1,7 @@
 /* Incorrect-information reports for study spaces.
  * Users submit reports from a place detail page; admins review them.
  */
-const mongoose = require('mongoose')
+const mongoose = require('mongoose')  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 
 const reportSchema = new mongoose.Schema({
   placeId: { type: Number, required: true },

@@ -12,10 +12,10 @@ A web application that helps students discover suitable study locations across S
 | | |
 |---|---|
 | **Source repository** | https://github.com/KhinBhonePyae/WAD2_Project |
-| **Deployed application** | ⚠️ **TODO — add the Vercel URL after deployment** (see [Deployment](#deployment)) |
-| **API server** | ⚠️ **TODO — add the Render URL after deployment** |
+| **Deployed application** | https://lockedin-bice-three.vercel.app |
+| **API server** | https://lockedin-api-oxey.onrender.com (check it at [`/health`](https://lockedin-api-oxey.onrender.com/health)) |
 
-> Planned hosting: the website on **Vercel**, the API on **Render**, data in **MongoDB Atlas**. Fill in both links once the site is live, before the Week 12 deadline (Fri 6 Nov, 9:00am).
+> Hosting: the website on **Vercel**, the API on **Render**, data in **MongoDB Atlas**. The API is on Render's free plan, so the first request after a quiet spell can take up to about 30 seconds while it wakes up.
 
 ---
 
@@ -85,16 +85,6 @@ The application must keep running until Week 18, so:
 - **Google Places needs a billing account.** Restrict the key to "Places API (New)" and set a quota cap in Google Cloud Console. The import script prints its quota use per run (`pnpm import:google:preview` shows what it would do without calling the API).
 - **Gemini:** set a daily request limit on the key. If the key fails, is rate-limited or runs out, the assistant shows a clear message and the rest of the app keeps working.
 - **OneMap, NLB and Open-Meteo are free.** OneMap tokens expire every 3 days; the server renews them by itself from `ONEMAP_EMAIL` and `ONEMAP_PASSWORD`.
-- **One nominated owner per account:**
-
-| Service | Account owner | Spend cap |
-|---|---|---|
-| Google Cloud (Places API) | *TODO* | *TODO* |
-| Google Gemini API | *TODO* | *TODO* |
-| OneMap | *TODO* | Free |
-| MongoDB Atlas | *TODO* | Free tier |
-| Render (API hosting) | *TODO* | *TODO* |
-| Vercel (website hosting) | *TODO* | Free tier |
 
 ---
 
@@ -426,7 +416,6 @@ Do not redeploy after submission.
 
 - [ ] Both live URLs in [Links](#links), checked by someone who didn't deploy
 - [ ] Atlas password and `JWT_SECRET` changed from the ones shared during development
-- [ ] Account owners and spend caps filled in under [API cost controls](#api-cost-controls)
 - [ ] AI declaration below completed by every member
 - [ ] Copy this file to `README.txt` (the course asks for that file name)
 
@@ -451,6 +440,7 @@ Parts of this project written with AI/LLM tools. Each member completes their own
 | Jeffrey Wen | Tests: client unit and component tests (`suitability`, `searchFilters`, `crowd`, `StarRating`, `CrowdHistogram`), server tests (`crowd`, `place-summary`, `auth-middleware`) and end-to-end tests (`accounts`, `reviews`, `search`, `crowd`, `saved`) | Generated with Claude Code, then run and checked by Jeffrey |
 | Jeffrey Wen | Chat buttons closing on an outside click, their icons and labels (`AssistantBubble.vue`, `WorldChat.vue`); pnpm setup; README | Written with Claude Code |
 | Jeffrey Wen | Favourite kinds of spot and preference ordering (`client/src/utils/studySpots.js`, sign-up, profile, home and Browse), star rating picker (`StarPicker.vue`), review pagination, weather background (`WeatherBackdrop.vue`), "Nearby" card tags, walking-route steps, the restored admin route guard, and the matching tests | Written with Claude Code, then reviewed and tested by Jeffrey |
+| Jeffrey Wen | Final checks before submission: removing forgot-password leftovers, opening hours on their own line and larger phone text on place cards (`PlaceCard.vue`, `HomeView.vue`, `AreaCarousel.vue`), library credit comments on imports (FAQ 6), README links and test counts | Done with Claude Code, then reviewed by Jeffrey |
 | Leong Yew Kai | *TODO* | *TODO* |
 | Khin Bhone Pyae | *TODO* | *TODO* |
 | Thet Htar Nwe | *TODO* | *TODO* |

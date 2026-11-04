@@ -4,7 +4,7 @@ const intentModel = require('../models/intent-model');
 const savedModel = require('../models/saved-model');
 const checkinModel = require('../models/checkin-model');
 const { summarisePlaces } = require('../utils/place-summary');
-const axios = require('axios');
+const axios = require('axios');  // Library: axios: open-source HTTP client library (MIT)
 const { withOneMapToken } = require('../utils/onemap-auth');
 
 const ALLOWED_FACILITIES = ['wifi', 'sockets', 'toilets', 'water', 'fnb', 'quiet'];

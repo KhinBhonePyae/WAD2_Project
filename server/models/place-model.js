@@ -1,6 +1,6 @@
 /* Place model. Follows the wk5 pattern: the model file is also the
  * data-access layer and exports named CRUD helpers. */
-const mongoose = require('mongoose');
+const mongoose = require('mongoose');  // Library: Mongoose: open-source MongoDB object modelling library (MIT)
 const fs = require('fs');
 const path = require('path');
 
