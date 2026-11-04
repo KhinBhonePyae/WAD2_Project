@@ -4,8 +4,6 @@ const intentModel = require('../models/intent-model')
 const checkinModel = require('../models/checkin-model')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const crypto = require('crypto')
-const transporter = require('../utils/email')
 
 function userResponse(user) {
   return {
@@ -112,111 +110,6 @@ exports.login = async (req, res, next) => {
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' })
     res.json({ message: 'Login successful', token, user: userResponse(user) })
-  } catch (e) {
-    next(e)
-  }
-}
-
-/* POST /users/forgot-password */
-exports.forgotPassword = async (req, res, next) => {
-  try {
-    const { email } = req.body
-
-    if (typeof email !== 'string' || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      return res.status(400).json({ error: 'Enter a valid email address' })
-    }
-
-    const user = await userModel.findByEmail(email.trim().toLowerCase())
-
-    if (user) {
-      const resetToken = crypto.randomBytes(32).toString('hex')
-      const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex')
-      const expires = new Date(Date.now() + 15 * 60 * 1000)
-
-      await userModel.updateUser(user._id, {
-        resetPasswordToken: hashedToken,
-        resetPasswordExpires: expires
-      })
-
-      const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '')
-      const resetLink = `${clientUrl}/reset-password/${resetToken}`
-
-      try {
-        await transporter.sendMail({
-          from: `"LockedIN" <${process.env.EMAIL_USER}>`,
-          to: user.email,
-          subject: 'Reset your LockedIN password',
-          html: `
-            <h2>Reset your LockedIN password</h2>
-            <p>We received a request to reset your password.</p>
-            <p><a href="${resetLink}">Reset password</a></p>
-            <p>This link will expire in 15 minutes.</p>
-            <p>If you did not request this, you can ignore this email.</p>
-          `
-        })
-      } catch (emailError) {
-        await userModel.updateUser(user._id, {
-          resetPasswordToken: null,
-          resetPasswordExpires: null
-        })
-        throw emailError
-      }
-    }
-
-    res.json({
-      message: 'If an account exists for this email, a password reset link has been sent.'
-    })
-  } catch (e) {
-    next(e)
-  }
-}
-
-/* POST /users/reset-password/:token */
-exports.resetPassword = async (req, res, next) => {
-  try {
-    const { newPassword, confirmPassword } = req.body
-
-    if (!newPassword || !confirmPassword) {
-      return res.status(400).json({ error: 'Both password fields are required' })
-    }
-
-    if (newPassword !== confirmPassword) {
-      return res.status(400).json({ error: 'Passwords do not match' })
-    }
-
-    const weak = checkPassword(newPassword)
-    if (weak) return res.status(400).json({ error: weak })
-
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(req.params.token)
-      .digest('hex')
-
-    const user = await userModel.findByResetToken(hashedToken)
-
-    if (!user) {
-      return res.status(400).json({
-        error: 'Password reset link is invalid or has expired'
-      })
-    }
-
-    const samePassword = await bcrypt.compare(newPassword, user.password)
-
-    if (samePassword) {
-      return res.status(400).json({
-        error: 'New password must be different from the current password'
-      })
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10)
-
-    await userModel.updateUser(user._id, {
-      password: hashedPassword,
-      resetPasswordToken: null,
-      resetPasswordExpires: null
-    })
-
-    res.json({ message: 'Password reset successfully' })
   } catch (e) {
     next(e)
   }

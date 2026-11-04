@@ -84,12 +84,6 @@ async function login() {
                 placeholder="Enter your password" autocomplete="current-password">
             </div>
 
-            <div class="forgot-row">
-              <RouterLink to="/forgot-password" class="forgot-link">
-                Forgot password?
-              </RouterLink>
-            </div>
-
             <button type="submit" class="btn auth-button" :disabled="loading" data-test="login-submit">
               <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
 

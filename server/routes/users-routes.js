@@ -8,8 +8,6 @@ const router = express.Router()
 router.post('/register', usersController.register)
 router.post('/check-email', usersController.checkEmail)
 router.post('/login', usersController.login)
-router.post('/forgot-password', usersController.forgotPassword)
-router.post('/reset-password/:token', usersController.resetPassword)
 
 router.get('/admin', authenticate, requireAdmin, usersController.getAllUsers)
 router.put('/admin/:id', authenticate, requireAdmin, usersController.updateUserByAdmin)

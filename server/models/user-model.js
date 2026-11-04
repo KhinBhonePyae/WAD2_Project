@@ -8,9 +8,6 @@ const userSchema = new mongoose.Schema({
   email: { type: String, required: true, trim: true, lowercase: true, unique: true },
   password: { type: String, required: true },
 
-  resetPasswordToken: { type: String, default: null },
-  resetPasswordExpires: { type: Date, default: null },
-
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
 
   preferences: {
@@ -61,22 +58,6 @@ exports.createUser = async (data) => {
 exports.findByEmail = async (email) => {
   if (global.MOCK_MODE) return mem.find(user => user.email === email.toLowerCase()) || null
   return User.findOne({ email: email.toLowerCase() })
-}
-
-// Find user by valid password reset token
-exports.findByResetToken = async (token) => {
-  if (global.MOCK_MODE) {
-    return mem.find(user =>
-      user.resetPasswordToken === token &&
-      user.resetPasswordExpires &&
-      new Date(user.resetPasswordExpires) > new Date()
-    ) || null
-  }
-
-  return User.findOne({
-    resetPasswordToken: token,
-    resetPasswordExpires: { $gt: new Date() }
-  })
 }
 
 // Find user by ID

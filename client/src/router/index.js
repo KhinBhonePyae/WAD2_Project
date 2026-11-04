@@ -6,8 +6,6 @@ import SearchView from '../views/SearchView.vue'
 import PlaceDetailView from '../views/PlaceDetailView.vue'
 import LoginView from '../views/LoginView.vue'
 import SignUpView from '../views/SignUpView.vue'
-import ForgotPasswordView from '../views/ForgotPasswordView.vue'
-import ResetPasswordView from '../views/ResetPasswordView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import SavedView from '../views/SavedView.vue'
 import AdminPlacesView from '../views/AdminPlacesView.vue'
@@ -31,8 +29,6 @@ const router = createRouter({
     
     { path: '/login', component: LoginView },
     { path: '/signup', component: SignUpView },
-    { path: '/forgot-password', component: ForgotPasswordView },
-    { path: '/reset-password/:token', component: ResetPasswordView },
     { path: '/profile', component: ProfileView },
     { path: '/saved', component: SavedView },
 
