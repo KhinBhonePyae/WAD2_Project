@@ -48,6 +48,8 @@ ONEMAP_EMAIL=<OneMap login email>
 ONEMAP_PASSWORD=<OneMap login password>
 ```
 
+For marking, the filled-in `server/config.env` is included in the zip we submitted on eLearn, so you can skip this step. It isn't on GitHub because it holds our keys.
+
 `DB` connects to our shared database, which has all 159 study spaces and the test accounts below. Most reviews in it are demo data from `server/seed-reviews.js`, so every place has ratings and crowd levels. Without `DB`, the server still starts but in mock mode, with only 5 sample places and no test accounts. Without `GEMINI_API_KEY` the AI assistant is off, and without the OneMap login the map works but directions don't.
 
 4. Start the API in one terminal:
@@ -99,7 +101,7 @@ Open https://lockedin-bice-three.vercel.app (or http://localhost:5173 if you're 
 2. Explore by area: scroll through the area cards (Raffles Place, Orchard, Bugis and more) and pick one to see the spots in that area.
 3. Global chat: the green globe button at the bottom left opens a chat room for logged-in users.
 4. Locker Bot: the purple robot button below it opens the AI study assistant. Ask it to find a spot or plan a study session.
-5. Saving a spot: press the heart on any place card. Your saved places are under the Saved icon in the navigation bar (Saved Places in the phone menu).
+5. Saving a spot: press the heart on any place card, or the heart on the photos of a place page. Your saved places are under the Saved icon in the navigation bar (Saved Places in the phone menu).
 
 ### Browse page
 
@@ -109,12 +111,13 @@ Open it from Browse in the navigation bar, from "Browse all 159 spots", or by se
 2. Weather: the live weather for central Singapore shows at the top and as the page background, and it affects each place's suitability score.
 3. Filters: filter by facilities, area, crowd level, rating, open now, free entry, indoor or outdoor, and distance from you.
 4. Places: all 159 study spots, from cafés and study spaces around SMU to public libraries across Singapore, 12 per page. Places that match your favourite kinds of spot come first.
+5. Suitability score: each place gets a score out of 100 based on your must-have facilities, whether it's open now, how busy it is, its rating and the weather, with 10 extra points if it's one of your favourite kinds of spot.
 
 ### Place page
 
 Click any place to open its page.
 
-1. Details: name, address, rating, crowd level, opening hours, whether it's open now, facilities, tags and photos.
+1. Details: name, address, rating, crowd level, opening hours, whether it's open now, facilities, tags and photos. Press the heart on the photos to save the place. If you set study preferences, "Why this matches you" shows which ones the place meets.
 2. Planning to go: say you're going today or tomorrow in a time slot, and see how busy that slot is likely to be.
 3. Community insights ("How busy is it?"): see how busy the place is from recent reports and reviews. If you're there, tap Quiet, Moderate or Packed to report it, and change or undo it within the hour.
 4. Reviews: read other users' reviews, and write, edit or delete your own.
@@ -133,7 +136,7 @@ Log in as the admin test account to see Manage, Users and Reports in the navigat
 
 | Tests | Command | Count |
 |---|---|---|
-| Client unit and component tests (Vitest) | `cd client` then `pnpm test:unit -- --run` | 326 |
+| Client unit and component tests (Vitest) | `cd client` then `pnpm test:unit -- --run` | 340 |
 | Server tests (Node test runner, mock mode) | `cd server` then `pnpm test` | 47 |
 | End-to-end tests (Playwright) | `cd client` then `pnpm test:e2e` | 34 |
 
@@ -164,6 +167,20 @@ The end-to-end tests cover these user journeys:
 | 7 | Report wrong information, and an admin resolves it | `reports.spec.js` |
 | 8 | Admin creates, edits and deletes a study space | `admin-places.spec.js` |
 | 9 | Admin promotes, demotes and deletes users | `admin-users.spec.js` |
+
+Video recordings of every end-to-end test from our last full run are in `client/test-results/`, so you can watch them without running anything. Running the end-to-end tests again replaces these recordings with new ones.
+
+## External APIs and libraries
+
+| API | What we use it for |
+|---|---|
+| Open-Meteo | Live weather for central Singapore, used for the page background and the suitability score |
+| OneMap (SLA) | Map tiles, location search and directions by walking, car, bus and train |
+| Google Gemini | The Locker Bot AI study assistant, called from our server so the key stays private |
+| NLB (National Library Board) | Public library branches and opening hours, imported once with `server/import-libraries.js` |
+| Google Places | Cafés and study spaces with photos and hours, imported once with `server/import-google-places.js` |
+
+Open-source libraries (credited in the code comments too): Vue 3, Vue Router, Vite, Bootstrap 5, Axios, Leaflet, Mapbox Polyline, GSAP and Lenis on the client, Express, Mongoose, bcrypt, jsonwebtoken, cors, dotenv and `@google/genai` on the server, and Vitest, Vue Test Utils and Playwright for testing.
 
 ## Use of AI / LLM tools
 
