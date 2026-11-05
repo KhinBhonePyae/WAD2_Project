@@ -11,6 +11,7 @@ LockedIN helps students in Singapore find a good place to study. You can browse 
 | Live application | https://lockedin-bice-three.vercel.app |
 | Source repository | https://github.com/KhinBhonePyae/WAD2_Project |
 | API server | https://lockedin-api-oxey.onrender.com |
+| Video Link | https://youtu.be/AtxiDzKFRm8 |
 
 The API is on Render's free plan, so the first request after a quiet period can take 30 to 60 seconds while it wakes up.
 
